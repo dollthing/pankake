@@ -7,4 +7,5 @@
 
 pub use ananke_api::openai::{
     ChatCompletionEnvelope, CompletionEnvelope, EmbeddingEnvelope, ModelListing, ModelsResponse,
+    TranscriptionEnvelope,
 };

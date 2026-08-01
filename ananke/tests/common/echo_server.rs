@@ -31,6 +31,10 @@ pub struct EchoState {
     pub spawn_counter: Arc<AtomicU32>,
     /// Sink for recording request bodies from /v1/* endpoints.
     pub sink: Arc<Mutex<Vec<serde_json::Value>>>,
+    /// Sink recording `(content_type, raw_body)` pairs from the multipart
+    /// `/v1/audio/transcriptions` endpoint, where byte-exact forwarding is
+    /// the property under test.
+    pub raw_sink: Arc<Mutex<Vec<(String, Bytes)>>>,
     /// When set, `/v1/*` returns 200 headers and then a body that never
     /// yields a frame — simulating a wedged child that accepts a request but
     /// emits no token. Used to exercise the time-to-first-token stall
@@ -136,6 +140,30 @@ async fn handle(
             Ok(Response::builder()
                 .status(StatusCode::OK)
                 .header("content-type", "text/plain; version=0.0.4")
+                .body(body)
+                .unwrap())
+        }
+
+        "/v1/audio/transcriptions" => {
+            let content_type = req
+                .headers()
+                .get(hyper::header::CONTENT_TYPE)
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or_default()
+                .to_string();
+            let body_bytes = req
+                .into_body()
+                .collect()
+                .await
+                .map(|c| c.to_bytes())
+                .unwrap_or_default();
+            state.raw_sink.lock().push((content_type, body_bytes));
+            let body = Full::new(Bytes::from(r#"{"text":"the quick brown fox"}"#))
+                .map_err(|n| match n {})
+                .boxed();
+            Ok(Response::builder()
+                .status(StatusCode::OK)
+                .header("content-type", "application/json")
                 .body(body)
                 .unwrap())
         }

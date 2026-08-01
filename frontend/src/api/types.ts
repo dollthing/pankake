@@ -313,6 +313,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/audio/transcriptions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Audio transcription (OpenAI-compatible proxy) */
+    post: operations["audio_transcriptions"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/chat/completions": {
     parameters: {
       query?: never;
@@ -670,7 +687,7 @@ export interface components {
     };
     /**
      * @description Estimator output projected to the wire. Carries the components a
-     *     reader needs to answer "how much VRAM will this service take?"
+     *     reader needs to answer "how much memory will this service take?"
      *     without having to re-derive any of them client-side.
      */
     EstimateSummary: {
@@ -968,7 +985,7 @@ export interface components {
      *     byte-identical — the field is elided from the wire when it's `Chat`.
      * @enum {string}
      */
-    Modality: "chat" | "embedding";
+    Modality: "chat" | "embedding" | "transcription";
     /**
      * @description GGUF-derived facts about a model file. Read once per service per
      *     daemon run and cached; the file isn't re-parsed on every detail
@@ -1569,6 +1586,33 @@ export interface components {
           /** @enum {string} */
           status: "drained";
         };
+    /**
+     * @description `POST /v1/audio/transcriptions` request envelope (multipart/form-data).
+     *
+     *     The daemon only interprets the `model` field; the whole multipart body
+     *     (file included) is forwarded byte-for-byte to the upstream ASR service,
+     *     which ignores `model` and reads the remaining fields itself.
+     */
+    TranscriptionEnvelope: {
+      /**
+       * Format: binary
+       * @description The audio file to transcribe. Accepted formats depend on the
+       *     upstream server (parakeet-server: WAV only; whisper-server with
+       *     `--convert`: anything ffmpeg reads).
+       */
+      file: string;
+      /**
+       * @description Model name (maps to an ananke service name with
+       *     `modality = "transcription"`).
+       */
+      model: string;
+      /**
+       * @description Upstream-interpreted response format: `json` (default), `text`,
+       *     or `verbose_json` (upstream-dependent; whisper-server also
+       *     supports `srt` and `vtt`).
+       */
+      response_format?: string | null;
+    };
     /** @description One validation error from the config parser. */
     ValidationError: {
       /**
@@ -2243,6 +2287,64 @@ export interface operations {
       };
       /** @description service_not_found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  audio_transcriptions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["TranscriptionEnvelope"];
+      };
+    };
+    responses: {
+      /** @description Proxied from upstream */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description invalid_request_error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description model_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description upstream_unavailable */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description service_disabled, start_queue_full, start_failed, insufficient_capacity, service_blocked */
+      503: {
         headers: {
           [name: string]: unknown;
         };
