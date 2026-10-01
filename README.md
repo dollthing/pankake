@@ -104,7 +104,7 @@ The dashboard is served at the management port (`http://<host>:7071`) by fronten
 
 Events records live events from the browser's subscription and combines them with persisted automatic restarts; it labels the capture start time. The backend does not persist a full general event history. Missing metrics and estimate components stay unavailable rather than becoming sample data. Temporary services remain available through the CLI and backend API.
 
-Open uses a service's HTTP proxy port. For a service published through HTTPS or another hostname, set `metadata.web_ui_url = "https://service.example/"` in its service block. The URL must use HTTP or HTTPS; the upstream determines whether it serves a web UI. Chat is enabled only for OpenAI-compatible chat services.
+Open uses a service's HTTP proxy port. For a service published through HTTPS or another hostname, set `metadata.web_ui_url = "https://service.example/"` in its service block. Loopback-only proxy ports require a local browser or an SSH forward; use a published URL for remote dashboard access. The URL must use HTTP or HTTPS; the upstream determines whether it serves a web UI. Chat is enabled only for OpenAI-compatible chat services.
 
 ### `anankectl`
 

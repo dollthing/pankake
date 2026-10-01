@@ -47,6 +47,10 @@ export function Chat({
   const choices = (models.data?.data ?? []).filter(
     (m) => !m.modality || m.modality === "chat",
   );
+  const canSend =
+    !chat.generating &&
+    !!chat.input.trim() &&
+    choices.some((model) => model.id === chat.model);
   const ref = useRef<HTMLDivElement>(null),
     stickRef = useRef(true);
   const setModel = chat.setModel;
@@ -139,7 +143,7 @@ export function Chat({
             >
               <option value="">Choose a model</option>
               {chat.model && !choices.some((m) => m.id === chat.model) && (
-                <option value={chat.model}>{chat.model}</option>
+                <option value={chat.model}>{chat.model} (unavailable)</option>
               )}
               {choices.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -169,8 +173,10 @@ export function Chat({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
                   e.preventDefault();
-                  stickRef.current = true;
-                  void chat.send();
+                  if (canSend) {
+                    stickRef.current = true;
+                    void chat.send();
+                  }
                 }
               }}
             />
@@ -178,11 +184,11 @@ export function Chat({
               icon={chat.generating ? "stop" : "send"}
               tone="primary"
               class="h-auto px-[18px] text-[13.5px] font-semibold"
-              disabled={!chat.generating && (!chat.input.trim() || !chat.model)}
+              disabled={!chat.generating && !canSend}
               onClick={() => {
                 stickRef.current = true;
                 if (chat.generating) chat.stop();
-                else void chat.send();
+                else if (canSend) void chat.send();
               }}
             >
               {chat.generating ? "Stop" : "Send"}

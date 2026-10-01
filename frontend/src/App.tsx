@@ -39,6 +39,12 @@ export function App() {
   }, []);
   const services = system.services.data?.services ?? [],
     devices = system.devices.data ?? [];
+  const chatModel = services.find(
+    (service) =>
+      service.name === lastService &&
+      service.openai_compat &&
+      (!service.modality || service.modality === "chat"),
+  )?.name;
   const compact = width < 900;
   const nav = (
     <Nav
@@ -48,7 +54,7 @@ export function App() {
         navigate({
           section,
           service: section === "services" ? lastService : undefined,
-          model: section === "chat" ? lastService : undefined,
+          model: section === "chat" ? chatModel : undefined,
         })
       }
     />
