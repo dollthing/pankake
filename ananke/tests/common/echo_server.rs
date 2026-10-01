@@ -179,18 +179,12 @@ async fn handle(
         }
 
         "/v1/audio/transcriptions" => {
-            let content_type = req
-                .headers()
+            let content_type = parts
+                .headers
                 .get(hyper::header::CONTENT_TYPE)
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or_default()
                 .to_string();
-            let body_bytes = req
-                .into_body()
-                .collect()
-                .await
-                .map(|c| c.to_bytes())
-                .unwrap_or_default();
             state.raw_sink.lock().push((content_type, body_bytes));
             let body = Full::new(Bytes::from(r#"{"text":"the quick brown fox"}"#))
                 .map_err(|n| match n {})
