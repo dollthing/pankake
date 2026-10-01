@@ -147,3 +147,43 @@ test("log backfill fills a gap larger than one page using only socket reads", as
   ).toHaveLength(2);
   expect(backend.control.connectionCount).toBe(1);
 });
+
+test("editing a long configuration keeps the hardware header at the top of the viewport", async ({
+  page,
+}) => {
+  await mockBackend(page);
+  await page.goto("/services/qwen3.6-27b");
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Config", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const draft =
+    "# Long configuration\n" +
+    Array.from({ length: 1500 }, (_, index) => `# setting ${index}\n`).join(
+      "",
+    ) +
+    "[daemon]\n";
+  await page.getByRole("textbox", { name: "Configuration TOML" }).fill(draft);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Configuration saved." }),
+  ).toBeVisible();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Services", exact: true })
+    .click();
+  await page
+    .getByRole("main", { name: "Service qwen3.6-27b" })
+    .getByRole("button", { name: "Stop", exact: true })
+    .click({ trial: true });
+  const layout = await page.evaluate(() => ({
+    scroll: window.scrollY,
+    top: document.querySelector("header")?.getBoundingClientRect().top,
+    bottom: document.querySelector("#root")?.getBoundingClientRect().bottom,
+    height: window.innerHeight,
+  }));
+  expect(layout.scroll).toBe(0);
+  expect(layout.top).toBe(0);
+  expect(layout.bottom).toBe(layout.height);
+});

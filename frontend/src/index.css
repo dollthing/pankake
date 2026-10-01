@@ -140,6 +140,12 @@
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: clip;
+  }
   body {
     margin: 0;
     background: var(--tone-canvas);
