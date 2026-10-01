@@ -1053,7 +1053,7 @@
   "Modality": {
     "type": "string",
     "description": "What kind of model the service exposes through the OpenAI-compatible\nAPI. Drives badge rendering in the frontend and lets clients (Discord\nrotation, RAG indexers) filter the model list by purpose without\nparsing `metadata.*` strings.\n\nDefaults to `Chat`, and the field is elided from the wire when it is,\nso a chat service carries no `modality` key in its config or payloads.",
-    "enum": ["chat", "embedding"]
+    "enum": ["chat", "embedding", "transcription"]
   },
   "ModelInfo": {
     "type": "object",
@@ -1766,6 +1766,26 @@
         "type": ["integer", "null"],
         "format": "int64",
         "description": "Prompt tokens actually evaluated — cache hits excluded, which is\nwhat makes this the right prefill-throughput numerator rather\nthan `usage.prompt_tokens`."
+      }
+    }
+  },
+  "TranscriptionEnvelope": {
+    "type": "object",
+    "description": "`POST /v1/audio/transcriptions` request envelope (multipart/form-data).\n\nThe daemon only interprets the `model` field; the whole multipart body\n(file included) is forwarded byte-for-byte to the upstream ASR service,\nwhich ignores `model` and reads the remaining fields itself.",
+    "required": ["model", "file"],
+    "properties": {
+      "file": {
+        "type": "string",
+        "format": "binary",
+        "description": "The audio file to transcribe. Accepted formats depend on the\nupstream server (parakeet-server: WAV only; whisper-server with\n`--convert`: anything ffmpeg reads)."
+      },
+      "model": {
+        "type": "string",
+        "description": "Model name (maps to an ananke service name with\n`modality = \"transcription\"`)."
+      },
+      "response_format": {
+        "type": ["string", "null"],
+        "description": "Upstream-interpreted response format: `json` (default), `text`,\nor `verbose_json` (upstream-dependent; whisper-server also\nsupports `srt` and `vtt`)."
       }
     }
   },

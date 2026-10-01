@@ -247,9 +247,10 @@ function ServiceRow({
               vision
             </span>
           )}
-          {service.modality === "embedding" && (
+          {(service.modality === "embedding" ||
+            service.modality === "transcription") && (
             <span class="border border-[#376b55] px-1 text-[#7ed6b0]">
-              embedding
+              {service.modality}
             </span>
           )}
         </span>
