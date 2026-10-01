@@ -34,6 +34,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/dashboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["upgrade"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/devices": {
     parameters: {
       query?: never;
@@ -521,6 +537,188 @@ export interface components {
        */
       uptime_ms?: number;
     };
+    /**
+     * @description A service lifecycle command.
+     * @enum {string}
+     */
+    DashboardAction: "start" | "stop" | "restart" | "enable" | "disable";
+    /** @description Retained events and the actual beginning of this daemon's capture window. */
+    DashboardEvents: {
+      /** @description Events in publication order; the bounded history survives browser reconnects. */
+      events: components["schemas"]["Event"][];
+      /**
+       * Format: int64
+       * @description Oldest retained event time, or the daemon's capture start when empty.
+       */
+      since_ms: number;
+    };
+    /** @description A response or pushed snapshot; JSON bodies use the existing endpoint schemas. */
+    DashboardMessage:
+      | {
+          /** @description The endpoint's generated response DTO, or null for an empty response. */
+          body: unknown;
+          /** @description The request or subscription id. */
+          id: string;
+          /**
+           * Format: int32
+           * @description The equivalent HTTP status code.
+           */
+          status: number;
+          /** @enum {string} */
+          type: "response";
+        }
+      | {
+          /** @description The chat request id. */
+          id: string;
+          /** @description UTF-8 SSE data, preserving upstream frame boundaries across fragments. */
+          text: string;
+          /** @enum {string} */
+          type: "stream";
+        }
+      | {
+          /** @description The chat request id. */
+          id: string;
+          /** @enum {string} */
+          type: "end";
+        };
+    /** @description A dashboard read; subscriptions receive an initial snapshot and subsequent updates. */
+    DashboardQuery:
+      | {
+          /** @enum {string} */
+          type: "services";
+        }
+      | {
+          /** @description The configured service name. */
+          name: string;
+          /** @enum {string} */
+          type: "service";
+        }
+      | {
+          /** @enum {string} */
+          type: "devices";
+        }
+      | {
+          /** @enum {string} */
+          type: "info";
+        }
+      | {
+          /** @enum {string} */
+          type: "models";
+        }
+      | {
+          /** @enum {string} */
+          type: "events";
+        }
+      | {
+          /** @description The aggregation bucket, e.g. `5m`. */
+          bucket: string;
+          /** @description The requested historical window. */
+          range: components["schemas"]["DashboardRange"];
+          /** @description An optional service filter. */
+          service?: string | null;
+          /** @enum {string} */
+          type: "metrics";
+        }
+      | {
+          /** @description The requested historical window. */
+          range: components["schemas"]["DashboardRange"];
+          /** @description An optional service filter. */
+          service?: string | null;
+          /** @enum {string} */
+          type: "restarts";
+        }
+      | {
+          /** @description The requested historical window. */
+          range: components["schemas"]["DashboardRange"];
+          /** @enum {string} */
+          type: "samples";
+        }
+      | {
+          /** @description An opaque cursor for older lines. */
+          before?: string | null;
+          /** @description The configured service name. */
+          name: string;
+          /** @description The requested historical window. */
+          range: components["schemas"]["DashboardRange"];
+          /** @enum {string} */
+          type: "logs";
+        }
+      | {
+          /** @enum {string} */
+          type: "config";
+        };
+    /** @description A historical window, optionally following the server clock. */
+    DashboardRange: {
+      /**
+       * Format: int64
+       * @description A rolling window's duration; fixed windows omit this field.
+       */
+      live_ms?: number | null;
+      /**
+       * Format: int64
+       * @description Inclusive lower bound for a fixed window, in Unix milliseconds.
+       */
+      since: number;
+      /**
+       * Format: int64
+       * @description Inclusive upper bound for a fixed window, in Unix milliseconds.
+       */
+      until: number;
+    };
+    /** @description One client operation, correlated by its request or subscription id. */
+    DashboardRequest:
+      | {
+          /** @description The connection-local correlation id. */
+          id: string;
+          /** @description The requested resource. */
+          query: components["schemas"]["DashboardQuery"];
+          /** @description Whether to push subsequent changes. */
+          subscribe: boolean;
+          /** @enum {string} */
+          type: "read";
+        }
+      | {
+          /** @description The id to cancel. */
+          id: string;
+          /** @enum {string} */
+          type: "cancel";
+        }
+      | {
+          /** @description The lifecycle command. */
+          action: components["schemas"]["DashboardAction"];
+          /** @description The correlation id. */
+          id: string;
+          /** @description The configured service name. */
+          name: string;
+          /** @enum {string} */
+          type: "action";
+        }
+      | {
+          /** @description The TOML draft. */
+          content: string;
+          /** @description The correlation id. */
+          id: string;
+          /** @enum {string} */
+          type: "validate";
+        }
+      | {
+          /** @description The TOML draft. */
+          content: string;
+          /** @description The hash returned by the last configuration read. */
+          hash: string;
+          /** @description The correlation id. */
+          id: string;
+          /** @enum {string} */
+          type: "save";
+        }
+      | {
+          /** @description The OpenAI-compatible request body. */
+          body: components["schemas"]["ChatCompletionEnvelope"];
+          /** @description The correlation id. */
+          id: string;
+          /** @enum {string} */
+          type: "chat";
+        };
     /** @description One device's share of a [`ServiceSummary`]'s footprint. */
     DeviceFootprint: {
       /**
@@ -1840,6 +2038,31 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["ConfigValidateResponse"];
         };
+      };
+    };
+  };
+  upgrade: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Multiplexed dashboard WebSocket. See DashboardRequest and DashboardMessage. */
+      101: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The browser Origin does not match the Host. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

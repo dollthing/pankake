@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
-import type { Result } from "./client";
+import { connectionStatus, watch } from "./socket";
+import type { Source } from "./socket";
 
 export type Resource<T> = {
   readonly data?: T;
@@ -8,38 +9,32 @@ export type Resource<T> = {
   readonly error?: string;
 };
 
-export function useResource<T>(
-  key: string,
-  read: (signal: AbortSignal) => Promise<Result<T>>,
-  interval = 0,
-  revision = 0,
-): Resource<T> {
-  const readerRef = useRef(read);
+export function useResource<T>(key: string, source: Source<T>): Resource<T> {
+  const sourceRef = useRef(source);
   useLayoutEffect(() => {
-    readerRef.current = read;
-  }, [read]);
-  const identityRef = useRef(key);
+    sourceRef.current = source;
+  }, [source]);
   const [state, setState] = useState<Resource<T>>({ loading: true });
   useEffect(() => {
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    if (identityRef.current !== key) setState({ loading: true });
-    identityRef.current = key;
-    async function refresh() {
-      const result = await readerRef.current(controller.signal);
-      if (controller.signal.aborted) return;
+    setState({ loading: true });
+    const stop = watch(sourceRef.current, (result) => {
       setState((previous) =>
         result.kind === "ok"
           ? { loading: false, data: result.value }
           : { ...previous, loading: false, error: result.message },
       );
-      if (interval) timer = setTimeout(() => void refresh(), interval);
-    }
-    void refresh();
+    });
+    const disconnect = connectionStatus((connected) => {
+      if (!connected)
+        setState((previous) => ({
+          ...previous,
+          error: "Dashboard: reconnecting.",
+        }));
+    });
     return () => {
-      controller.abort();
-      clearTimeout(timer);
+      stop();
+      disconnect();
     };
-  }, [key, interval, revision]);
+  }, [key]);
   return state;
 }

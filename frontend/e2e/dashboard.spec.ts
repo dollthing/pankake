@@ -288,7 +288,7 @@ test("approved section composition, local fonts, dark chart tips, and browser di
 test("configuration validation, navigation persistence, and concurrent-edit protection", async ({
   page,
 }) => {
-  await mockBackend(page);
+  const calls = await mockBackend(page);
   await page.goto("/config");
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   const editor = page.getByRole("textbox", { name: "Configuration TOML" });
@@ -309,13 +309,7 @@ test("configuration validation, navigation persistence, and concurrent-edit prot
     .getByRole("button", { name: "Config", exact: true })
     .click();
   await expect(editor).toHaveText("# pending draft[daemon]");
-  await page.route(
-    (url) => url.pathname === "/api/config",
-    (route) =>
-      route.request().method() === "PUT"
-        ? route.fulfill({ status: 412 })
-        : route.fallback(),
-  );
+  calls.control.conflict();
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "file changed on the server" }),
@@ -326,24 +320,17 @@ test("configuration validation, navigation persistence, and concurrent-edit prot
 test("captured events filter correctly and service links select a detail", async ({
   page,
 }) => {
-  await mockBackend(page);
-  await page.routeWebSocket("**/api/events", (socket) => {
-    socket.send(
-      JSON.stringify({
+  await mockBackend(page, 2, {
+    events: [
+      {
         type: "state_changed",
         service: "qwen3.6-27b",
         from: "idle",
         to: "running",
         at_ms: Date.now(),
-      }),
-    );
-    socket.send(
-      JSON.stringify({
-        type: "config_reloaded",
-        changed_services: [],
-        at_ms: Date.now(),
-      }),
-    );
+      },
+      { type: "config_reloaded", changed_services: [], at_ms: Date.now() },
+    ],
   });
   await page.goto("/events");
   await expect(page.getByText("Idle → Running", { exact: true })).toBeVisible();

@@ -238,6 +238,308 @@
       }
     }
   },
+  "DashboardAction": {
+    "type": "string",
+    "description": "A service lifecycle command.",
+    "enum": ["start", "stop", "restart", "enable", "disable"]
+  },
+  "DashboardEvents": {
+    "type": "object",
+    "description": "Retained events and the actual beginning of this daemon's capture window.",
+    "required": ["since_ms", "events"],
+    "properties": {
+      "events": {
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/Event" },
+        "description": "Events in publication order; the bounded history survives browser reconnects."
+      },
+      "since_ms": {
+        "type": "integer",
+        "format": "int64",
+        "description": "Oldest retained event time, or the daemon's capture start when empty."
+      }
+    }
+  },
+  "DashboardMessage": {
+    "oneOf": [
+      {
+        "type": "object",
+        "description": "A read result, pushed snapshot, or mutation acknowledgement.",
+        "required": ["id", "status", "body", "type"],
+        "properties": {
+          "body": {
+            "description": "The endpoint's generated response DTO, or null for an empty response."
+          },
+          "id": {
+            "type": "string",
+            "description": "The request or subscription id."
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The equivalent HTTP status code.",
+            "minimum": 0
+          },
+          "type": { "type": "string", "enum": ["response"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "A fragment of the existing OpenAI event stream.",
+        "required": ["id", "text", "type"],
+        "properties": {
+          "id": { "type": "string", "description": "The chat request id." },
+          "text": {
+            "type": "string",
+            "description": "UTF-8 SSE data, preserving upstream frame boundaries across fragments."
+          },
+          "type": { "type": "string", "enum": ["stream"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "The stream has ended; absence of an OpenAI DONE marker remains an error.",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string", "description": "The chat request id." },
+          "type": { "type": "string", "enum": ["end"] }
+        }
+      }
+    ],
+    "description": "A response or pushed snapshot; JSON bodies use the existing endpoint schemas."
+  },
+  "DashboardQuery": {
+    "oneOf": [
+      {
+        "type": "object",
+        "description": "The service inventory.",
+        "required": ["type"],
+        "properties": { "type": { "type": "string", "enum": ["services"] } }
+      },
+      {
+        "type": "object",
+        "description": "One service's current state and placement.",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The configured service name."
+          },
+          "type": { "type": "string", "enum": ["service"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "The latest hardware measurements.",
+        "required": ["type"],
+        "properties": { "type": { "type": "string", "enum": ["devices"] } }
+      },
+      {
+        "type": "object",
+        "description": "Daemon addresses, configuration path, and uptime.",
+        "required": ["type"],
+        "properties": { "type": { "type": "string", "enum": ["info"] } }
+      },
+      {
+        "type": "object",
+        "description": "OpenAI-compatible model discovery.",
+        "required": ["type"],
+        "properties": { "type": { "type": "string", "enum": ["models"] } }
+      },
+      {
+        "type": "object",
+        "description": "Retained lifecycle events from this daemon instance.",
+        "required": ["type"],
+        "properties": { "type": { "type": "string", "enum": ["events"] } }
+      },
+      {
+        "type": "object",
+        "description": "Persisted request metrics.",
+        "required": ["range", "bucket", "type"],
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "description": "The aggregation bucket, e.g. `5m`."
+          },
+          "range": {
+            "$ref": "#/components/schemas/DashboardRange",
+            "description": "The requested historical window."
+          },
+          "service": {
+            "type": ["string", "null"],
+            "description": "An optional service filter."
+          },
+          "type": { "type": "string", "enum": ["metrics"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "Persisted automatic restart records.",
+        "required": ["range", "type"],
+        "properties": {
+          "range": {
+            "$ref": "#/components/schemas/DashboardRange",
+            "description": "The requested historical window."
+          },
+          "service": {
+            "type": ["string", "null"],
+            "description": "An optional service filter."
+          },
+          "type": { "type": "string", "enum": ["restarts"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "Persisted device measurements.",
+        "required": ["range", "type"],
+        "properties": {
+          "range": {
+            "$ref": "#/components/schemas/DashboardRange",
+            "description": "The requested historical window."
+          },
+          "type": { "type": "string", "enum": ["samples"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "A page of captured child-process logs.",
+        "required": ["name", "range", "type"],
+        "properties": {
+          "before": {
+            "type": ["string", "null"],
+            "description": "An opaque cursor for older lines."
+          },
+          "name": {
+            "type": "string",
+            "description": "The configured service name."
+          },
+          "range": {
+            "$ref": "#/components/schemas/DashboardRange",
+            "description": "The requested historical window."
+          },
+          "type": { "type": "string", "enum": ["logs"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "The configuration file and its concurrency hash.",
+        "required": ["type"],
+        "properties": { "type": { "type": "string", "enum": ["config"] } }
+      }
+    ],
+    "description": "A dashboard read; subscriptions receive an initial snapshot and subsequent updates."
+  },
+  "DashboardRange": {
+    "type": "object",
+    "description": "A historical window, optionally following the server clock.",
+    "required": ["since", "until"],
+    "properties": {
+      "live_ms": {
+        "type": ["integer", "null"],
+        "format": "int64",
+        "description": "A rolling window's duration; fixed windows omit this field.",
+        "minimum": 0
+      },
+      "since": {
+        "type": "integer",
+        "format": "int64",
+        "description": "Inclusive lower bound for a fixed window, in Unix milliseconds."
+      },
+      "until": {
+        "type": "integer",
+        "format": "int64",
+        "description": "Inclusive upper bound for a fixed window, in Unix milliseconds."
+      }
+    }
+  },
+  "DashboardRequest": {
+    "oneOf": [
+      {
+        "type": "object",
+        "description": "Read once or subscribe until cancelled.",
+        "required": ["id", "query", "subscribe", "type"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The connection-local correlation id."
+          },
+          "query": {
+            "$ref": "#/components/schemas/DashboardQuery",
+            "description": "The requested resource."
+          },
+          "subscribe": {
+            "type": "boolean",
+            "description": "Whether to push subsequent changes."
+          },
+          "type": { "type": "string", "enum": ["read"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "Cancel a subscription or an in-progress request.",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string", "description": "The id to cancel." },
+          "type": { "type": "string", "enum": ["cancel"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "Execute a service lifecycle command.",
+        "required": ["id", "name", "action", "type"],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/DashboardAction",
+            "description": "The lifecycle command."
+          },
+          "id": { "type": "string", "description": "The correlation id." },
+          "name": {
+            "type": "string",
+            "description": "The configured service name."
+          },
+          "type": { "type": "string", "enum": ["action"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "Validate a configuration draft.",
+        "required": ["id", "content", "type"],
+        "properties": {
+          "content": { "type": "string", "description": "The TOML draft." },
+          "id": { "type": "string", "description": "The correlation id." },
+          "type": { "type": "string", "enum": ["validate"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "Save a draft using the same optimistic concurrency contract as HTTP.",
+        "required": ["id", "content", "hash", "type"],
+        "properties": {
+          "content": { "type": "string", "description": "The TOML draft." },
+          "hash": {
+            "type": "string",
+            "description": "The hash returned by the last configuration read."
+          },
+          "id": { "type": "string", "description": "The correlation id." },
+          "type": { "type": "string", "enum": ["save"] }
+        }
+      },
+      {
+        "type": "object",
+        "description": "Stream a chat completion until completion or cancellation.",
+        "required": ["id", "body", "type"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ChatCompletionEnvelope",
+            "description": "The OpenAI-compatible request body."
+          },
+          "id": { "type": "string", "description": "The correlation id." },
+          "type": { "type": "string", "enum": ["chat"] }
+        }
+      }
+    ],
+    "description": "One client operation, correlated by its request or subscription id."
+  },
   "DeviceFootprint": {
     "type": "object",
     "description": "One device's share of a [`ServiceSummary`]'s footprint.",

@@ -19,8 +19,6 @@ export function Services({
   onRange,
   onNavigate,
   captured,
-  revision,
-  refresh,
   loading,
   error,
 }: {
@@ -33,8 +31,6 @@ export function Services({
   readonly onRange: (r: Range) => void;
   readonly onNavigate: (r: Route) => void;
   readonly captured: readonly CapturedEvent[];
-  readonly revision: number;
-  readonly refresh: () => void;
   readonly loading: boolean;
   readonly error?: string;
 }) {
@@ -146,8 +142,6 @@ export function Services({
           name={selected}
           summary={services.find((s) => s.name === selected)}
           devices={devices}
-          revision={revision}
-          refresh={refresh}
           range={range}
           onRange={onRange}
           captured={captured}

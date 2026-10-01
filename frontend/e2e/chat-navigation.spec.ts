@@ -7,7 +7,6 @@ for (const modality of ["embedding", "transcription"] as const) {
   test(`Chat rejects a selected ${modality} service and an unavailable model link`, async ({
     page,
   }) => {
-    const calls = await mockBackend(page);
     const name = "jina-embeddings-v5-text-small-retrieval-vllm";
     const inventory: Schemas["ServicesResponse"] = {
       services: referenceServices.map((service) =>
@@ -17,9 +16,7 @@ for (const modality of ["embedding", "transcription"] as const) {
       ),
       openai_api_port: 7070,
     };
-    await page.route("**/api/services", (route) =>
-      route.fulfill({ json: inventory }),
-    );
+    const calls = await mockBackend(page, 2, { inventory: inventory.services });
     await page.goto("/");
     await page
       .getByRole("button", { name: new RegExp(`^${name} Copy`) })

@@ -1,5 +1,5 @@
 import type { Range } from "../api/client";
-import { api } from "../api/client";
+import { api, rangeKey } from "../api/client";
 import { useResource } from "../api/resource";
 import { Message } from "../ui/Message";
 import { PageHeader } from "../ui/PageHeader";
@@ -16,18 +16,10 @@ export function Stats({
   readonly range: Range;
   readonly onRange: (range: Range) => void;
 }) {
-  const key = `${range.since}:${range.until}`;
-  const metrics = useResource(
-    key,
-    (s) => api.metrics(range, undefined, s),
-    15_000,
-  );
-  const restarts = useResource(
-    key,
-    (s) => api.restarts(range, undefined, s),
-    15_000,
-  );
-  const samples = useResource(key, (s) => api.samples(range, s), 30_000);
+  const key = rangeKey(range);
+  const metrics = useResource(key, api.metrics(range));
+  const restarts = useResource(key, api.restarts(range));
+  const samples = useResource(key, api.samples(range));
   const buckets = metrics.data?.buckets ?? [];
   const speeds = serviceSpeeds(buckets);
   const max = Math.max(0, ...speeds.map((s) => s.value ?? 0));

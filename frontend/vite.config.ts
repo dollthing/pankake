@@ -8,7 +8,6 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: process.env.ANANKE_ENDPOINT ?? "http://127.0.0.1:7071",
-        changeOrigin: true,
         ws: true,
       },
       "/v1": {

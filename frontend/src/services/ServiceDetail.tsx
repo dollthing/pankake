@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 
 import type { Range } from "../api/client";
-import { api } from "../api/client";
+import { api, rangeKey } from "../api/client";
 import type { Device, Service } from "../api/contract";
 import { useResource } from "../api/resource";
 import type { CapturedEvent } from "../api/system";
@@ -25,8 +25,6 @@ export function ServiceDetail({
   name,
   summary,
   devices,
-  revision,
-  refresh,
   range,
   onRange,
   captured,
@@ -39,8 +37,6 @@ export function ServiceDetail({
   readonly name: string;
   readonly summary?: Service;
   readonly devices: readonly Device[];
-  readonly revision: number;
-  readonly refresh: () => void;
   readonly range: Range;
   readonly onRange: (r: Range) => void;
   readonly captured: readonly CapturedEvent[];
@@ -50,19 +46,10 @@ export function ServiceDetail({
   readonly listClosed: boolean;
   readonly serviceCount: number;
 }) {
-  const resource = useResource(
-    name,
-    (s) => api.detail(name, s),
-    5000,
-    revision,
-  );
-  const key = `${name}:${range.since}:${range.until}`;
-  const metrics = useResource(key, (s) => api.metrics(range, name, s), 15_000);
-  const restarts = useResource(
-    key,
-    (s) => api.restarts(range, name, s),
-    15_000,
-  );
+  const resource = useResource(name, api.detail(name));
+  const key = `${name}:${rangeKey(range)}`;
+  const metrics = useResource(key, api.metrics(range, name));
+  const restarts = useResource(key, api.restarts(range, name));
   const [pending, setPending] = useState(false),
     [actionError, setActionError] = useState<string>();
   const detail = resource.data;
@@ -87,7 +74,6 @@ export function ServiceDetail({
     const result = await api.action(name, kind);
     setPending(false);
     if (result.kind === "error") setActionError(result.message);
-    else refresh();
   }
   const openUrl = serviceUrl(
     summary?.port ?? detail?.port,

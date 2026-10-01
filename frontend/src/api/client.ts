@@ -1,6 +1,9 @@
 import type { ValidateFunction } from "ajv";
 
 import { codec, deviceListCodec } from "./contract";
+import type { Schemas } from "./contract";
+import { command, read } from "./socket";
+import type { Source } from "./socket";
 
 export type Result<T> =
   | { readonly kind: "ok"; readonly value: T }
@@ -11,82 +14,71 @@ export type Range = {
   readonly preset: number | null;
 };
 
-const services = codec("ServicesResponse");
-const detail = codec("ServiceDetail");
-const info = codec("DaemonInfoResponse");
-const metrics = codec("MetricsResponse");
-const restarts = codec("RestartsResponse");
-const samples = codec("DeviceSamplesResponse");
-const logs = codec("LogsResponse");
-const config = codec("ConfigResponse");
+function source<T>(
+  query: Schemas["DashboardQuery"],
+  validate: ValidateFunction<T>,
+): Source<T> {
+  return { query, validate };
+}
+const config = source({ type: "config" }, codec("ConfigResponse"));
 const validation = codec("ConfigValidateResponse");
 
 export const api = {
-  services: (signal?: AbortSignal) =>
-    request("/api/services", services, signal),
-  detail: (name: string, signal?: AbortSignal) =>
-    request(`/api/services/${encodeURIComponent(name)}`, detail, signal),
-  devices: (signal?: AbortSignal) =>
-    request("/api/devices", deviceListCodec, signal),
-  info: (signal?: AbortSignal) => request("/api/info", info, signal),
-  metrics: (range: Range, service?: string, signal?: AbortSignal) =>
-    request(
-      `/api/metrics?${query(range, { service, bucket: bucketSize(range).label })}`,
-      metrics,
-      signal,
+  services: source({ type: "services" }, codec("ServicesResponse")),
+  detail: (name: string) =>
+    source({ type: "service", name }, codec("ServiceDetail")),
+  devices: source({ type: "devices" }, deviceListCodec),
+  info: source({ type: "info" }, codec("DaemonInfoResponse")),
+  events: source({ type: "events" }, codec("DashboardEvents")),
+  models: source({ type: "models" }, codec("ModelsResponse")),
+  metrics: (range: Range, service?: string) =>
+    source(
+      {
+        type: "metrics",
+        range: window(range),
+        service: service ?? null,
+        bucket: bucketSize(range).label,
+      },
+      codec("MetricsResponse"),
     ),
-  restarts: (range: Range, service?: string, signal?: AbortSignal) =>
-    request(`/api/restarts?${query(range, { service })}`, restarts, signal),
-  samples: (range: Range, signal?: AbortSignal) =>
-    request(`/api/devices/samples?${query(range)}`, samples, signal),
+  restarts: (range: Range, service?: string) =>
+    source(
+      { type: "restarts", range: window(range), service: service ?? null },
+      codec("RestartsResponse"),
+    ),
+  samples: (range: Range) =>
+    source(
+      { type: "samples", range: window(range) },
+      codec("DeviceSamplesResponse"),
+    ),
+  logSource: (name: string, range: Range, before?: string) =>
+    source(
+      { type: "logs", name, range: window(range), before: before ?? null },
+      codec("LogsResponse"),
+    ),
   logs: (name: string, range: Range, before?: string, signal?: AbortSignal) =>
-    request(
-      `/api/services/${encodeURIComponent(name)}/logs?${query(range, { before, limit: "200" })}`,
-      logs,
-      signal,
-    ),
-  config: (signal?: AbortSignal) => request("/api/config", config, signal),
-  validate: (content: string) =>
-    request("/api/config/validate", validation, undefined, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ content }),
-    }),
-  save: async (content: string, hash: string): Promise<Result<void>> => {
-    try {
-      const response = await fetch("/api/config", {
-        method: "PUT",
-        headers: { "content-type": "text/plain", "if-match": `"${hash}"` },
-        body: content,
-      });
-      if (response.status === 412)
-        return {
-          kind: "error",
-          message:
-            "Config: the file changed on the server. Reload it and review your edits before saving.",
+    read(api.logSource(name, range, before), signal),
+  config: (signal?: AbortSignal) => read(config, signal),
+  validate: async (content: string) => {
+    const result = await command({ type: "validate", content });
+    if (result.kind === "error") return result;
+    return validation(result.value)
+      ? { kind: "ok" as const, value: result.value }
+      : {
+          kind: "error" as const,
+          message: "Config: the server returns invalid validation results.",
         };
-      return response.ok
-        ? { kind: "ok", value: undefined }
-        : { kind: "error", message: await failure(response) };
-    } catch (error) {
-      return { kind: "error", message: errorText(error) };
-    }
+  },
+  save: async (content: string, hash: string): Promise<Result<void>> => {
+    const result = await command({ type: "save", content, hash });
+    return result.kind === "error" ? result : { kind: "ok", value: undefined };
   },
   action: async (
     name: string,
-    action: "start" | "stop" | "restart" | "enable" | "disable",
+    action: Schemas["DashboardAction"],
   ): Promise<Result<void>> => {
-    try {
-      const response = await fetch(
-        `/api/services/${encodeURIComponent(name)}/${action}`,
-        { method: "POST" },
-      );
-      return response.ok
-        ? { kind: "ok", value: undefined }
-        : { kind: "error", message: await failure(response) };
-    } catch (error) {
-      return { kind: "error", message: errorText(error) };
-    }
+    const result = await command({ type: "action", name, action });
+    return result.kind === "error" ? result : { kind: "ok", value: undefined };
   },
 };
 
@@ -99,70 +91,16 @@ export function bucketSize(range: Range) {
       : { label: "1h", ms: 3_600_000 };
 }
 
-export function socketUrl(path: string) {
-  const url = new URL(path, location.href);
-  url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  return url.href;
+export function rangeKey(range: Range) {
+  return range.preset
+    ? `live:${range.preset}`
+    : `${range.since}:${range.until}`;
 }
 
-export function errorText(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
-
-async function request<T>(
-  url: string,
-  validate: ValidateFunction<T>,
-  signal?: AbortSignal,
-  init?: RequestInit,
-): Promise<Result<T>> {
-  const result = await raw(url, { ...init, signal });
-  if (result.kind === "error") return result;
-  return validate(result.value)
-    ? { kind: "ok", value: result.value }
-    : {
-        kind: "error",
-        message: `${url.split("?")[0]}: the server returns an invalid response.`,
-      };
-}
-
-async function raw(url: string, init: RequestInit): Promise<Result<unknown>> {
-  try {
-    const response = await fetch(url, init);
-    return response.ok
-      ? { kind: "ok", value: await response.json() }
-      : { kind: "error", message: await failure(response) };
-  } catch (error) {
-    return { kind: "error", message: errorText(error) };
-  }
-}
-
-export async function failure(response: Response) {
-  const text = await response.text();
-  try {
-    const body: unknown = JSON.parse(text);
-    if (body && typeof body === "object" && "error" in body) {
-      const error = body.error;
-      if (typeof error === "string") return error;
-      if (
-        error &&
-        typeof error === "object" &&
-        "message" in error &&
-        typeof error.message === "string"
-      )
-        return error.message;
-    }
-  } catch {
-    /* Non-JSON upstream failures still carry useful response text. */
-  }
-  return `${response.status}: ${text || response.statusText}`;
-}
-
-function query(range: Range, extra: Record<string, string | undefined> = {}) {
-  const params = new URLSearchParams({
-    since: String(range.since),
-    until: String(range.until),
-  });
-  for (const [key, value] of Object.entries(extra))
-    if (value !== undefined) params.set(key, value);
-  return params;
+function window(range: Range): Schemas["DashboardRange"] {
+  return {
+    since: range.since,
+    until: range.until,
+    live_ms: range.preset ? range.preset * 3_600_000 : null,
+  };
 }

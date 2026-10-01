@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { useState } from "preact/hooks";
 
 import type { Range } from "../api/client";
-import { api } from "../api/client";
+import { api, rangeKey } from "../api/client";
 import { useResource } from "../api/resource";
 import type { CapturedEvent } from "../api/system";
 import { RangeControl } from "../history/RangeControl";
@@ -30,11 +30,7 @@ export function Events({
   readonly onNavigate: (route: Route) => void;
 }) {
   const [type, setType] = useState<EventType>("all");
-  const restarts = useResource(
-    `${range.since}:${range.until}`,
-    (s) => api.restarts(range, undefined, s),
-    15_000,
-  );
+  const restarts = useResource(rangeKey(range), api.restarts(range));
   const rows = eventsInRange(
     captured,
     restarts.data?.restarts ?? [],

@@ -1,4 +1,4 @@
-import { errorText, failure } from "../api/client";
+import { command } from "../api/socket";
 import type { Result } from "../api/client";
 import { chunkCodec } from "../api/contract";
 import type { Schemas } from "../api/contract";
@@ -60,22 +60,7 @@ export async function streamChat(
       stream: true,
       stream_options: { include_usage: true },
     };
-    const response = await fetch("/v1/chat/completions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      signal,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok)
-      return { kind: "error", message: await failure(response) };
-    const reader = response.body?.getReader();
-    if (!reader)
-      return {
-        kind: "error",
-        message: "Chat: the server returns no response stream.",
-      };
-    const decoder = new TextDecoder(),
-      sse = new SseDecoder();
+    const sse = new SseDecoder();
     let doneMarker = false;
     function deliver(frames: readonly string[]) {
       for (const data of frames) {
@@ -91,19 +76,14 @@ export async function streamChat(
         onChunk(chunk);
       }
     }
-    try {
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        deliver(sse.feed(decoder.decode(value, { stream: true })));
-        if (doneMarker) break;
-      }
-      deliver(sse.feed(decoder.decode()));
-      deliver(sse.finish());
-    } finally {
-      await reader.cancel().catch(() => {});
-      reader.releaseLock();
-    }
+    const result = await command({ type: "chat", body }, signal, (text) =>
+      deliver(sse.feed(text)),
+    );
+    if (result.kind === "error")
+      return signal.aborted
+        ? { kind: "error", message: "Generation stopped." }
+        : result;
+    deliver(sse.finish());
     return doneMarker
       ? { kind: "ok", value: undefined }
       : {
@@ -113,7 +93,11 @@ export async function streamChat(
   } catch (error) {
     return {
       kind: "error",
-      message: signal.aborted ? "Generation stopped." : errorText(error),
+      message: signal.aborted
+        ? "Generation stopped."
+        : error instanceof Error
+          ? error.message
+          : String(error),
     };
   }
 }

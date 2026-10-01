@@ -94,8 +94,6 @@ export function App() {
             onRange={setRange}
             onNavigate={navigate}
             captured={system.events}
-            revision={system.revision}
-            refresh={system.refresh}
             loading={system.services.loading}
             error={system.services.error}
           />

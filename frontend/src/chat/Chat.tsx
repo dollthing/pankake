@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { useEffect, useRef } from "preact/hooks";
 
-import { codec } from "../api/contract";
+import { api } from "../api/client";
 import type { Service } from "../api/contract";
 import { useResource } from "../api/resource";
 import { Button } from "../ui/Button";
@@ -12,8 +12,6 @@ import { number, time } from "../ui/format";
 import { Markdown } from "./Markdown";
 import type { ChatTurn } from "./stream";
 import type { useChat } from "./useChat";
-
-const modelCodec = codec("ModelsResponse");
 
 export function Chat({
   chat,
@@ -26,24 +24,7 @@ export function Chat({
   readonly requestedModel?: string;
   readonly active: boolean;
 }) {
-  const models = useResource(
-    `models:${active}`,
-    async (signal) => {
-      try {
-        const response = await fetch("/v1/models", { signal });
-        const data: unknown = await response.json();
-        return response.ok && modelCodec(data)
-          ? { kind: "ok", value: data }
-          : { kind: "error", message: "Chat: model discovery is unavailable." };
-      } catch {
-        return {
-          kind: "error",
-          message: "Chat: model discovery is unavailable.",
-        };
-      }
-    },
-    10_000,
-  );
+  const models = useResource(`models:${active}`, api.models);
   const choices = (models.data?.data ?? []).filter(
     (m) => !m.modality || m.modality === "chat",
   );

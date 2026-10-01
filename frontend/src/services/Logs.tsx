@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type { Range } from "../api/client";
-import { api, socketUrl } from "../api/client";
-import { logCodec } from "../api/contract";
+import { api } from "../api/client";
+import { connectionStatus, watch } from "../api/socket";
 import type { LogLine } from "../api/contract";
 import { Copy } from "../ui/Copy";
 import { Message } from "../ui/Message";
@@ -25,7 +25,8 @@ export function Logs({
   const ref = useRef<HTMLDivElement>(null),
     busyRef = useRef(false),
     cursorRef = useRef<string | null>(null),
-    generationRef = useRef(0);
+    generationRef = useRef(0),
+    retainedRef = useRef<readonly LogLine[]>([]);
   const live = range.preset !== null;
   const since = live ? 0 : range.since,
     until = live ? 0 : range.until,
@@ -36,9 +37,11 @@ export function Logs({
   useEffect(() => {
     const controller = new AbortController();
     const run = ++generationRef.current;
-    let socket: WebSocket | undefined, timer: ReturnType<typeof setTimeout>;
+    let initial = true;
+    let backfilling = false;
     setLines([]);
     setCursor(null);
+    cursorRef.current = null;
     setLoading(true);
     setError(undefined);
     busyRef.current = false;
@@ -48,72 +51,100 @@ export function Logs({
         ? { preset, since: now - preset * 3_600_000, until: now }
         : { preset: null, since, until };
     };
-    async function load() {
-      const result = await api.logs(
-        name,
-        currentRange(),
-        undefined,
-        controller.signal,
-      );
+    retainedRef.current = [];
+    const stop = watch(api.logSource(name, currentRange()), (result) => {
       if (controller.signal.aborted || run !== generationRef.current) return;
       setLoading(false);
       if (result.kind === "error") {
         setError(result.message);
         return;
       }
-      setLines((previous) => mergeLogs(previous, result.value.logs));
-      setCursor(result.value.next_cursor ?? null);
-      requestAnimationFrame(() => {
-        if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
-      });
-    }
-    function connect() {
-      socket = new WebSocket(
-        socketUrl(`/api/services/${encodeURIComponent(name)}/logs/stream`),
-      );
-      socket.onopen = () => {
-        setStreaming(true);
-        void load();
-      };
-      socket.onclose = () => {
-        setStreaming(false);
-        if (!controller.signal.aborted) timer = setTimeout(connect, 2000);
-      };
-      socket.onmessage = (message) => {
-        try {
-          const value: unknown = JSON.parse(message.data);
-          if (!logCodec(value)) return;
-          if (value.type === "overflow") {
-            setError(
-              `${value.dropped} log frames dropped; reloading captured lines.`,
+      setError(undefined);
+      const el = ref.current;
+      const atBottom =
+        initial ||
+        (el ? el.scrollHeight - el.clientHeight - el.scrollTop < 40 : false);
+      const previous = retainedRef.current;
+      retainedRef.current = mergeLogs(
+        retainedRef.current,
+        result.value.logs,
+      ).slice(-5000);
+      setLines(retainedRef.current);
+      if (initial) setCursor(result.value.next_cursor ?? null);
+      initial = false;
+      if (atBottom)
+        requestAnimationFrame(() => {
+          if (el) el.scrollTop = el.scrollHeight;
+        });
+      // A reconnect or a large committed batch can exceed the first history page.
+      // Follow opaque cursors until the new page overlaps our retained tail.
+      if (
+        !backfilling &&
+        previous.length &&
+        result.value.next_cursor &&
+        result.value.logs.length &&
+        !result.value.logs.some((line) =>
+          previous.some(
+            (old) => old.run_id === line.run_id && old.seq === line.seq,
+          ),
+        )
+      ) {
+        backfilling = true;
+        void (async () => {
+          let before = result.value.next_cursor;
+          let count = 0;
+          while (before && count < 5000 && !controller.signal.aborted) {
+            const page = await api.logs(
+              name,
+              currentRange(),
+              before,
+              controller.signal,
             );
-            void load();
-            return;
+            if (controller.signal.aborted || run !== generationRef.current)
+              return;
+            if (page.kind === "error") {
+              setError(page.message);
+              break;
+            }
+            retainedRef.current = mergeLogs(
+              retainedRef.current,
+              page.value.logs,
+            ).slice(-5000);
+            setLines(retainedRef.current);
+            count += page.value.logs.length;
+            if (
+              page.value.logs.some((line) =>
+                previous.some(
+                  (old) => old.run_id === line.run_id && old.seq === line.seq,
+                ),
+              )
+            )
+              break;
+            if (page.value.next_cursor === before || !page.value.logs.length) {
+              setError(
+                "Logs: the server returns a history cursor that does not advance.",
+              );
+              break;
+            }
+            before = page.value.next_cursor;
           }
-          if (value.timestamp_ms < currentRange().since) return;
-          const el = ref.current,
-            atBottom = el
-              ? el.scrollHeight - el.clientHeight - el.scrollTop < 40
-              : false;
-          setLines((previous) => mergeLogs(previous, [value]).slice(-5000));
-          if (atBottom)
-            requestAnimationFrame(() => {
-              if (el) el.scrollTop = el.scrollHeight;
-            });
-        } catch {
-          /* Malformed stream frames do not replace captured log history. */
-        }
-      };
-    }
-    void load();
-    if (live && running) connect();
+          backfilling = false;
+        })();
+      }
+    });
     return () => {
       controller.abort();
-      clearTimeout(timer);
-      socket?.close();
-      setStreaming(false);
+      stop();
     };
-  }, [name, since, until, preset, live, running]);
+  }, [name, since, until, preset]);
+  useEffect(
+    () =>
+      connectionStatus((connected) =>
+        setStreaming(connected && live && running),
+      ),
+    [live, running],
+  );
+
   async function older() {
     if (busyRef.current || !cursorRef.current) return;
     busyRef.current = true;
@@ -131,7 +162,8 @@ export function Logs({
       setError(result.message);
       return;
     }
-    setLines((previous) => mergeLogs(previous, result.value.logs));
+    retainedRef.current = mergeLogs(retainedRef.current, result.value.logs);
+    setLines(retainedRef.current);
     setCursor(result.value.next_cursor ?? null);
     requestAnimationFrame(() => {
       if (el) el.scrollTop = el.scrollHeight - previousHeight;
