@@ -6,7 +6,7 @@ use crate::docs::{
     DEFAULT_DRAIN_TIMEOUT_MS, DEFAULT_EXTENDED_STREAM_DRAIN_MS, DEFAULT_HEALTH_PROBE_INTERVAL_MS,
     DEFAULT_HEALTH_TIMEOUT_MS, DEFAULT_IDLE_TIMEOUT_MS, DEFAULT_MAX_REQUEST_DURATION_MS,
     DEFAULT_MIN_BORROWER_RUNTIME_MS, DEFAULT_SERVICE_PRIORITY, DEFAULT_START_QUEUE_DEPTH,
-    SectionDoc, bt, bt_dur, code_values, field,
+    DEFAULT_STOP_GRACE_MS, SectionDoc, bt, bt_dur, code_values, field,
 };
 
 /// Return the common-fields, placement, health-check, allocation, filter,
@@ -91,7 +91,13 @@ pub(crate) fn sections() -> Vec<SectionDoc> {
                     "drain_timeout",
                     "duration string",
                     bt_dur(DEFAULT_DRAIN_TIMEOUT_MS),
-                    "Drain timeout before the supervisor escalates to SIGKILL.",
+                    "Tail grace after in-flight requests end, before SIGTERM; skipped when drain starts idle.",
+                ),
+                field(
+                    "stop_grace",
+                    "duration string",
+                    bt_dur(DEFAULT_STOP_GRACE_MS),
+                    "Time from SIGTERM to SIGKILL for running-service stops, evictions, idle expiry and daemon shutdown. Startup and watchdog fast-kill grace periods are unchanged. `daemon.shutdown_timeout` remains the overall daemon shutdown bound.",
                 ),
                 field(
                     "extended_stream_drain",

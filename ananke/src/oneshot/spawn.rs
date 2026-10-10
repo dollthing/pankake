@@ -13,8 +13,9 @@ use crate::{
         validate::{
             AllocationMode, CommandConfig, DEFAULT_DRAIN_TIMEOUT_MS,
             DEFAULT_EXTENDED_STREAM_DRAIN_MS, DEFAULT_MAX_REQUEST_DURATION_MS,
-            DEFAULT_MIN_BORROWER_RUNTIME_MS, DEFAULT_SERVICE_PRIORITY, DeviceReserves, Filters,
-            Lifecycle, PlacementPolicy, ServiceConfig, SplitMode, Template, TemplateConfig,
+            DEFAULT_MIN_BORROWER_RUNTIME_MS, DEFAULT_SERVICE_PRIORITY, DEFAULT_STOP_GRACE_MS,
+            DeviceReserves, Filters, Lifecycle, PlacementPolicy, ServiceConfig, SplitMode,
+            Template, TemplateConfig,
         },
     },
     daemon::app_state::AppState,
@@ -132,6 +133,7 @@ pub async fn spawn_oneshot(
         filters: Filters::default(),
         idle_timeout_ms: ttl_ms,
         drain_timeout_ms: DEFAULT_DRAIN_TIMEOUT_MS,
+        stop_grace_ms: DEFAULT_STOP_GRACE_MS,
         extended_stream_drain_ms: DEFAULT_EXTENDED_STREAM_DRAIN_MS,
         max_request_duration_ms: DEFAULT_MAX_REQUEST_DURATION_MS,
         // Oneshot services run once and expire on TTL; self-healing restarts

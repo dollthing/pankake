@@ -17,6 +17,7 @@ use crate::{
         DEFAULT_DRAIN_TIMEOUT_MS, DEFAULT_EXTENDED_STREAM_DRAIN_MS,
         DEFAULT_HEALTH_PROBE_INTERVAL_MS, DEFAULT_HEALTH_TIMEOUT_MS, DEFAULT_IDLE_TIMEOUT_MS,
         DEFAULT_MAX_REQUEST_DURATION_MS, DEFAULT_MIN_BORROWER_RUNTIME_MS, DEFAULT_SERVICE_PRIORITY,
+        DEFAULT_STOP_GRACE_MS,
     },
     parse::RawService,
     validate::{
@@ -389,6 +390,13 @@ pub(crate) fn validate_service(
         .transpose()
         .map_err(|e| fail(format!("service {name} drain_timeout: {e}")))?
         .unwrap_or(DEFAULT_DRAIN_TIMEOUT_MS);
+    let stop_grace_ms = common
+        .stop_grace
+        .as_deref()
+        .map(parse_duration_ms)
+        .transpose()
+        .map_err(|e| fail(format!("service {name} stop_grace: {e}")))?
+        .unwrap_or(DEFAULT_STOP_GRACE_MS);
     let extended_stream_drain_ms = common
         .extended_stream_drain
         .as_deref()
@@ -526,6 +534,7 @@ pub(crate) fn validate_service(
         filters,
         idle_timeout_ms,
         drain_timeout_ms,
+        stop_grace_ms,
         extended_stream_drain_ms,
         max_request_duration_ms,
         auto_restart,

@@ -49,6 +49,7 @@ fn comfy_like_service(name: &str, port: u16) -> ServiceConfig {
         reserves: Arc::new(DeviceReserves::default()),
         idle_timeout_ms: 60_000,
         drain_timeout_ms: 1_000,
+        stop_grace_ms: 10_000,
         extended_stream_drain_ms: 1_000,
         max_request_duration_ms: 5_000,
         auto_restart: AutoRestartSettings::disabled(),

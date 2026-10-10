@@ -182,6 +182,7 @@ fn merge_common(
     take!(idle_timeout);
     take!(description);
     take!(drain_timeout);
+    take!(stop_grace);
     take!(extended_stream_drain);
     take!(max_request_duration);
     take!(start_queue_depth);

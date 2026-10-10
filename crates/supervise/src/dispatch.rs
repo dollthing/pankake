@@ -5,8 +5,7 @@
 use tracing::info;
 
 use crate::{
-    AutoRestartOutcome, RUNNING_SIGTERM_GRACE, RunLoop, RunningOutcome, STARTING_SIGTERM_GRACE,
-    StartingOutcome,
+    AutoRestartOutcome, RunLoop, RunningOutcome, STARTING_SIGTERM_GRACE, StartingOutcome,
     drain::{self, fast_kill},
     handle::{
         DisableResult, EnableResult, EnsureResponse, StartFailure, StartFailureKind, StartOutcome,
@@ -30,7 +29,11 @@ impl RunLoop {
                 let next = transition(&self.read_state(), StateEvent::DrainRequested);
                 self.set_state(next);
                 let _ = self.cancel_tx.send(true);
-                drain::sigterm_then_sigkill(workload, RUNNING_SIGTERM_GRACE).await;
+                drain::sigterm_then_sigkill(
+                    workload,
+                    std::time::Duration::from_millis(self.current_svc().stop_grace_ms),
+                )
+                .await;
                 self.run_shutdown_command().await;
                 self.end_run(run_id).await;
                 self.record_drain_complete();

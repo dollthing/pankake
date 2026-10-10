@@ -72,10 +72,6 @@ pub use crate::{
 /// child.
 const STARTING_SIGTERM_GRACE: Duration = Duration::from_secs(5);
 
-/// SIGTERM grace during Running or during command-initiated drain. Longer
-/// because the child is healthy and may be mid-request.
-const RUNNING_SIGTERM_GRACE: Duration = Duration::from_secs(10);
-
 /// Live state for the generation-stall watchdog across one run: the poll
 /// cadence, the pure stall-decision state, and the HTTP bits for reaching the
 /// child's `/metrics`. Seeded at Running entry by `genstall_setup`.
