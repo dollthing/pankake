@@ -109,8 +109,10 @@ pub struct ServiceConfig {
     pub filters: Filters,
     /// How long an idle service may stay up before it is stopped.
     pub idle_timeout_ms: u64,
-    /// How long a draining service gets before it is killed.
+    /// Tail grace after in-flight requests end, before sending SIGTERM.
     pub drain_timeout_ms: u64,
+    /// SIGTERM-to-SIGKILL grace for normal stops of a running service.
+    pub stop_grace_ms: u64,
     /// How long drained connections keep streaming after the child exits.
     pub extended_stream_drain_ms: u64,
     /// Maximum wall-clock time for a single proxied request.

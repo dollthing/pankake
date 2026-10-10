@@ -92,7 +92,7 @@ Containers can outlive both ananke and the CLI process that started them, so the
 2. The container is created, not started, and its ID is attached to the intent.
 3. The ownership row is committed. Only then is the container started: a container is never running without a persisted row that says so.
 4. Logs are followed by a separate `logs --follow` process, and the exit status comes from an independent `wait`.
-5. On drain, `kill --signal TERM`, escalating to `KILL` on the existing `drain_timeout`. Final logs are drained before the container is removed.
+5. On drain, `kill --signal TERM`, escalating to `KILL` on the configured `stop_grace`. Final logs are drained before the container is removed.
 
 Each run gets its own container named `ananke-<service>-<run-id>`, removed along with any anonymous volumes the runtime created for it. A stable per-service name would be easier to read, but a single failed cleanup would then block the service permanently: the next `create` would fail because the name is already in use. A per-run name makes a stray container inert rather than blocking, and the startup sweep bounds how long one can persist.
 
@@ -104,7 +104,7 @@ At startup ananke reconciles what it finds against those records. Every containe
 
 A native child dies with the daemon: the spawner sets `PR_SET_PDEATHSIG`, and the kernel honours it however the daemon died. A container has no equivalent: it belongs to the runtime, not to ananke's process tree. Its survival is therefore handled explicitly rather than assumed.
 
-On a signal ananke can catch (`SIGTERM`, `SIGINT`, `SIGQUIT`, as sent by `systemctl stop`, a restart, a reboot, or Ctrl-C), every service drains: TERM, then KILL after `drain_timeout`, then removal. Containers do not outlive it.
+On a signal ananke can catch (`SIGTERM`, `SIGINT`, `SIGQUIT`, as sent by `systemctl stop`, a restart, a reboot, or Ctrl-C), every service drains: TERM, then KILL after `stop_grace`, then removal. Containers do not outlive it.
 
 If that drain overruns `shutdown_timeout`, the daemon exits rather than hanging. Before it exits, it removes every container still carrying this installation's owner label. The sweep exists for this case; after a drain that finished, it finds nothing.
 
