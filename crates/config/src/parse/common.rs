@@ -59,8 +59,10 @@ pub struct RawServiceCommon {
     pub env_inherit: Option<bool>,
     /// HTTP readiness probe for the child.
     pub health: Option<RawHealth>,
-    /// How long to wait for a draining service to exit before killing it.
+    /// Tail grace after in-flight requests end, before sending SIGTERM.
     pub drain_timeout: Option<String>,
+    /// SIGTERM-to-SIGKILL grace for a running service (default 10 seconds).
+    pub stop_grace: Option<String>,
     /// How long to keep streaming drained connections open after the child exits.
     pub extended_stream_drain: Option<String>,
     /// Maximum wall-clock time for a single inference request.

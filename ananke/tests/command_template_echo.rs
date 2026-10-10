@@ -47,6 +47,7 @@ fn command_argv_substitutes_port() {
         reserves: Arc::new(DeviceReserves::default()),
         idle_timeout_ms: 600_000,
         drain_timeout_ms: 5_000,
+        stop_grace_ms: 10_000,
         extended_stream_drain_ms: 5_000,
         max_request_duration_ms: 60_000,
         auto_restart: AutoRestartSettings::disabled(),

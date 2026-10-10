@@ -42,8 +42,11 @@ pub const DEFAULT_HEALTH_PROBE_INTERVAL_MS: u64 = 5_000;
 /// Default per-probe timeout for health checks (3 minutes).
 pub const DEFAULT_HEALTH_TIMEOUT_MS: u64 = 180_000;
 
-/// Default drain timeout before the supervisor escalates to SIGKILL (30 seconds).
+/// Default tail grace before SIGTERM after in-flight requests end (30 seconds).
 pub const DEFAULT_DRAIN_TIMEOUT_MS: u64 = 30_000;
+
+/// Default SIGTERM-to-SIGKILL grace for a running service (10 seconds).
+pub const DEFAULT_STOP_GRACE_MS: u64 = 10_000;
 
 /// Default extra grace granted to in-flight streaming requests during drain
 /// (30 seconds).

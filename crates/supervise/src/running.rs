@@ -7,8 +7,7 @@ use std::time::Duration;
 use tracing::{info, warn};
 
 use crate::{
-    AutoRestartOutcome, PeriodicOutcome, RUNNING_SIGTERM_GRACE, RunLoop, RunningOutcome,
-    StartingOutcome,
+    AutoRestartOutcome, PeriodicOutcome, RunLoop, RunningOutcome, StartingOutcome,
     drain::{DrainConfig, drain_pipeline},
     state::ServiceState,
     workload::ManagedWorkload,
@@ -191,7 +190,9 @@ impl RunLoop {
                         continue;
                     }
                     info!(service = %self.init.identity.name, "idle timeout; draining to idle");
-                    crate::drain::sigterm_then_sigkill(workload, RUNNING_SIGTERM_GRACE).await;
+                    crate::drain::sigterm_then_sigkill(
+                        workload, Duration::from_millis(self.current_svc().stop_grace_ms),
+                    ).await;
                     self.run_shutdown_command().await;
                     self.end_run(run_id).await;
                     self.record_drain_complete();
@@ -242,7 +243,7 @@ impl RunLoop {
                 .unwrap_or_else(|| Duration::from_millis(current.max_request_duration_ms)),
             drain_timeout: Duration::from_millis(current.drain_timeout_ms),
             extended_stream_drain: Duration::from_millis(current.extended_stream_drain_ms),
-            sigterm_grace: RUNNING_SIGTERM_GRACE,
+            sigterm_grace: Duration::from_millis(current.stop_grace_ms),
         };
         drain_pipeline(workload, &cfg, self.init.inflight.clone(), reason).await;
         self.run_shutdown_command().await;
