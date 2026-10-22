@@ -14,15 +14,15 @@ import {
   useLifecycle,
 } from "../../api/hooks.ts";
 import { metricsWindow } from "../../util.ts";
-import { TimeWindowSelect } from "../ui/TimeWindowSelect.tsx";
-import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/timeWindow.ts";
+import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
+import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
 
 import { toggleFavourite, useFavourites } from "../../api/favourites.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Stat } from "../ui/Stat.tsx";
 import { Spinner } from "../ui/Spinner.tsx";
-import { SegmentedToggle } from "../ui/SegmentedToggle.tsx";
+import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
 import { DeviceCard } from "./DeviceCard.tsx";
 import { ServiceRow } from "./ServiceRow.tsx";
 import { buildServiceSparkline } from "./dashboardSparkline.ts";
@@ -160,6 +160,7 @@ export function DashboardView() {
           header={t("nav.services")}
           headerAction={
             <SegmentedToggle
+              label={t("dashboard.sortOrder")}
               options={SORT_OPTIONS.map((opt) => ({
                 label: opt.label,
                 value: opt.id,

@@ -12,12 +12,12 @@ import {
 import { bucketMsOf, metricsWindow } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
 import { Stat } from "../ui/Stat.tsx";
-import { TimeWindowSelect } from "../ui/TimeWindowSelect.tsx";
+import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
 import {
   TIME_WINDOW_PRESETS,
   windowLabel,
   type TimeWindow,
-} from "../ui/timeWindow.ts";
+} from "../ui/form/timeWindow.ts";
 import { Chart } from "../ui/Chart.tsx";
 import { CHART_PALETTE } from "../ui/chart-palette.ts";
 

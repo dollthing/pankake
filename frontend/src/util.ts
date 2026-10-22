@@ -1,4 +1,4 @@
-import type { TimeWindow } from "./components/ui/timeWindow.ts";
+import type { TimeWindow } from "./components/ui/form/timeWindow.ts";
 
 // Formatting helpers shared across the dashboard. All user-facing
 // formatting goes through here so units, precision, and rounding stay

@@ -11,8 +11,8 @@ import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
 import { useLogWindow, type LogWindow } from "../../api/hooks.ts";
 import type { LogLine } from "../../api/client.ts";
 import { formatTimestamp } from "../../util.ts";
-import { SegmentedToggle } from "../ui/SegmentedToggle.tsx";
-import { TimeWindowSelect } from "../ui/TimeWindowSelect.tsx";
+import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
+import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
 import { Spinner } from "../ui/Spinner.tsx";
 import { EmptyState } from "../ui/EmptyState.tsx";
 import { filterLines, type StreamFilter } from "./logFilter.ts";
@@ -58,6 +58,7 @@ export function LogsViewer({ name }: LogsViewerProps) {
         <TimeWindowSelect onChange={setWindow} />
         <div className="mx-1 h-3 w-px bg-border-default" />
         <SegmentedToggle<StreamFilter>
+          label={t("logs.streamFilter")}
           options={(["both", "stdout", "stderr", "combined"] as const).map(
             (s) => ({
               label: t(`logs.${s}`),

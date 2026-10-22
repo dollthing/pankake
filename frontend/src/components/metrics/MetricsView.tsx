@@ -22,8 +22,8 @@ import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Chart } from "../ui/Chart.tsx";
 import { CHART_PALETTE } from "../ui/chart-palette.ts";
-import { TimeWindowSelect } from "../ui/TimeWindowSelect.tsx";
-import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/timeWindow.ts";
+import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
+import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
 
 import { Spinner } from "../ui/Spinner.tsx";
 import {

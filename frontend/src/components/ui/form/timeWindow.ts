@@ -3,7 +3,7 @@
 // from the component file so react-refresh sees a components-only
 // module there.
 
-import type { LogWindow } from "../../api/hooks.ts";
+import type { LogWindow } from "../../../api/hooks.ts";
 
 /// The selector's value: identical to the logs API's window shape so
 /// consumers can pass it straight through.
