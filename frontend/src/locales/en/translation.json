@@ -272,6 +272,8 @@
     "live": "live",
     "dropped": "{{value}} dropped",
     "truncated": "truncated",
+    "loadOlder": "load older lines",
+    "loadingOlder": "loading older lines…",
     "follow": "follow",
     "allRuns": "all runs",
     "run": "run {{value}}",

@@ -1,6 +1,7 @@
-// Logs viewer for a service. REST seed + WebSocket live tail, with
+// Logs viewer for a service. REST seed + a follow on the live socket, with
 // time window presets, custom time range, text search, run filter,
-// stream filter, auto-follow, and a scroll container.
+// stream filter, auto-follow, and a scroll container that fetches older
+// lines over HTTP when scrolled to the top.
 //
 // Aims for GCP Log Explorer parity on the essentials: jump-to-time,
 // text search within the buffer, run filtering, and live tail.
@@ -8,7 +9,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
-import { useLogWindow, type LogWindow } from "../../api/hooks.ts";
+import { useLogWindow } from "../../api/logs/useLogWindow.ts";
+import type { LogWindow } from "../../api/logs/logWindow.ts";
 import type { LogLine } from "../../api/client.ts";
 import { formatTimestamp } from "../../util.ts";
 import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
@@ -51,6 +53,11 @@ export function LogsViewer({ name }: LogsViewerProps) {
   const { scrollRef, onScroll, pinned, scrollToBottom } =
     useStickToBottom(lines);
 
+  const onListScroll = () => {
+    onScroll();
+    if (scrollRef.current?.scrollTop === 0 && win.hasOlder) win.loadOlder();
+  };
+
   return (
     <div className="flex h-72 flex-col">
       {/* Toolbar row 1: time + stream + status */}
@@ -70,9 +77,9 @@ export function LogsViewer({ name }: LogsViewerProps) {
         />
         <div className="ml-auto flex items-center gap-2 text-xs text-tertiary">
           {win.isLive && <span className="text-success">{t("logs.live")}</span>}
-          {win.droppedByOverflow > 0 && (
+          {win.skipped > 0 && (
             <span className="text-warning">
-              {t("logs.dropped", { value: win.droppedByOverflow })}
+              {t("logs.dropped", { value: win.skipped })}
             </span>
           )}
           {win.truncated && (
@@ -122,9 +129,18 @@ export function LogsViewer({ name }: LogsViewerProps) {
       {/* Log lines */}
       <div
         ref={scrollRef}
-        onScroll={onScroll}
+        onScroll={onListScroll}
         className="flex-1 overflow-auto px-4 py-2 font-mono text-xs"
       >
+        {win.hasOlder && !win.loading && (
+          <button
+            onClick={win.loadOlder}
+            disabled={win.loadingOlder}
+            className="mb-1 text-tertiary hover:text-secondary"
+          >
+            {win.loadingOlder ? t("logs.loadingOlder") : t("logs.loadOlder")}
+          </button>
+        )}
         {win.loading ? (
           <Spinner />
         ) : win.error ? (

@@ -27,7 +27,7 @@ export type FitVerdict = Schemas["FitVerdict"];
 export type DeviceShortfall = Schemas["DeviceShortfall"];
 export type LogLine = Schemas["LogLine"];
 export type LogsResponse = Schemas["LogsResponse"];
-export type LogStreamMessage = Schemas["LogStreamMessage"];
+export type LogPosition = Schemas["LogPosition"];
 export type DeviceSummary = Schemas["DeviceSummary"];
 export type DeviceReservation = Schemas["DeviceReservation"];
 export type StartResponse = Schemas["StartResponse"];
@@ -50,6 +50,8 @@ export type LiveResource = Schemas["LiveResource"];
 export type LiveRequest = Schemas["LiveRequest"];
 export type LiveMessage = Schemas["LiveMessage"];
 export type LiveData = Schemas["LiveData"];
+export type LiveFeed = Schemas["LiveFeed"];
+export type LogFeed = Schemas["LogFeed"];
 
 export type LogsQuery = {
   since?: number;
@@ -160,10 +162,6 @@ export const api = {
     const qs = params.toString();
     const path = `/api/services/${encodeURIComponent(name)}/logs${qs ? `?${qs}` : ""}`;
     return getJson<LogsResponse>(path);
-  },
-  logStreamUrl: (name: string) => {
-    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${window.location.host}/api/services/${encodeURIComponent(name)}/logs/stream`;
   },
   getConfig: () => getJson<ConfigResponse>("/api/config"),
   validateConfig: (content: string) =>

@@ -1,21 +1,26 @@
 // The `/api/live` connection: one WebSocket per tab, shared by every live
-// query. Subscriptions are refcounted by resource, so two components showing
-// the services list hold one server subscription between them. No React in
-// here; `useLive.ts` adapts it.
+// query and log follow. Subscriptions are refcounted by resource, so two
+// components showing the services list hold one server subscription between
+// them. A follow belongs to its holder, whose position it resumes from, so it
+// is neither shared nor lingered. No React in here; `useLive.ts` and
+// `useLogFollow.ts` adapt it.
 //
 // The server answers every subscribe with a full snapshot, so reconnecting
 // is just resubscribing: nothing is replayed or patched. Each connection
 // opens with a hello naming the daemon's build; a different build after a
-// reconnect means the daemon was upgraded under this tab.
+// reconnect means the daemon was upgraded under this tab. A follow is
+// re-sent with the position of the last line its holder received.
 
 import { api } from "../client.ts";
 import type {
   ApiError,
   LiveData,
+  LiveFeed,
   LiveMessage,
   LiveRequest,
   LiveResource,
 } from "../client.ts";
+import type { FollowMessage } from "./logFollow.ts";
 
 export type LiveStatus = "connecting" | "open" | "reconnecting";
 
@@ -24,6 +29,12 @@ export type LiveListener = {
   /// A resource error, such as an unknown service. The subscription stays
   /// active; a later snapshot supersedes it.
   readonly onError: (error: ApiError, status: number) => void;
+};
+
+export type FollowListener = {
+  /// The feed to send when the follow starts or the socket reopens.
+  readonly resume: () => LiveFeed;
+  readonly onMessage: (message: FollowMessage) => void;
 };
 
 export type LiveSocketOptions = {
@@ -77,6 +88,7 @@ export class LiveSocket {
   readonly #random: () => number;
   readonly #entries = new Map<string, Entry>();
   readonly #byId = new Map<string, Entry>();
+  readonly #follows = new Map<string, FollowListener>();
   readonly #listeners = new Set<() => void>();
   #nextId = 0;
   #socket: WebSocket | null = null;
@@ -108,6 +120,22 @@ export class LiveSocket {
       if (entry.listeners.size === 0) {
         entry.linger = setTimeout(() => this.#drop(entry), LINGER_MS);
       }
+    };
+  }
+
+  /// Follow a feed until the returned release is called.
+  follow(listener: FollowListener): () => void {
+    const id = `f${this.#nextId++}`;
+    this.#follows.set(id, listener);
+    this.#send({ type: "follow", id, feed: listener.resume() });
+    this.#ensureConnected();
+
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.#follows.delete(id);
+      this.#send({ type: "cancel", id });
     };
   }
 
@@ -186,6 +214,9 @@ export class LiveSocket {
           resource: entry.resource,
         });
       }
+      for (const [id, listener] of this.#follows) {
+        this.#send({ type: "follow", id, feed: listener.resume() });
+      }
     };
     socket.onmessage = (ev: MessageEvent) => {
       if (typeof ev.data !== "string") return;
@@ -232,10 +263,13 @@ export class LiveSocket {
         return;
       }
       case "error": {
-        const entry =
-          message.id === null || message.id === undefined
-            ? undefined
-            : this.#byId.get(message.id);
+        const id = message.id ?? null;
+        const follow = id === null ? undefined : this.#follows.get(id);
+        if (follow) {
+          follow.onMessage(message);
+          return;
+        }
+        const entry = id === null ? undefined : this.#byId.get(id);
         if (!entry) {
           console.warn("live: the daemon rejected a request", message.error);
           return;
@@ -248,7 +282,8 @@ export class LiveSocket {
       case "log_lines":
       case "log_gap":
       case "log_caught_up":
-        // This socket starts no follows, so these never belong to it.
+        // A frame for a released follow is dropped.
+        this.#follows.get(message.id)?.onMessage(message);
         return;
       default: {
         const unreachable: never = message;
@@ -309,6 +344,9 @@ function isLiveMessage(value: unknown): value is LiveMessage {
   return (
     value.type === "hello" ||
     value.type === "snapshot" ||
+    value.type === "log_lines" ||
+    value.type === "log_gap" ||
+    value.type === "log_caught_up" ||
     value.type === "error"
   );
 }

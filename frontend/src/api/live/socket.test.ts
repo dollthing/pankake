@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { LiveData } from "../client.ts";
+import type { LiveData, LiveFeed } from "../client.ts";
 import { FakeWebSocket } from "./fakeWebSocket.ts";
 import {
   BACKOFF_INITIAL_MS,
@@ -201,5 +201,90 @@ describe("LiveSocket", () => {
     expect(first.closed).toBe(true);
     expect(FakeWebSocket.instances).toHaveLength(2);
     expect(live.getStatus()).toBe("reconnecting");
+  });
+
+  describe("follows", () => {
+    const FEED: LiveFeed = { kind: "logs", service: "demo", after: null };
+
+    function follower(resume: () => LiveFeed = () => FEED) {
+      return { resume: vi.fn(resume), onMessage: vi.fn() };
+    }
+
+    it("sends a follow once the socket opens", () => {
+      const live = newSocket();
+      live.follow(follower());
+      const ws = FakeWebSocket.latest();
+      expect(ws.sent).toEqual([]);
+      ws.accept();
+      expect(ws.sent).toEqual([{ type: "follow", id: "f0", feed: FEED }]);
+    });
+
+    it("resends with the holder's position after reconnecting", () => {
+      const live = newSocket();
+      let after: LiveFeed["after"] = null;
+      live.follow(follower(() => ({ ...FEED, after })));
+      const first = FakeWebSocket.latest();
+      first.accept();
+      after = { run_id: 3, seq: 9 };
+      first.close();
+      vi.advanceTimersByTime(BACKOFF_INITIAL_MS);
+
+      const second = FakeWebSocket.latest();
+      second.accept();
+      expect(second.sent).toEqual([
+        {
+          type: "follow",
+          id: "f0",
+          feed: { ...FEED, after: { run_id: 3, seq: 9 } },
+        },
+      ]);
+    });
+
+    it("routes log frames and errors by id and drops unknown ids", () => {
+      const live = newSocket();
+      const a = follower();
+      const b = follower();
+      live.follow(a);
+      live.follow(b);
+      const ws = FakeWebSocket.latest();
+      ws.accept();
+
+      const frame = {
+        type: "log_lines" as const,
+        id: "f1",
+        lines: [
+          { timestamp_ms: 0, stream: "stdout", line: "hi", run_id: 1, seq: 1 },
+        ],
+      };
+      ws.receive(frame);
+      ws.receive({ type: "log_caught_up", id: "f0" });
+      ws.receive({ type: "log_caught_up", id: "f9" });
+      const error = {
+        error: {
+          code: "service_not_found" as const,
+          message: "service `demo` not found",
+          type: "invalid_request_error" as const,
+        },
+      };
+      ws.receive({ type: "error", id: "f0", status: 404, error });
+
+      expect(b.onMessage.mock.calls).toEqual([[frame]]);
+      expect(a.onMessage.mock.calls).toEqual([
+        [{ type: "log_caught_up", id: "f0" }],
+        [{ type: "error", id: "f0", status: 404, error }],
+      ]);
+    });
+
+    it("cancels at once on release and ignores later frames", () => {
+      const live = newSocket();
+      const holder = follower();
+      const release = live.follow(holder);
+      const ws = FakeWebSocket.latest();
+      ws.accept();
+      release();
+      expect(ws.sent.at(-1)).toEqual({ type: "cancel", id: "f0" });
+      ws.receive({ type: "log_caught_up", id: "f0" });
+      expect(holder.onMessage).not.toHaveBeenCalled();
+    });
   });
 });
