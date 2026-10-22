@@ -21,7 +21,9 @@ export function MessageBubble({
   const isSystem = message.role === "system";
   const isAssistant = message.role === "assistant";
 
-  const label = isAssistant ? (modelName ?? t("chat.assistant")) : message.role;
+  const label = isAssistant
+    ? (message.model ?? modelName ?? t("chat.assistant"))
+    : message.role;
   const displayStats = liveStats ?? message.stats ?? null;
 
   return (

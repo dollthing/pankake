@@ -49,24 +49,19 @@ export function ChatView() {
   });
   const paramModel = searchParams.get("model");
 
-  // Sync URL → store, but only when the URL explicitly specifies a
-  // model AND there is no active conversation. The store is the source
-  // of truth for session persistence; navigating to /chat without
-  // ?model= should not wipe the session, and navigating from a service
-  // detail view with ?model=foo should not clobber an existing
-  // conversation with a different model.
+  // The store owns the selection, so it survives navigating away and
+  // back; the URL is how a deep link or Back names a model. A model the
+  // URL names is applied when the URL changes, and the dropdown writes
+  // both, so neither can hold a model the other has left.
   useEffect(() => {
-    if (
-      paramModel &&
-      paramModel !== chat.currentModel &&
-      chat.messages.length === 0
-    ) {
-      selectModel(paramModel);
+    if (paramModel !== null) selectModel(paramModel);
+  }, [paramModel]);
+  useEffect(() => {
+    if (paramModel === null && chat.currentModel !== null) {
+      setSearchParams({ model: chat.currentModel }, { replace: true });
     }
-  }, [paramModel, chat.currentModel, chat.messages.length]);
+  }, [paramModel, chat.currentModel, setSearchParams]);
 
-  // The store's currentModel is the effective selection — it survives
-  // navigation away and back even when the URL lacks ?model=.
   const selectedModel = chat.currentModel;
 
   const { scrollRef, onScroll } = useStickToBottom(chat.messages);
@@ -80,6 +75,7 @@ export function ChatView() {
   }
 
   function handleSelectModel(name: string) {
+    selectModel(name);
     setSearchParams({ model: name });
   }
 

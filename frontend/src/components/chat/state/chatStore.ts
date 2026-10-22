@@ -34,6 +34,8 @@ export type Message = {
   role: "system" | "user" | "assistant";
   content: string;
   reasoning?: string;
+  /// The model that wrote an assistant message.
+  model?: string;
   images?: string[];
   stats?: StreamStats;
   timestamp: string;
@@ -112,23 +114,21 @@ export function saveSystemPrompt(value: string): void {
   }
 }
 
-export function selectModel(name: string | null): void {
+/// Switches the model the next message goes to. The conversation carries
+/// on: each reply records the model that wrote it, and only the system
+/// prompt, which is stored per model, is swapped.
+export function selectModel(name: string): void {
+  if (name === snapshot.currentModel) return;
   let prompt = "";
-  if (name) {
-    try {
-      prompt = localStorage.getItem(`ananke-chat-sys-${name}`) ?? "";
-    } catch {
-      // localStorage unavailable.
-    }
+  try {
+    prompt = localStorage.getItem(`ananke-chat-sys-${name}`) ?? "";
+  } catch {
+    // localStorage unavailable.
   }
-  setSnapshot(() => ({
-    messages: [],
+  setSnapshot((prev) => ({
+    ...prev,
     systemPrompt: prompt,
     currentModel: name,
-    chatState: { kind: "idle" },
-    stats: { ...EMPTY_STATS },
-    input: "",
-    attachments: [],
   }));
 }
 

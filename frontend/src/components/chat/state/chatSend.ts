@@ -258,6 +258,7 @@ export async function send(
                   role: "assistant",
                   content: contentDelta ?? "",
                   reasoning: reasoningDelta || undefined,
+                  model: selectedModel,
                   timestamp: localISO(),
                 });
               }
