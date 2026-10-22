@@ -158,6 +158,7 @@
     "service": "Service",
     "summary": "Summary",
     "stateChanged": "{{from}} → {{to}}",
+    "stateWithReason": "{{state}} ({{reason}})",
     "allocationChanged": "device allocation shifted",
     "configReloaded": "configuration reloaded from disk",
     "estimatorDriftCorrection": "{{class}} correction {{value}}",

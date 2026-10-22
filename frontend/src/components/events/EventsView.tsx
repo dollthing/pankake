@@ -6,7 +6,6 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 import type { DaemonEvent } from "../../api/client.ts";
 import { useEventFeed } from "../../api/hooks.ts";
 import { useLiveSocket, useLiveStatus } from "../../api/live/useLive.ts";
@@ -15,6 +14,7 @@ import { formatTimestamp } from "../../util.ts";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Badge, type BadgeVariant } from "../ui/Badge.tsx";
 import { EmptyState } from "../ui/feedback/EmptyState.tsx";
+import { summarizeEvent } from "./eventSummary.ts";
 
 const EVENT_TYPES = [
   "state_changed",
@@ -148,30 +148,3 @@ const EVENT_VARIANTS: Record<DaemonEvent["type"], BadgeVariant> = {
   estimator_drift: "vision",
   auto_restarted: "warning",
 };
-
-function summarizeEvent(event: DaemonEvent, t: TFunction): string {
-  switch (event.type) {
-    case "state_changed":
-      return t("events.stateChanged", { from: event.from, to: event.to });
-    case "allocation_changed":
-      return t("events.allocationChanged");
-    case "config_reloaded":
-      return t("events.configReloaded");
-    case "estimator_drift":
-      return t("events.estimatorDriftCorrection", {
-        class: event.class,
-        value: event.rolling_mean.toFixed(3),
-      });
-    case "auto_restarted":
-      return event.detail
-        ? t("events.autoRestarted", {
-            trigger: event.trigger,
-            detail: event.detail,
-          })
-        : t("events.autoRestartedShort", { trigger: event.trigger });
-    default: {
-      const unreachable: never = event;
-      return unreachable;
-    }
-  }
-}
