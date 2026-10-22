@@ -24,12 +24,11 @@ import {
   useChat,
 } from "../../api/chatStore.ts";
 import { Spinner } from "../ui/Spinner.tsx";
-import { Button } from "../ui/Button.tsx";
-import { ButtonLink } from "../ui/ButtonLink.tsx";
+import { Button } from "../ui/button/Button.tsx";
+import { ButtonLink } from "../ui/button/ButtonLink.tsx";
 import { EmptyState } from "../ui/EmptyState.tsx";
 import { CopyButton } from "../ui/CopyButton.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { Icon } from "../ui/icon/Icon.tsx";
 import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
 import { ModelDropdown } from "./ChatModelDropdown.tsx";
 import { MessageBubble } from "./ChatMessageBubble.tsx";
@@ -255,22 +254,12 @@ export function ChatView() {
             {selectedModel && (
               <ButtonLink
                 to={`/services/${encodeURIComponent(selectedModel)}`}
-                variant="secondary"
-                size="sm"
-                className="w-7 justify-center px-0"
-              >
-                <Icon name="open" size="3.5" />
-              </ButtonLink>
+                size="icon-sm"
+                icon="open"
+              />
             )}
             {selectedModel && (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-7 justify-center px-0"
-                onClick={clearConversation}
-              >
-                <Icon name="trash" size="3.5" />
-              </Button>
+              <Button size="icon-sm" icon="trash" onClick={clearConversation} />
             )}
           </div>
           <div className="flex items-stretch gap-2">
@@ -311,21 +300,23 @@ export function ChatView() {
             </label>
             {chat.chatState.kind === "streaming" ||
             chat.chatState.kind === "starting" ? (
-              <button
+              <Button
+                tone="stop"
                 onClick={cancelSend}
                 disabled={chat.chatState.kind === "starting"}
-                className="shrink-0 self-stretch rounded-md bg-danger px-3 text-sm font-medium text-white hover:bg-danger/90 disabled:opacity-40"
+                className="h-auto self-stretch"
               >
                 {t("chat.stop")}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
+                tone="primary"
                 onClick={handleSend}
                 disabled={!selectedModel || !chat.input.trim()}
-                className="inline-flex shrink-0 self-stretch items-center justify-center gap-1.5 rounded-md bg-action-iris px-3 text-sm font-medium text-white transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-auto self-stretch"
               >
                 {t("chat.send")}
-              </button>
+              </Button>
             )}
           </div>
         </div>

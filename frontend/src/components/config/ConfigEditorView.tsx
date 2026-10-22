@@ -13,7 +13,7 @@ import {
   useSaveConfig,
 } from "../../api/hooks.ts";
 import type { ValidationError } from "../../api/client.ts";
-import { Button } from "../ui/Button.tsx";
+import { Button } from "../ui/button/Button.tsx";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Spinner } from "../ui/Spinner.tsx";
@@ -156,8 +156,7 @@ export function ConfigEditorView() {
           </button>
           {!serverReadOnly && (
             <Button
-              type="button"
-              variant="iris"
+              tone="primary"
               size="sm"
               onClick={handleSave}
               disabled={!dirty || saveMut.isPending || readOnly}
@@ -244,7 +243,7 @@ function HashMismatchDialog({
           >
             {t("config.keepLocalChanges")}
           </button>
-          <Button type="button" variant="iris" size="md" onClick={onReload}>
+          <Button tone="primary" onClick={onReload}>
             {t("config.reloadFromServer")}
           </Button>
         </div>

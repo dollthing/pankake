@@ -13,10 +13,8 @@ import { Badge } from "../ui/Badge.tsx";
 import { Stat } from "../ui/Stat.tsx";
 import { StatusDot } from "../ui/StatusDot.tsx";
 import { Spinner } from "../ui/Spinner.tsx";
-import { Button } from "../ui/Button.tsx";
-import { ButtonLink } from "../ui/ButtonLink.tsx";
-import { buttonClassName } from "../ui/buttonStyles.ts";
-import { Icon } from "../ui/icon/Icon.tsx";
+import { Button } from "../ui/button/Button.tsx";
+import { ButtonLink } from "../ui/button/ButtonLink.tsx";
 import { LogsViewer } from "../logs/LogsViewer.tsx";
 import {
   ModelInfoGrid,
@@ -93,21 +91,15 @@ export function ServiceDetailView() {
           {/* Lifecycle actions */}
           <Card header={t("serviceDetail.actions")} className="lg:col-span-2">
             <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={serviceProxyUrl(d.port)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonClassName("blue")}
-              >
-                <Icon name="open" size="3.5" />
+              <ButtonLink href={serviceProxyUrl(d.port)} external>
                 {t("serviceDetail.open")}
-              </a>
+              </ButtonLink>
               {d.modality !== "embedding" && (
                 <ButtonLink
-                  variant="iris"
+                  tone="primary"
+                  icon="chat"
                   to={`/chat?model=${encodeURIComponent(d.name)}`}
                 >
-                  <Icon name="chat" size="3.5" />
                   {t("serviceDetail.chat")}
                 </ButtonLink>
               )}
@@ -234,50 +226,47 @@ function LifecycleActions({
     <div className="flex flex-wrap items-center gap-2">
       {canStart && (
         <Button
-          variant="green"
+          tone="start"
+          icon="start"
           onClick={() => onAction("start")}
           disabled={pending}
         >
-          <Icon name="start" size="3.5" />
           {t("services.actions.start")}
         </Button>
       )}
       {canStop && (
         <>
           <Button
-            variant="red"
+            tone="stop"
+            icon="stop"
             onClick={() => onAction("stop")}
             disabled={pending}
           >
-            <Icon name="stop" size="3.5" />
             {t("services.actions.stop")}
           </Button>
           <Button
-            variant="cyan"
+            icon="restart"
             onClick={() => onAction("restart")}
             disabled={pending}
           >
-            <Icon name="restart" size="3.5" />
             {t("services.actions.restart")}
           </Button>
         </>
       )}
       {isDisabled ? (
         <Button
-          variant="orange"
+          icon="power"
           onClick={() => onAction("enable")}
           disabled={pending}
         >
-          <Icon name="power" size="3.5" />
           {t("services.actions.enable")}
         </Button>
       ) : (
         <Button
-          variant="magenta"
+          icon="disable"
           onClick={() => onAction("disable")}
           disabled={pending}
         >
-          <Icon name="disable" size="3.5" />
           {t("services.actions.disable")}
         </Button>
       )}
