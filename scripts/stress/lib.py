@@ -109,10 +109,6 @@ class Matrix:
         base = self.management.replace("http://", "ws://").replace("https://", "wss://")
         return f"{base}/api/live"
 
-    def log_stream_ws(self, service: str) -> str:
-        base = self.management.replace("http://", "ws://").replace("https://", "wss://")
-        return f"{base}/api/services/{service}/logs/stream"
-
 
 # --- event recorder --------------------------------------------------------
 
