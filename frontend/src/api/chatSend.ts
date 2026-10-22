@@ -3,7 +3,6 @@
 // chat store snapshot.
 
 import { api } from "./client.ts";
-import { getSnapshot as getSystemSnapshot } from "./systemStore.ts";
 import {
   getSnapshot,
   setSnapshot,
@@ -48,8 +47,11 @@ export async function send(
   const controller = new AbortController();
 
   // Check if the model is running; start it if not.
-  const sysSnap = getSystemSnapshot();
-  const svc = sysSnap.services.find((s) => s.name === selectedModel);
+  // If the state is unknown, send anyway and let the daemon start the model.
+  const svc = await api.listServices().then(
+    (r) => r.services.find((s) => s.name === selectedModel),
+    () => undefined,
+  );
   const needsStart = svc != null && svc.state !== "running";
   if (needsStart) {
     setSnapshot((prev) => ({

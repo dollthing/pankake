@@ -1,5 +1,5 @@
-// Event feed — live feed of system events from the /api/events
-// WebSocket. Shows timestamp, event type, service name, and key
+// Event feed — the daemon's recent event history, kept current by the
+// live socket's `events` subscription. Shows timestamp, event type, service name, and key
 // fields as one-line summaries in a table layout. Oldest events at
 // the top, newest at the bottom; autoscrolls to the bottom when new
 // events arrive unless the user has scrolled up.
@@ -7,11 +7,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import {
-  reconnectEvents,
-  useEventFeed,
-  type SystemEvent,
-} from "../../api/events.ts";
+import type { DaemonEvent } from "../../api/client.ts";
+import { useEventFeed } from "../../api/hooks.ts";
+import { useLiveSocket, useLiveStatus } from "../../api/live/useLive.ts";
 import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
 import { formatTimestamp } from "../../util.ts";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
@@ -24,12 +22,15 @@ const EVENT_TYPES = [
   "config_reloaded",
   "estimator_drift",
   "auto_restarted",
-  "overflow",
-] as const;
+] as const satisfies readonly DaemonEvent["type"][];
+
+const NO_EVENTS: readonly DaemonEvent[] = [];
 
 export function EventsView() {
   const { t } = useTranslation();
-  const { events, connected } = useEventFeed();
+  const events = useEventFeed().data?.events ?? NO_EVENTS;
+  const socket = useLiveSocket();
+  const connected = useLiveStatus() === "open";
   const [typeFilter, setTypeFilter] = useState<Set<string>>(
     new Set(EVENT_TYPES),
   );
@@ -75,7 +76,7 @@ export function EventsView() {
             <span className="text-danger">{t("events.disconnected")}</span>
           )}
           <button
-            onClick={reconnectEvents}
+            onClick={() => socket.reconnect()}
             className="rounded-sm px-2 py-0.5 text-tertiary transition-colors hover:text-secondary"
             title={t("events.forceReconnect")}
           >
@@ -109,7 +110,7 @@ export function EventsView() {
             <tbody>
               {filtered.map((event, i) => (
                 <EventRow
-                  key={`${event.at_ms ?? i}-${event.type}`}
+                  key={`${event.at_ms}-${event.type}-${i}`}
                   event={event}
                 />
               ))}
@@ -121,75 +122,56 @@ export function EventsView() {
   );
 }
 
-function EventRow({ event }: { event: SystemEvent }) {
+function EventRow({ event }: { event: DaemonEvent }) {
   const { t } = useTranslation();
-  const variant = EVENT_VARIANTS[event.type] ?? "neutral";
+  const variant = EVENT_VARIANTS[event.type];
   return (
     <tr className="border-b border-border-default/50 text-xs hover:bg-elevated/60">
       <td className="px-4 py-1.5 font-mono text-tertiary">
-        {event.at_ms != null ? formatTimestamp(event.at_ms) : "\u2014"}
+        {formatTimestamp(event.at_ms)}
       </td>
       <td className="px-4 py-1.5">
         <Badge variant={variant}>{event.type}</Badge>
       </td>
       <td className="px-4 py-1.5 font-mono text-primary">
-        {event.service ?? "—"}
+        {"service" in event ? event.service : "—"}
       </td>
       <td className="px-4 py-1.5 text-secondary">{summarizeEvent(event, t)}</td>
     </tr>
   );
 }
 
-const EVENT_VARIANTS: Record<string, BadgeVariant> = {
+const EVENT_VARIANTS: Record<DaemonEvent["type"], BadgeVariant> = {
   state_changed: "success",
   allocation_changed: "accent",
   config_reloaded: "warning",
   estimator_drift: "vision",
   auto_restarted: "warning",
-  overflow: "danger",
 };
 
-function summarizeEvent(event: SystemEvent, t: TFunction): string {
+function summarizeEvent(event: DaemonEvent, t: TFunction): string {
   switch (event.type) {
-    case "state_changed": {
-      const from = event.from ?? "?";
-      const to = event.to ?? "?";
-      return t("events.stateChanged", { from, to });
-    }
+    case "state_changed":
+      return t("events.stateChanged", { from: event.from, to: event.to });
     case "allocation_changed":
       return t("events.allocationChanged");
     case "config_reloaded":
       return t("events.configReloaded");
-    case "estimator_drift": {
-      const mean = event.rolling_mean;
-      const memoryClass = event.class;
-      if (typeof mean === "number" && typeof memoryClass === "string") {
-        return t("events.estimatorDriftCorrection", {
-          class: memoryClass,
-          value: mean.toFixed(3),
-        });
-      }
-      return t("events.estimatorDrift");
-    }
-    case "auto_restarted": {
-      const trigger = event.trigger ?? "?";
+    case "estimator_drift":
+      return t("events.estimatorDriftCorrection", {
+        class: event.class,
+        value: event.rolling_mean.toFixed(3),
+      });
+    case "auto_restarted":
       return event.detail
-        ? t("events.autoRestarted", { trigger, detail: event.detail })
-        : t("events.autoRestartedShort", { trigger });
+        ? t("events.autoRestarted", {
+            trigger: event.trigger,
+            detail: event.detail,
+          })
+        : t("events.autoRestartedShort", { trigger: event.trigger });
+    default: {
+      const unreachable: never = event;
+      return unreachable;
     }
-    case "overflow": {
-      const dropped = event.dropped;
-      return typeof dropped === "number"
-        ? t("events.eventsDroppedCount", { value: dropped })
-        : t("events.eventsDropped");
-    }
-    default:
-      return JSON.stringify(
-        Object.fromEntries(
-          Object.entries(event).filter(
-            ([k]) => k !== "type" && k !== "service" && k !== "at_ms",
-          ),
-        ),
-      );
   }
 }

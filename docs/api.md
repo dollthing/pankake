@@ -11,8 +11,8 @@ The daemon listens on two HTTP sockets:
 - **OpenAI-compatible API** (`127.0.0.1:7070` by default): `/v1/models`,
   `/v1/chat/completions`, `/v1/completions`, `/v1/embeddings`.
 - **Management API** (`127.0.0.1:7071` by default): `/api/services`,
-  `/api/config`, `/api/devices`, `/api/metrics`, `/api/events`, `/api/info`,
-  and `/api/openapi.json`.
+  `/api/config`, `/api/devices`, `/api/metrics`, `/api/events/history`,
+  `/api/info`, `/api/live`, and `/api/openapi.json`.
 
 Both addresses are configurable via `[daemon]` in the TOML config.
 
@@ -432,11 +432,6 @@ List recent events
       service: string
       trigger: string
       type: "auto_restarted"
-    }
-    // overflow
-    | {
-      dropped: number
-      type: "overflow"
     }[]
   since_ms: number
 }
@@ -1025,15 +1020,11 @@ A `disabled` state carries a reason that explains why:
 - `disabled → idle`: user enable.
 - `* → disabled`: user disable.
 
-## WebSocket: /api/events
+## Events
 
-The `/api/events` WebSocket delivers a system-wide stream of daemon events. Connect with a standard WebSocket handshake to `ws://<host>:7071/api/events`.
+The daemon publishes lifecycle events on an internal bus and keeps the newest 1000 in memory. `GET /api/events/history` returns that window, and the `/api/live` socket's `events` resource pushes it again whenever an event arrives. The window starts afresh when the daemon restarts.
 
-An optional `?service=<name>` query parameter filters events to a single service. Events that don't carry a service field (`config_reloaded`, `overflow`) are always delivered.
-
-### Frame format
-
-Each frame is a text message containing a single JSON object with a `type` tag. The `at_ms` field (millisecond UNIX timestamp) is present on every variant except `overflow`.
+Each event is a JSON object with a `type` tag. Every variant carries `at_ms`, a millisecond UNIX timestamp.
 
 ### Variants
 
@@ -1105,21 +1096,6 @@ Emitted when a `Running` service is drained and respawned by its auto-restart po
   "at_ms": 1700000000000
 }
 ```
-
-#### `overflow`
-
-Emitted when the event bus drops events because a subscriber fell behind.
-
-```json
-{
-  "type": "overflow",
-  "dropped": 42
-}
-```
-
-### Heartbeat
-
-The server sends a WebSocket Ping frame every 30 seconds. Clients should respond with Pong to keep intermediaries from closing the connection.
 
 ## WebSocket: /api/live
 
@@ -1335,4 +1311,6 @@ The spec is produced by `utoipa`'s compile-time derive from the `#[utoipa::path]
 The daemon embeds the frontend SPA as a fallback handler. Any request that doesn't match an `/api/*`, `/v1/*`, `/metrics`, or WebSocket route is served from the embedded `frontend/dist` directory.
 
 The embedded assets are built at compile time via `rust-embed`. Set the `ANANKE_SKIP_FRONTEND_BUILD=1` environment variable during `cargo build` to skip the frontend build (useful for Rust-only dev loops).
+
+The frontend reads live state (services, service detail, devices, the event history, and daemon info) through one `/api/live` WebSocket, loading over HTTP first and polling over HTTP every 5 seconds while the socket is down. Commands such as starting a service or saving the config go over HTTP, and logs stream over the per-service log socket.
 

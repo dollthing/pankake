@@ -1,7 +1,6 @@
-//! `/api/events` endpoints — the system-wide event bus and its history.
+//! `/api/events` endpoints — the system-wide event bus's history.
 
 pub mod history;
-pub mod stream;
 
 pub use history::EventHistory;
 

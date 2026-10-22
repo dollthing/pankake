@@ -1,11 +1,11 @@
-// Root component: router + AppShell + event subscription.
+// Root component: router + AppShell + event-driven invalidation.
 // Routes are defined here; each view lives in its own component file
 // under `src/components/`.
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { AppShell } from "./components/layout/AppShell.tsx";
-import { useEventsConnection } from "./api/events.ts";
+import { useEventInvalidation } from "./api/live/invalidation.ts";
 import { DashboardView } from "./components/dashboard/DashboardView.tsx";
 import { ServiceDetailView } from "./components/services/ServiceDetailView.tsx";
 import { EventsView } from "./components/events/EventsView.tsx";
@@ -50,9 +50,9 @@ function Placeholder({ title }: { title: string }) {
 }
 
 export default function App() {
-  // Open the events WebSocket on mount. It drives query invalidation
-  // for near-instant updates.
-  useEventsConnection();
+  // Live queries update themselves; this refreshes the few that are not
+  // live (config, restarts) when an event says they changed.
+  useEventInvalidation();
 
   return (
     <BrowserRouter>

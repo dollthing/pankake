@@ -80,7 +80,7 @@ pub(crate) fn wants_event(resource: &LiveResource, event: &Event) -> bool {
             | Event::AllocationChanged { service, .. }
             | Event::EstimatorDrift { service, .. }
             | Event::AutoRestarted { service, .. } => service.as_str() == name,
-            Event::ConfigReloaded { .. } | Event::Overflow { .. } => true,
+            Event::ConfigReloaded { .. } => true,
         },
     }
 }

@@ -43,6 +43,13 @@ export type MetricBucketResponse = Schemas["MetricBucketResponse"];
 export type DeviceSamplesResponse = Schemas["DeviceSamplesResponse"];
 export type DeviceSampleResponse = Schemas["DeviceSampleResponse"];
 export type DaemonInfoResponse = Schemas["DaemonInfoResponse"];
+// `Event` would shadow the DOM type of the same name.
+export type DaemonEvent = Schemas["Event"];
+export type EventHistory = Schemas["EventHistory"];
+export type LiveResource = Schemas["LiveResource"];
+export type LiveRequest = Schemas["LiveRequest"];
+export type LiveMessage = Schemas["LiveMessage"];
+export type LiveData = Schemas["LiveData"];
 
 export type LogsQuery = {
   since?: number;
@@ -191,6 +198,7 @@ export const api = {
   },
   getPrometheusMetrics: () => fetch("/metrics").then((r) => r.text()),
   getInfo: () => getJson<DaemonInfoResponse>("/api/info"),
+  getEventHistory: () => getJson<EventHistory>("/api/events/history"),
   start: (name: string) =>
     postJson<StartResponse>(`/api/services/${encodeURIComponent(name)}/start`),
   stop: (name: string) =>
@@ -207,8 +215,8 @@ export const api = {
     postJson<DisableResponse>(
       `/api/services/${encodeURIComponent(name)}/disable`,
     ),
-  eventsStreamUrl: () => {
+  liveUrl: () => {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${window.location.host}/api/events`;
+    return `${proto}//${window.location.host}/api/live`;
   },
 };

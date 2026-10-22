@@ -86,7 +86,7 @@ pub struct ServiceDetail {
     pub last_used_ms: Option<i64>,
     /// Recent auto-restart watchdog firings, most recent first. Sourced
     /// from the daemon's durable `service_restarts` store, so firings are
-    /// visible after the fact — not only to a live `/api/events` listener.
+    /// visible after the fact — not only to a client that was connected when it happened.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recent_restarts: Vec<RestartEvent>,
     /// Serving-runtime details for a llama-cpp service. `None` for

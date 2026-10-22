@@ -1,7 +1,7 @@
-// TanStack Query hooks over the management API. Services and devices
-// are served from the systemStore (event-driven, no polling when the
-// WebSocket is connected). Everything else uses TanStack Query with
-// sensible refetch cadences.
+// TanStack Query hooks over the management API. Services, devices, the
+// event history, daemon info, and service detail are live queries kept
+// current by the `/api/live` socket (see `live/`). Everything else uses
+// TanStack Query with sensible refetch cadences.
 
 import { useMemo, useState } from "react";
 import {
@@ -18,6 +18,8 @@ import {
   type ConfigSaveResult,
   type DaemonInfoResponse,
   type DeviceSampleResponse,
+  type DeviceSummary,
+  type EventHistory,
   type ServiceRestartEntry,
   type DisableResponse,
   type EnableResponse,
@@ -27,31 +29,49 @@ import {
   type MetricsQuery,
   type MetricsResponse,
   type ServiceDetail,
+  type ServiceSummary,
   type StartResponse,
   type StopResponse,
   type ValidationError,
 } from "./client.ts";
-import { isEventsConnected } from "./events.ts";
-import { refresh as refreshStore } from "./systemStore.ts";
+import {
+  devicesQuery,
+  eventsQuery,
+  infoQuery,
+  serviceDetailQuery,
+  servicesQuery,
+} from "./live/resources.ts";
+import { useLive } from "./live/useLive.ts";
 import { useWebSocket } from "./useWebSocket.ts";
 
-// Re-export so consumers keep importing from hooks.ts.
-export { useServices, useDevices } from "./systemStore.ts";
-
-const SERVICES_POLL_MS = 5_000;
 const METRICS_STALE_MS = 30_000;
 const LOGS_PAGE_SIZE = 1_000;
 const LOGS_MAX_SEED_PAGES = 5;
 
+export function useServices(): UseQueryResult<ServiceSummary[], Error> {
+  return useLive(servicesQuery, { select: selectServices });
+}
+
+function selectServices(response: { services: ServiceSummary[] }) {
+  return response.services;
+}
+
+export function useDevices(): UseQueryResult<DeviceSummary[], Error> {
+  return useLive(devicesQuery);
+}
+
+export function useEventFeed(): UseQueryResult<EventHistory, Error> {
+  return useLive(eventsQuery);
+}
+
+export function useInfo(): UseQueryResult<DaemonInfoResponse, Error> {
+  return useLive(infoQuery);
+}
+
 export function useServiceDetail(
   name: string | null,
 ): UseQueryResult<ServiceDetail, Error> {
-  return useQuery({
-    queryKey: ["service-detail", name],
-    queryFn: () => api.serviceDetail(name ?? ""),
-    enabled: name !== null,
-    refetchInterval: () => (isEventsConnected() ? false : SERVICES_POLL_MS),
-  });
+  return useLive(serviceDetailQuery(name ?? ""), { enabled: name !== null });
 }
 
 export function useServiceCommand(
@@ -62,9 +82,6 @@ export function useServiceCommand(
     queryKey: ["service-command", name],
     queryFn: () => api.serviceCommand(name ?? ""),
     enabled: enabled && name !== null,
-    refetchInterval: enabled
-      ? () => (isEventsConnected() ? false : SERVICES_POLL_MS)
-      : false,
   });
 }
 
@@ -120,14 +137,6 @@ export function useConfig(): UseQueryResult<ConfigResponse, Error> {
   return useQuery({
     queryKey: ["config"],
     queryFn: api.getConfig,
-  });
-}
-
-export function useInfo(): UseQueryResult<DaemonInfoResponse, Error> {
-  return useQuery({
-    queryKey: ["info"],
-    queryFn: api.getInfo,
-    staleTime: Infinity,
   });
 }
 
@@ -315,8 +324,8 @@ export function useLifecycle(): UseMutationResult<
         }
       }
     },
+    // The live socket pushes the outcome; this covers the socket being down.
     onSettled: (_data, _err, vars) => {
-      void refreshStore();
       void qc.invalidateQueries({ queryKey: ["service-detail", vars.name] });
     },
   });

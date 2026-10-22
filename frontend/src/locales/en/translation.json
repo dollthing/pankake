@@ -123,10 +123,7 @@
     "stateChanged": "{{from}} → {{to}}",
     "allocationChanged": "device allocation shifted",
     "configReloaded": "configuration reloaded from disk",
-    "estimatorDrift": "estimate correction updated",
     "estimatorDriftCorrection": "{{class}} correction {{value}}",
-    "eventsDropped": "events dropped",
-    "eventsDroppedCount": "{{value}} events dropped",
     "autoRestarted": "auto-restarted ({{trigger}}): {{detail}}",
     "autoRestartedShort": "auto-restarted ({{trigger}})"
   },

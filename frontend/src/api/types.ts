@@ -722,8 +722,8 @@ export interface components {
       weights_bytes: number;
     };
     /**
-     * @description One event delivered over `/api/events`. The `type` tag discriminates the
-     *     variant; `at_ms` is present on every variant except `overflow`. The same
+     * @description One daemon lifecycle event. The `type` tag discriminates the variant, and
+     *     every variant carries `at_ms`. The same
      *     `Event` is used as a broadcast bus message internally, so it must stay
      *     serializable and stable — anything published here is part of the wire
      *     contract the frontend and other clients read.
@@ -805,15 +805,6 @@ export interface components {
           trigger: string;
           /** @enum {string} */
           type: "auto_restarted";
-        }
-      | {
-          /**
-           * Format: int64
-           * @description How many events were dropped for the slow subscriber.
-           */
-          dropped: number;
-          /** @enum {string} */
-          type: "overflow";
         };
     /** @description The daemon's bounded window of recent events, oldest first. */
     EventHistory: {
@@ -1435,7 +1426,7 @@ export interface components {
       /**
        * @description Recent auto-restart watchdog firings, most recent first. Sourced
        *     from the daemon's durable `service_restarts` store, so firings are
-       *     visible after the fact — not only to a live `/api/events` listener.
+       *     visible after the fact — not only to a client that was connected when it happened.
        */
       recent_restarts?: components["schemas"]["RestartEvent"][];
       /**

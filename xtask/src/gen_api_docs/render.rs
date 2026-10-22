@@ -50,9 +50,9 @@ pub fn render_markdown(spec: &Value, prose: &ProseFragments) -> String {
     writeln!(&mut out, "## Service states\n").unwrap();
     write_prose(&mut out, prose.service_states);
 
-    // Events WebSocket.
-    writeln!(&mut out, "## WebSocket: /api/events\n").unwrap();
-    write_prose(&mut out, prose.events_ws);
+    // Event variants.
+    writeln!(&mut out, "## Events\n").unwrap();
+    write_prose(&mut out, prose.events);
 
     // Live subscriptions WebSocket.
     writeln!(&mut out, "## WebSocket: /api/live\n").unwrap();
@@ -104,7 +104,7 @@ pub struct ProseFragments {
     pub management_api: &'static str,
     pub per_service_proxy: &'static str,
     pub service_states: &'static str,
-    pub events_ws: &'static str,
+    pub events: &'static str,
     pub live_ws: &'static str,
     pub logs_ws: &'static str,
     pub errors: &'static str,

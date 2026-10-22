@@ -82,12 +82,7 @@ impl History {
         if self.events.len() == EVENT_HISTORY_CAPACITY
             && let Some(evicted) = self.events.pop_front()
         {
-            self.since_ms = self
-                .events
-                .front()
-                .and_then(Event::at_ms)
-                .or_else(|| evicted.at_ms())
-                .unwrap_or(self.since_ms);
+            self.since_ms = self.events.front().unwrap_or(&evicted).at_ms();
         }
         self.events.push_back(event);
     }
@@ -119,9 +114,9 @@ mod tests {
         let history = bus.history();
         assert_eq!(history.events.len(), EVENT_HISTORY_CAPACITY);
         assert_eq!(history.since_ms, 5);
-        assert_eq!(history.events[0].at_ms(), Some(5));
+        assert_eq!(history.events[0].at_ms(), 5);
         assert_eq!(
-            history.events.last().and_then(Event::at_ms),
+            history.events.last().map(Event::at_ms),
             Some(EVENT_HISTORY_CAPACITY as i64 + 4)
         );
     }

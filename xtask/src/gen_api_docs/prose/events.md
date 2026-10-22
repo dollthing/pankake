@@ -1,10 +1,6 @@
-The `/api/events` WebSocket delivers a system-wide stream of daemon events. Connect with a standard WebSocket handshake to `ws://<host>:7071/api/events`.
+The daemon publishes lifecycle events on an internal bus and keeps the newest 1000 in memory. `GET /api/events/history` returns that window, and the `/api/live` socket's `events` resource pushes it again whenever an event arrives. The window starts afresh when the daemon restarts.
 
-An optional `?service=<name>` query parameter filters events to a single service. Events that don't carry a service field (`config_reloaded`, `overflow`) are always delivered.
-
-### Frame format
-
-Each frame is a text message containing a single JSON object with a `type` tag. The `at_ms` field (millisecond UNIX timestamp) is present on every variant except `overflow`.
+Each event is a JSON object with a `type` tag. Every variant carries `at_ms`, a millisecond UNIX timestamp.
 
 ### Variants
 
@@ -76,18 +72,3 @@ Emitted when a `Running` service is drained and respawned by its auto-restart po
   "at_ms": 1700000000000
 }
 ```
-
-#### `overflow`
-
-Emitted when the event bus drops events because a subscriber fell behind.
-
-```json
-{
-  "type": "overflow",
-  "dropped": 42
-}
-```
-
-### Heartbeat
-
-The server sends a WebSocket Ping frame every 30 seconds. Clients should respond with Pong to keep intermediaries from closing the connection.
