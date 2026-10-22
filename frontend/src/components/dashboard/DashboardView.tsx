@@ -7,9 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useServices, useMetrics, useLifecycle } from "../../api/hooks.ts";
-import { metricsWindow } from "../../util.ts";
-import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
-import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
+import { TimeRangeSelect } from "../ui/form/TimeRangeSelect.tsx";
+import { useResolvedRange, useTimeRange } from "../ui/form/useTimeRange.ts";
 
 import { toggleFavourite, useFavourites } from "../../api/favourites.ts";
 import { Card } from "../ui/Card.tsx";
@@ -37,15 +36,8 @@ export function DashboardView() {
   const lifecycle = useLifecycle();
   const favourites = useFavourites();
 
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>({
-    kind: "relative",
-    durationMs: TIME_WINDOW_PRESETS[0]!.durationMs,
-  });
-  // Freeze `now` per window selection so the query key doesn't churn.
-  const { since, until, end, bucket } = useMemo(
-    () => metricsWindow(timeWindow),
-    [timeWindow],
-  );
+  const [range, setRange] = useTimeRange();
+  const { since, until, end, bucket } = useResolvedRange(range);
   const xMin = since / 1000;
   const xMax = end / 1000;
   const [sortOrder, setSortOrder] = useState<SortOrder>(
@@ -107,7 +99,7 @@ export function DashboardView() {
     <div className="flex h-full flex-col">
       <ViewHeader className="gap-3 sm:gap-5">
         <h1 className="eyebrow !text-primary">{t("dashboard.title")}</h1>
-        <TimeWindowSelect onChange={setTimeWindow} />
+        <TimeRangeSelect value={range} onChange={setRange} />
         <div className="flex w-full flex-wrap items-center gap-x-5 gap-y-3 sm:w-auto sm:ml-auto">
           <Stat label={t("dashboard.totalServices")} value={totalCount} />
           <Stat label={t("dashboard.runningServices")} value={runningCount} />

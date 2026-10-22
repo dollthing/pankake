@@ -1,7 +1,6 @@
 // Per-service stats card + charts (request rate, token throughput,
 // tokens/sec, errors/restarts) for ServiceDetailView.
 
-import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useMetrics, useRestarts } from "../../api/hooks.ts";
@@ -9,28 +8,18 @@ import {
   aggregateBuckets,
   toErrorsRestartsData,
 } from "../../api/metrics-aggregate.ts";
-import { bucketMsOf, metricsWindow } from "../../util.ts";
+import { bucketMsOf } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
 import { Stat } from "../ui/data/Stat.tsx";
-import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
-import {
-  TIME_WINDOW_PRESETS,
-  windowLabel,
-  type TimeWindow,
-} from "../ui/form/timeWindow.ts";
+import { TimeRangeSelect } from "../ui/form/TimeRangeSelect.tsx";
+import { rangeLabel } from "../ui/form/timeRange.ts";
+import { useResolvedRange, useTimeRange } from "../ui/form/useTimeRange.ts";
 import { Chart, type ChartSeries } from "../ui/chart/Chart.tsx";
 
 export function ServiceMetrics({ name }: { name: string }) {
   const { t } = useTranslation();
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>({
-    kind: "relative",
-    durationMs: TIME_WINDOW_PRESETS[0]!.durationMs,
-  });
-  // Freeze `now` per window selection so the query key doesn't churn.
-  const { since, until, end, bucket } = useMemo(
-    () => metricsWindow(timeWindow),
-    [timeWindow],
-  );
+  const [range, setRange] = useTimeRange();
+  const { since, until, end, bucket } = useResolvedRange(range);
   const xMin = since / 1000;
   const xMax = end / 1000;
 
@@ -84,7 +73,7 @@ export function ServiceMetrics({ name }: { name: string }) {
     <div className="space-y-4">
       <Card
         header={t("serviceDetail.stats")}
-        headerAction={<TimeWindowSelect onChange={setTimeWindow} />}
+        headerAction={<TimeRangeSelect value={range} onChange={setRange} />}
       >
         {/* The effective throughput stat is always shown; the input/output
             decode rates are added alongside it when the window has
@@ -96,7 +85,7 @@ export function ServiceMetrics({ name }: { name: string }) {
         >
           <Stat
             label={t("serviceDetail.requestsInPeriod", {
-              range: windowLabel(timeWindow, t),
+              range: rangeLabel(range, t),
             })}
             value={totalRequests}
           />

@@ -17,13 +17,13 @@ import {
   groupByService,
   toErrorsRestartsData,
 } from "../../api/metrics-aggregate.ts";
-import { bucketMsOf, metricsWindow } from "../../util.ts";
+import { bucketMsOf } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Chart, type ChartSeries } from "../ui/chart/Chart.tsx";
 import { categorical, deviceSeries } from "../ui/chart/series.ts";
-import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
-import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
+import { TimeRangeSelect } from "../ui/form/TimeRangeSelect.tsx";
+import { useResolvedRange, useTimeRange } from "../ui/form/useTimeRange.ts";
 
 import { Spinner } from "../ui/feedback/Spinner.tsx";
 import {
@@ -37,15 +37,8 @@ import {
 
 export function MetricsView() {
   const { t } = useTranslation();
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>({
-    kind: "relative",
-    durationMs: TIME_WINDOW_PRESETS[0]!.durationMs,
-  });
-  // Freeze `now` per window selection so the query key doesn't churn.
-  const { since, until, end, bucket } = useMemo(
-    () => metricsWindow(timeWindow),
-    [timeWindow],
-  );
+  const [range, setRange] = useTimeRange();
+  const { since, until, end, bucket } = useResolvedRange(range);
   const xMin = since / 1000;
   const xMax = end / 1000;
   const [serviceFilter, setServiceFilter] = useState<string>("");
@@ -93,7 +86,7 @@ export function MetricsView() {
     <div className="flex h-full flex-col">
       <ViewHeader>
         <h1 className="eyebrow !text-primary">{t("stats.title")}</h1>
-        <TimeWindowSelect onChange={setTimeWindow} />
+        <TimeRangeSelect value={range} onChange={setRange} />
         <div className="ml-auto flex items-center gap-2">
           <select
             value={serviceFilter}

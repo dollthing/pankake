@@ -41,8 +41,18 @@ export function useLogWindow(
   name: string | null,
   window: LogWindow,
 ): LogWindowResult {
-  // The window's start is fixed when it is chosen, not on every render.
-  const bounds = useMemo(() => resolveBounds(window, nowMs()), [window]);
+  // The window's start is fixed when it is chosen, not on every render, and
+  // a window is the same window when its fields are, whatever its identity.
+  const identity = windowIdentity(window);
+  const [held, setHeld] = useState(() => ({
+    identity,
+    bounds: resolveBounds(window, nowMs()),
+  }));
+  if (held.identity !== identity) {
+    setHeld({ identity, bounds: resolveBounds(window, nowMs()) });
+  }
+  const bounds =
+    held.identity === identity ? held.bounds : resolveBounds(window, nowMs());
   const isLiveWindow = bounds.untilMs === null;
   const liveStatus = useLiveStatus();
   const key = windowKey(name, bounds);
@@ -129,6 +139,12 @@ export function useLogWindow(
     error: seed.error ?? followError ?? olderError,
     loading: seed.isPending && name !== null,
   };
+}
+
+function windowIdentity(window: LogWindow): string {
+  return window.kind === "relative"
+    ? `relative:${window.durationMs}`
+    : `absolute:${window.sinceMs}:${window.untilMs ?? ""}`;
 }
 
 function nowMs(): number {

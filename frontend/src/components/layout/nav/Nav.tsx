@@ -11,6 +11,7 @@ import { useServices } from "../../../api/hooks.ts";
 import { cn } from "../../ui/cn.ts";
 import { Icon } from "../../ui/icon/Icon.tsx";
 import type { IconName } from "../../ui/icon/iconGeometry.tsx";
+import { rangeSearch } from "../../ui/form/timeRange.ts";
 import { Chip } from "../../ui/status/Chip.tsx";
 import { needsAttention } from "../../ui/status/stateTone.ts";
 import { navItemVariants } from "./navItemVariants.ts";
@@ -24,7 +25,8 @@ import {
 
 export function Nav({ className }: { readonly className?: string }) {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const range = rangeSearch(search);
   const services = useServices();
   const current = sectionForPath(pathname);
 
@@ -66,6 +68,7 @@ export function Nav({ className }: { readonly className?: string }) {
             to={sectionHref(
               section,
               section === "services" ? undefined : lastService,
+              range,
             )}
             aria-current={active ? "page" : undefined}
             className={navItemVariants({

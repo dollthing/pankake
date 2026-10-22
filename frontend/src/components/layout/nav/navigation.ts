@@ -43,22 +43,26 @@ export type LastService = Pick<
 >;
 
 /// Where a section's nav item points. Services reopens the last service,
-/// and Chat preselects it when it is a chat model.
+/// and Chat preselects it when it is a chat model. `range` is the current
+/// time range's query (`rangeSearch`), carried into the two sections that
+/// read it, Services and Stats, so moving between them keeps the range.
 export function sectionHref(
   section: Section,
   lastService: LastService | undefined,
+  range = "",
 ): string {
   switch (section) {
     case "services":
       return lastService === undefined
-        ? "/"
-        : `${SERVICE_PREFIX}${encodeURIComponent(lastService.name)}`;
+        ? `/${range}`
+        : `${SERVICE_PREFIX}${encodeURIComponent(lastService.name)}${range}`;
     case "chat":
       return lastService !== undefined && isChatModel(lastService)
         ? `/chat?model=${encodeURIComponent(lastService.name)}`
         : "/chat";
-    case "events":
     case "stats":
+      return `/stats${range}`;
+    case "events":
     case "config":
       return `/${section}`;
     default: {

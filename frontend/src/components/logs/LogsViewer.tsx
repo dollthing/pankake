@@ -1,7 +1,7 @@
-// Logs viewer for a service. REST seed + a follow on the live socket, with
-// time window presets, custom time range, text search, run filter,
-// stream filter, auto-follow, and a scroll container that fetches older
-// lines over HTTP when scrolled to the top.
+// Logs viewer for a service. REST seed + a follow on the live socket over
+// the shared time range (a rolling range follows, a fixed one does not),
+// with text search, run filter, stream filter, auto-follow, and a scroll
+// container that fetches older lines over HTTP when scrolled to the top.
 //
 // Aims for GCP Log Explorer parity on the essentials: jump-to-time,
 // text search within the buffer, run filtering, and live tail.
@@ -10,11 +10,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
 import { useLogWindow } from "../../api/logs/useLogWindow.ts";
-import type { LogWindow } from "../../api/logs/logWindow.ts";
 import type { LogLine } from "../../api/client.ts";
 import { formatTimestamp } from "../../util.ts";
 import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
-import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
+import { logWindowFor } from "../ui/form/timeRange.ts";
+import { useTimeRange } from "../ui/form/useTimeRange.ts";
 import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { EmptyState } from "../ui/feedback/EmptyState.tsx";
 import { filterLines, type StreamFilter } from "./logFilter.ts";
@@ -25,12 +25,8 @@ type LogsViewerProps = {
 
 export function LogsViewer({ name }: LogsViewerProps) {
   const { t } = useTranslation();
-  const [window, setWindow] = useState<LogWindow>({
-    kind: "relative",
-    durationMs: 5 * 60 * 1000,
-  });
-
-  const win = useLogWindow(name, window);
+  const [range] = useTimeRange();
+  const win = useLogWindow(name, logWindowFor(range));
   const [streamFilter, setStreamFilter] = useState<StreamFilter>("both");
   const [search, setSearch] = useState("");
   const [runFilter, setRunFilter] = useState<number | null>(null);
@@ -62,8 +58,6 @@ export function LogsViewer({ name }: LogsViewerProps) {
     <div className="flex h-72 flex-col">
       {/* Toolbar row 1: time + stream + status */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border-default px-4 py-2">
-        <TimeWindowSelect onChange={setWindow} />
-        <div className="mx-1 h-3 w-px bg-border-default" />
         <SegmentedToggle<StreamFilter>
           label={t("logs.streamFilter")}
           options={(["both", "stdout", "stderr", "combined"] as const).map(

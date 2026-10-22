@@ -65,6 +65,19 @@ describe("sectionHref", () => {
     );
   });
 
+  it("carries the time range into Services and Stats only", () => {
+    const qwen = { name: "qwen", openai_compat: true };
+    expect(sectionHref("services", undefined, "?range=6h")).toBe("/?range=6h");
+    expect(sectionHref("services", qwen, "?range=6h")).toBe(
+      "/services/qwen?range=6h",
+    );
+    expect(sectionHref("stats", qwen, "?from=1&to=2")).toBe(
+      "/stats?from=1&to=2",
+    );
+    expect(sectionHref("chat", qwen, "?range=6h")).toBe("/chat?model=qwen");
+    expect(sectionHref("events", qwen, "?range=6h")).toBe("/events");
+  });
+
   it("ignores the last service elsewhere", () => {
     expect(sectionHref("config", { name: "qwen", openai_compat: true })).toBe(
       "/config",
