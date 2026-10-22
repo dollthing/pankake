@@ -11,7 +11,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 // Tailwind rules only run here, so files still on the legacy tokens are
 // neither failed nor auto-fixed before their own restyle. The list grows a
 // folder at a time and becomes `src/**` once nothing legacy is left.
-const migrated = ["src/components/ui/**"];
+const migrated = ["src/components/ui/**", "src/styles/**"];
 
 export default defineConfig([
   globalIgnores(["dist", "src/api/types.ts"]),
@@ -50,6 +50,39 @@ export default defineConfig([
     rules: {
       // Prettier owns line length; the wrapping rule fights it.
       "better-tailwindcss/enforce-consistent-line-wrapping": "off",
+      "better-tailwindcss/no-restricted-classes": [
+        "error",
+        {
+          restrict: [
+            {
+              pattern: String.raw`^text-\[\d`,
+              message: "Use the type scale (text-2xs to text-xl).",
+            },
+            {
+              pattern: String.raw`\[#|^(?:bg|text|border|fill|stroke)-\[(?:rgb|hsl)`,
+              message: "Use a colour token.",
+            },
+            {
+              pattern: String.raw`^rounded(?!-full$)`,
+              message: "Corners are square; only rounded-full is allowed.",
+            },
+            { pattern: "^shadow", message: "Surfaces are flat." },
+            {
+              pattern: String.raw`^(?:gap|[pm][xytrbl]?|space-[xy])-\[\d+px\]`,
+              message: "Use the spacing scale.",
+            },
+            {
+              pattern: String.raw`-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}(?:\/\d+)?$`,
+              message: "Use a colour token, not the default palette.",
+            },
+          ],
+        },
+      ],
     },
+  },
+  {
+    // Legacy primitives kept only until their last views are restyled.
+    files: ["src/components/ui/Badge.tsx", "src/components/ui/ViewHeader.tsx"],
+    rules: { "better-tailwindcss/no-restricted-classes": "off" },
   },
 ]);

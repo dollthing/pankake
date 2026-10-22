@@ -20,8 +20,8 @@ import {
 import { bucketMsOf, metricsWindow } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { Chart } from "../ui/Chart.tsx";
-import { CHART_PALETTE } from "../ui/chart-palette.ts";
+import { Chart, type ChartSeries } from "../ui/chart/Chart.tsx";
+import { categorical, deviceSeries } from "../ui/chart/series.ts";
 import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
 import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
 
@@ -128,8 +128,8 @@ export function MetricsView() {
                 series={[
                   {
                     label: t("stats.requests"),
-                    stroke: CHART_PALETTE[0],
-                    fill: "rgba(139,124,248,0.08)",
+                    color: "series-1",
+                    fill: true,
                   },
                 ]}
               />
@@ -148,13 +148,13 @@ export function MetricsView() {
                 series={[
                   {
                     label: t("stats.tokensIn"),
-                    stroke: CHART_PALETTE[0],
-                    fill: "rgba(139,124,248,0.08)",
+                    color: "series-1",
+                    fill: true,
                   },
                   {
                     label: t("stats.tokensOut"),
-                    stroke: CHART_PALETTE[1],
-                    fill: "rgba(69,201,138,0.08)",
+                    color: "series-2",
+                    fill: true,
                   },
                 ]}
               />
@@ -170,13 +170,13 @@ export function MetricsView() {
                 series={[
                   {
                     label: t("stats.errors"),
-                    stroke: CHART_PALETTE[5],
-                    fill: "rgba(239,90,90,0.08)",
+                    color: "danger",
+                    fill: true,
                   },
                   {
                     label: t("stats.restarts"),
-                    stroke: CHART_PALETTE[2],
-                    fill: "rgba(224,168,60,0.08)",
+                    color: "warn",
+                    fill: true,
                   },
                 ]}
               />
@@ -191,8 +191,8 @@ export function MetricsView() {
                 series={[
                   {
                     label: t("stats.durationMs"),
-                    stroke: CHART_PALETTE[2],
-                    fill: "rgba(224,168,60,0.08)",
+                    color: "series-3",
+                    fill: true,
                   },
                 ]}
               />
@@ -217,11 +217,11 @@ export function MetricsView() {
                 ]}
                 series={[
                   ...(hasSplitTps(aggregated)
-                    ? [
+                    ? ([
                         {
                           label: t("stats.tpsIn"),
-                          stroke: CHART_PALETTE[0],
-                          fill: "rgba(139,124,248,0.08)",
+                          color: "series-1",
+                          fill: true,
                           unit: "tok/s",
                           // Decode/prefill rate is undefined when nothing is
                           // generating; break the line rather than interpolate
@@ -230,17 +230,17 @@ export function MetricsView() {
                         },
                         {
                           label: t("stats.tpsOut"),
-                          stroke: CHART_PALETTE[1],
-                          fill: "rgba(69,201,138,0.08)",
+                          color: "series-2",
+                          fill: true,
                           unit: "tok/s",
                           spanGaps: false,
                         },
-                      ]
+                      ] satisfies ChartSeries[])
                     : []),
                   {
                     label: t("stats.tpsEffective"),
-                    stroke: CHART_PALETTE[2],
-                    fill: "rgba(224,168,60,0.08)",
+                    color: "series-3",
+                    fill: true,
                     unit: "tok/s",
                     spanGaps: false,
                   },
@@ -254,10 +254,10 @@ export function MetricsView() {
                 xMin={xMin}
                 xMax={xMax}
                 data={toMemoryData(memorySeries)}
-                series={memorySeries.map((s, i) => ({
+                series={memorySeries.map((s) => ({
                   label: s.device,
-                  stroke: CHART_PALETTE[i % CHART_PALETTE.length],
-                  fill: `rgba(139,124,248,${0.04 + 0.06 * i})`,
+                  color: deviceSeries(s.device),
+                  fill: true,
                   unit: "GB",
                 }))}
               />
@@ -276,7 +276,7 @@ export function MetricsView() {
                   data={toMultiSeriesData(perService, "outputTps")}
                   series={perService.map((s, i) => ({
                     label: s.serviceName,
-                    stroke: CHART_PALETTE[i % CHART_PALETTE.length],
+                    color: categorical(i),
                     unit: "tok/s",
                     // Sparse decode rate: break the line where a service is
                     // idle or producing nothing rather than interpolating.
@@ -299,7 +299,7 @@ export function MetricsView() {
                   data={toMultiSeriesData(perService, "requestCount")}
                   series={perService.map((s, i) => ({
                     label: s.serviceName,
-                    stroke: CHART_PALETTE[i % CHART_PALETTE.length],
+                    color: categorical(i),
                   }))}
                 />
               </Card>

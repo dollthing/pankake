@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "@fontsource-variable/work-sans/wght.css";
-import "highlight.js/styles/github-dark.css";
 import "./index.css";
 import "./i18n.ts";
 import App from "./App.tsx";

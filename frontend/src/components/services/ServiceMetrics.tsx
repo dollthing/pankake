@@ -18,8 +18,7 @@ import {
   windowLabel,
   type TimeWindow,
 } from "../ui/form/timeWindow.ts";
-import { Chart } from "../ui/Chart.tsx";
-import { CHART_PALETTE } from "../ui/chart-palette.ts";
+import { Chart, type ChartSeries } from "../ui/chart/Chart.tsx";
 
 export function ServiceMetrics({ name }: { name: string }) {
   const { t } = useTranslation();
@@ -144,8 +143,8 @@ export function ServiceMetrics({ name }: { name: string }) {
             series={[
               {
                 label: t("stats.requests"),
-                stroke: CHART_PALETTE[0],
-                fill: "rgba(139,124,248,0.08)",
+                color: "series-1",
+                fill: true,
               },
             ]}
           />
@@ -162,13 +161,13 @@ export function ServiceMetrics({ name }: { name: string }) {
             series={[
               {
                 label: t("stats.tokensIn"),
-                stroke: CHART_PALETTE[0],
-                fill: "rgba(139,124,248,0.08)",
+                color: "series-1",
+                fill: true,
               },
               {
                 label: t("stats.tokensOut"),
-                stroke: CHART_PALETTE[1],
-                fill: "rgba(69,201,138,0.08)",
+                color: "series-2",
+                fill: true,
               },
             ]}
           />
@@ -203,25 +202,25 @@ export function ServiceMetrics({ name }: { name: string }) {
             ]}
             series={[
               ...(hasSplitTps
-                ? [
+                ? ([
                     {
                       label: t("stats.tpsIn"),
-                      stroke: CHART_PALETTE[0],
-                      fill: "rgba(139,124,248,0.08)",
+                      color: "series-1",
+                      fill: true,
                       unit: "tok/s",
                     },
                     {
                       label: t("stats.tpsOut"),
-                      stroke: CHART_PALETTE[1],
-                      fill: "rgba(69,201,138,0.08)",
+                      color: "series-2",
+                      fill: true,
                       unit: "tok/s",
                     },
-                  ]
+                  ] satisfies ChartSeries[])
                 : []),
               {
                 label: t("stats.tpsEffective"),
-                stroke: CHART_PALETTE[2],
-                fill: "rgba(224,168,60,0.08)",
+                color: "series-3",
+                fill: true,
                 unit: "tok/s",
               },
             ]}
@@ -237,13 +236,13 @@ export function ServiceMetrics({ name }: { name: string }) {
             series={[
               {
                 label: t("stats.errors"),
-                stroke: CHART_PALETTE[5],
-                fill: "rgba(239,90,90,0.08)",
+                color: "danger",
+                fill: true,
               },
               {
                 label: t("stats.restarts"),
-                stroke: CHART_PALETTE[2],
-                fill: "rgba(224,168,60,0.08)",
+                color: "warn",
+                fill: true,
               },
             ]}
           />

@@ -8,7 +8,6 @@ import type { FitVerdict, ServiceSummary } from "../../api/client.ts";
 import { formatBytes, serviceProxyUrl } from "../../util.ts";
 import { StatusDot } from "../ui/status/StatusDot.tsx";
 import { Sparkline } from "../ui/data/Sparkline.tsx";
-import { CHART_PALETTE } from "../ui/chart-palette.ts";
 import { Icon } from "../ui/icon/Icon.tsx";
 
 export function ServiceRow({
@@ -91,7 +90,7 @@ export function ServiceRow({
         <div className="hidden h-6 w-20 shrink-0 sm:block">
           <Sparkline
             data={sparkLineData}
-            color={CHART_PALETTE[0]}
+            color="series-1"
             height={24}
             xMin={xMin}
             xMax={xMax}

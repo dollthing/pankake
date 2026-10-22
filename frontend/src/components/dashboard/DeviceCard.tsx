@@ -8,8 +8,8 @@ import type { DeviceSummary, DeviceSampleResponse } from "../../api/client.ts";
 import { formatBytes } from "../../util.ts";
 import { MemoryBar } from "../ui/data/MemoryBar.tsx";
 import { Chip } from "../ui/status/Chip.tsx";
-import { Chart } from "../ui/Chart.tsx";
-import { CHART_PALETTE } from "../ui/chart-palette.ts";
+import { Chart } from "../ui/chart/Chart.tsx";
+import { deviceSeries } from "../ui/chart/series.ts";
 
 export function DeviceCard({
   device,
@@ -49,8 +49,8 @@ export function DeviceCard({
         series={[
           {
             label: "Used",
-            stroke: CHART_PALETTE[0],
-            fill: "rgba(139,124,248,0.08)",
+            color: deviceSeries(device.id),
+            fill: true,
             unit: "GB",
           },
         ]}

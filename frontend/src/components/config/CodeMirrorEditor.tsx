@@ -18,26 +18,28 @@ import {
 import { tags } from "@lezer/highlight";
 import { toml } from "@codemirror/legacy-modes/mode/toml";
 
-// Custom TOML highlight style using the console's theme tokens so the
-// editor reads as part of the instrument panel, not a generic code
-// editor. CSS variables are resolved by the browser, so colours adapt
-// to dark/light mode automatically.
+// TOML highlighting from the shared `syntax-*` tokens, so the editor
+// matches highlighted code elsewhere. The browser resolves the `var()`s
+// live, so the editor follows a theme change without a rebuild.
 const tomlHighlightStyle = HighlightStyle.define([
   {
     tag: tags.comment,
-    color: "var(--color-text-tertiary)",
+    color: "var(--color-syntax-comment)",
     fontStyle: "italic",
   },
-  { tag: tags.string, color: "var(--color-success)" },
-  { tag: tags.number, color: "var(--color-warning)" },
-  { tag: tags.bool, color: "var(--color-vision)" },
-  { tag: tags.keyword, color: "var(--color-vision)" },
-  { tag: tags.propertyName, color: "var(--color-accent)" },
-  { tag: tags.definition(tags.propertyName), color: "var(--color-accent)" },
-  { tag: tags.variableName, color: "var(--color-text-primary)" },
-  { tag: tags.atom, color: "var(--color-vision)" },
-  { tag: tags.punctuation, color: "var(--color-text-secondary)" },
-  { tag: tags.bracket, color: "var(--color-text-secondary)" },
+  { tag: tags.string, color: "var(--color-syntax-string)" },
+  { tag: tags.number, color: "var(--color-syntax-number)" },
+  { tag: tags.bool, color: "var(--color-syntax-keyword)" },
+  { tag: tags.keyword, color: "var(--color-syntax-keyword)" },
+  { tag: tags.propertyName, color: "var(--color-syntax-property)" },
+  {
+    tag: tags.definition(tags.propertyName),
+    color: "var(--color-syntax-property)",
+  },
+  { tag: tags.variableName, color: "var(--color-ink)" },
+  { tag: tags.atom, color: "var(--color-syntax-keyword)" },
+  { tag: tags.punctuation, color: "var(--color-syntax-punct)" },
+  { tag: tags.bracket, color: "var(--color-syntax-punct)" },
 ]);
 
 export function CodeMirrorEditor({
@@ -68,7 +70,7 @@ export function CodeMirrorEditor({
     const theme = EditorView.theme({
       "&": {
         backgroundColor: "var(--color-surface)",
-        color: "var(--color-text-primary)",
+        color: "var(--color-ink)",
         height: "100%",
         fontSize: "13px",
       },
@@ -79,22 +81,22 @@ export function CodeMirrorEditor({
       ".cm-content": { padding: "8px 0" },
       ".cm-gutters": {
         backgroundColor: "var(--color-surface)",
-        color: "var(--color-text-tertiary)",
+        color: "var(--color-muted)",
         border: "none",
-        borderRight: "1px solid var(--color-border-default)",
+        borderRight: "1px solid var(--color-line)",
       },
       ".cm-lineNumbers .cm-gutterElement": {
         fontFamily: "var(--font-mono)",
         fontSize: "11px",
         padding: "0 8px 0 12px",
       },
-      ".cm-activeLine": { backgroundColor: "var(--color-elevated)" },
+      ".cm-activeLine": { backgroundColor: "var(--color-raised)" },
       ".cm-activeLineGutter": {
-        backgroundColor: "var(--color-elevated)",
-        color: "var(--color-text-secondary)",
+        backgroundColor: "var(--color-raised)",
+        color: "var(--color-soft)",
       },
       "&.cm-focused .cm-selectionBackground, ::selection": {
-        backgroundColor: "rgba(139,124,248,0.2)",
+        backgroundColor: "var(--color-selected)",
       },
       ".cm-cursor, .cm-dropCursor": {
         borderLeftColor: "var(--color-accent)",

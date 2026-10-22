@@ -3,9 +3,13 @@
  * (`bg-canvas`, `text-muted`, `border-line-strong`) and sets the type
  * scale, control sizes, and breakpoints. `inline` makes each utility
  * emit the `var()` itself, so a theme flip needs no rebuilt values.
+ * `static` emits every `--color-*` variable even when no utility or
+ * source string names it: the chart and the code editor build those
+ * names at runtime, and an unemitted one silently resolves to the
+ * text colour.
  */
 
-@theme inline {
+@theme static inline {
   /* Square and flat everywhere. `rounded-full` still works; it is not a
    * token. */
   --radius-*: initial;
