@@ -1,9 +1,9 @@
 // Pure formatting helpers for rendering a LaunchCommand as a
-// copy-pasteable shell command, used by ServiceLaunchCommand.tsx.
+// copy-pasteable shell command, used by LaunchCommandPanel.tsx.
 // Containerized workloads render the runtime create command plus the
 // in-container argv distinctly from native process argv.
 
-import type { LaunchCommand } from "../../api/client.ts";
+import type { LaunchCommand } from "../../../api/client.ts";
 
 export function renderCommand(cmd: LaunchCommand): string {
   if (cmd.container) {

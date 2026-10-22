@@ -17,14 +17,12 @@ import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { Button } from "../ui/button/Button.tsx";
 import { ButtonLink } from "../ui/button/ButtonLink.tsx";
 import { LogsViewer } from "../logs/LogsViewer.tsx";
-import {
-  ModelInfoGrid,
-  ConfigGrid,
-  ServingGrid,
-  EstimateGrid,
-} from "./ServiceInfoCards.tsx";
-import { PlacementSection } from "./ServicePlacement.tsx";
-import { LaunchCommandSection } from "./ServiceLaunchCommand.tsx";
+import { ConfigurationPanel } from "./detail/ConfigurationPanel.tsx";
+import { EstimatePanel } from "./detail/EstimatePanel.tsx";
+import { LaunchCommandPanel } from "./detail/LaunchCommandPanel.tsx";
+import { ModelPanel } from "./detail/ModelPanel.tsx";
+import { PlacementPanel } from "./detail/PlacementPanel.tsx";
+import { ServingPanel } from "./detail/ServingPanel.tsx";
 import { ServiceMetrics } from "./ServiceMetrics.tsx";
 
 export function ServiceDetailView() {
@@ -89,7 +87,7 @@ export function ServiceDetailView() {
         </div>
       </ViewHeader>
 
-      <div className="flex-1 space-y-4 overflow-auto p-4">
+      <div className="@container/detail flex-1 space-y-4 overflow-auto p-4">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Lifecycle actions */}
           <Card header={t("serviceDetail.actions")} className="lg:col-span-2">
@@ -116,56 +114,16 @@ export function ServiceDetailView() {
             </div>
           </Card>
 
-          {/* Model info */}
-          {d.model_info && (
-            <Card header={t("serviceDetail.model")}>
-              <ModelInfoGrid model={d.model_info} />
-            </Card>
-          )}
-
-          {/* Configuration */}
-          <Card header={t("serviceDetail.configuration")}>
-            <ConfigGrid detail={d} />
-          </Card>
-
-          {/* Serving (llama-cpp services only) */}
+          {d.model_info && <ModelPanel model={d.model_info} />}
+          <ConfigurationPanel detail={d} />
           {d.serving && (
-            <Card
-              header={t("serviceDetail.serving")}
-              bodyClassName="max-h-72 overflow-y-auto p-4"
-            >
-              <ServingGrid serving={d.serving} runtime={d.runtime ?? null} />
-            </Card>
+            <ServingPanel serving={d.serving} runtime={d.runtime} />
           )}
-
-          {/* Memory estimate */}
-          {d.estimate && (
-            <Card header={t("serviceDetail.memoryEstimate")}>
-              <EstimateGrid
-                estimate={d.estimate}
-                observedPeakBytes={d.observed_peak_bytes}
-              />
-            </Card>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {/* Placement */}
-          <Card header={t("serviceDetail.placement")} className="lg:col-span-2">
-            <PlacementSection
-              current={d.current_allocation}
-              placementOverride={d.placement_override}
-              placement={d.placement_preview ?? null}
-            />
-          </Card>
-
-          {/* Launch command */}
-          <Card
-            header={t("serviceDetail.launchCommand")}
-            className="lg:col-span-2"
-          >
-            <LaunchCommandSection name={d.name} />
-          </Card>
+          {d.estimate && <EstimatePanel estimate={d.estimate} detail={d} />}
+          <PlacementPanel detail={d} />
+          <div className="lg:col-span-2">
+            <LaunchCommandPanel name={d.name} />
+          </div>
         </div>
 
         {/* Per-service stats */}

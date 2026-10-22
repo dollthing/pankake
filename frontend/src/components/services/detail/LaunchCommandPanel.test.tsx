@@ -5,8 +5,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import type { LaunchCommand } from "../../api/client.ts";
-import { CommandPanel } from "./ServiceLaunchCommand.tsx";
+import type { LaunchCommand } from "../../../api/client.ts";
+import { CommandPanel } from "./LaunchCommandPanel.tsx";
 
 const processCommand: LaunchCommand = {
   source: "preview",
@@ -36,7 +36,7 @@ const containerCommand: LaunchCommand = {
   },
 };
 
-describe("LaunchCommandSection", () => {
+describe("CommandPanel", () => {
   it("launch_command_section_renders_process_preview", () => {
     render(<CommandPanel label="Standalone" command={processCommand} />);
 

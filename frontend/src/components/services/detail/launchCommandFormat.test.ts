@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { LaunchCommand } from "../../api/client.ts";
+import type { LaunchCommand } from "../../../api/client.ts";
 import { renderCommand, shellQuote } from "./launchCommandFormat.ts";
 
 const processCommand: LaunchCommand = {
