@@ -16,7 +16,8 @@ const migrated = [
   "src/components/events/eventSummary.ts",
   "src/components/layout/**",
   "src/components/logs/**",
-  "src/components/services/detail/**",
+  "src/components/services/**",
+  "src/hooks/useStoredValue.ts",
   "src/components/ui/**",
   "src/styles/**",
 ];

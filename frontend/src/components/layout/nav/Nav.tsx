@@ -62,14 +62,7 @@ export function Nav({ className }: { readonly className?: string }) {
           <Link
             key={section}
             ref={active ? activeRef : undefined}
-            // Services keeps pointing at the list until the services view
-            // has its own way back to it; until then reopening the last
-            // service would strand the user on its page.
-            to={sectionHref(
-              section,
-              section === "services" ? undefined : lastService,
-              range,
-            )}
+            to={sectionHref(section, lastService, range, current)}
             aria-current={active ? "page" : undefined}
             className={navItemVariants({
               active,

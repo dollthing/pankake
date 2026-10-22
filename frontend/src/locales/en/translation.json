@@ -77,17 +77,6 @@
   },
   "services": {
     "title": "Services",
-    "table": {
-      "name": "Name",
-      "state": "State",
-      "lifecycle": "Lifecycle",
-      "priority": "Priority",
-      "port": "Port",
-      "pid": "PID",
-      "modality": "Modality",
-      "inflight": "In-flight",
-      "actions": "Actions"
-    },
     "actions": {
       "start": "Start",
       "stop": "Stop",
@@ -151,17 +140,28 @@
       "recentEvents": "Recent events",
       "allEvents": "All events",
       "noEvents": "No events for this service in this range."
+    },
+    "selectService": "Select a service to see its state, placement, and activity.",
+    "list": {
+      "shown": "{{shown}} / {{total}} shown",
+      "hide": "Hide the service list",
+      "search": "Search services",
+      "searchPlaceholder": "search…",
+      "sort": "Sort order",
+      "sortOrders": {
+        "alpha": "A–Z",
+        "recent": "Recent",
+        "size": "Size"
+      },
+      "favouritesOnly": "Favourites only",
+      "noMatch": "No services match.",
+      "favourite": "Favourite {{name}}",
+      "inflight_one": "{{count}} in flight",
+      "inflight_other": "{{count}} in flight",
+      "wontFit": "won't fit",
+      "resize": "Resize the service list",
+      "resizeHint": "Drag or use the arrow keys to resize; Enter hides the list."
     }
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "openaiPort": "OpenAI port",
-    "totalServices": "Services",
-    "runningServices": "Running",
-    "inputTokens": "Tokens (in)",
-    "outputTokens": "Tokens (out)",
-    "recentEvents": "Recent events",
-    "sortOrder": "Sort order"
   },
   "chat": {
     "title": "Chat",
@@ -222,7 +222,9 @@
     "durationMs": "Duration (ms)",
     "tpsIn": "TPS (in)",
     "tpsOut": "TPS (out)",
-    "tpsEffective": "TPS (effective)"
+    "tpsEffective": "TPS (effective)",
+    "totalServices": "Services",
+    "runningServices": "Running"
   },
   "config": {
     "readOnlyBadge": "read-only",
@@ -240,21 +242,15 @@
   },
   "serviceDetail": {
     "notFound": "service not found",
-    "autoRestarts": "Auto-restarts",
     "model": "Model",
     "configuration": "Configuration",
     "memoryEstimate": "Memory estimate",
-    "actions": "Actions",
     "placement": "Placement",
     "launchCommand": "Launch command",
     "logs": "Logs",
-    "stats": "Stats",
-    "open": "Open",
     "chat": "Chat",
-    "port": "port",
-    "pid": "pid",
-    "priority": "priority",
-    "lifecycle": "lifecycle",
+    "priority": "Priority",
+    "lifecycle": "Lifecycle",
     "name": "Name",
     "file": "File",
     "architecture": "Architecture",

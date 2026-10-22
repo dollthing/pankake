@@ -6,8 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { AppShell } from "./components/layout/AppShell.tsx";
 import { useEventInvalidation } from "./api/live/invalidation.ts";
-import { DashboardView } from "./components/dashboard/DashboardView.tsx";
-import { ServiceDetailView } from "./components/services/ServiceDetailView.tsx";
+import { ServicesView } from "./components/services/ServicesView.tsx";
 import { EventsView } from "./components/events/EventsView.tsx";
 import { ChatView } from "./components/chat/ChatView.tsx";
 import { MetricsView } from "./components/metrics/MetricsView.tsx";
@@ -23,8 +22,10 @@ export default function App() {
     <BrowserRouter>
       <AppShell>
         <Routes>
-          <Route path="/" element={<DashboardView />} />
-          <Route path="/services/:name" element={<ServiceDetailView />} />
+          {/* One element type at one position for both, so React keeps
+              the list mounted while services are opened. */}
+          <Route path="/" element={<ServicesView />} />
+          <Route path="/services/:name" element={<ServicesView />} />
           <Route path="/chat" element={<ChatView />} />
           <Route path="/config" element={<ConfigEditorView />} />
           <Route path="/events" element={<EventsView />} />

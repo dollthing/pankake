@@ -1,4 +1,4 @@
-// Formatting helpers shared across the dashboard. All user-facing
+// Formatting helpers shared across the views. All user-facing
 // formatting goes through here so units, precision, and rounding stay
 // consistent.
 
@@ -51,10 +51,6 @@ export function formatTokenRate(tokensPerSecond: number): string {
   if (tokensPerSecond < 1) return tokensPerSecond.toFixed(2);
   if (tokensPerSecond < 100) return tokensPerSecond.toFixed(1);
   return Math.round(tokensPerSecond).toString();
-}
-
-export function serviceProxyUrl(port: number): string {
-  return `${window.location.protocol}//${window.location.hostname}:${port}`;
 }
 
 // Construct the OpenAI API base URL from the daemon's `openai_listen`

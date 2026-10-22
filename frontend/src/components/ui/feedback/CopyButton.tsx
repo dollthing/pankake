@@ -15,6 +15,7 @@ type CopyButtonProps = {
   readonly value: string;
   /// What is being copied, for the accessible name; defaults to `value`.
   readonly label?: string;
+  readonly tabIndex?: number;
   readonly className?: string;
 };
 
@@ -23,6 +24,7 @@ const RESET_AFTER_MS = 3_000;
 export function CopyButton({
   value,
   label = value,
+  tabIndex,
   className,
 }: CopyButtonProps) {
   const { t } = useTranslation();
@@ -59,6 +61,7 @@ export function CopyButton({
       type="button"
       title={name}
       aria-label={name}
+      tabIndex={tabIndex}
       onKeyDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();

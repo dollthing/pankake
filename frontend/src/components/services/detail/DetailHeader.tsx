@@ -66,6 +66,7 @@ export function DetailHeader({
             size="sm"
             icon="browse"
             className="max-lg:hidden"
+            data-browse-services=""
             onClick={onBrowse}
           >
             {t("services.detail.browse", { count: serviceCount })}

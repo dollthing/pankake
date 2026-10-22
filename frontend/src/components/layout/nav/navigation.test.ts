@@ -78,6 +78,14 @@ describe("sectionHref", () => {
     expect(sectionHref("events", qwen, "?range=6h")).toBe("/events");
   });
 
+  it("leads back to the list from within Services", () => {
+    const qwen = { name: "qwen", openai_compat: true };
+    expect(sectionHref("services", qwen, "?range=1h", "services")).toBe(
+      "/?range=1h",
+    );
+    expect(sectionHref("services", qwen, "", "stats")).toBe("/services/qwen");
+  });
+
   it("ignores the last service elsewhere", () => {
     expect(sectionHref("config", { name: "qwen", openai_compat: true })).toBe(
       "/config",

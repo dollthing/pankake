@@ -25,6 +25,7 @@ import { categorical, deviceSeries } from "../ui/chart/series.ts";
 import { TimeRangeSelect } from "../ui/form/TimeRangeSelect.tsx";
 import { useResolvedRange, useTimeRange } from "../ui/form/useTimeRange.ts";
 
+import { Stat } from "../ui/data/Stat.tsx";
 import { Spinner } from "../ui/feedback/Spinner.tsx";
 import {
   groupDeviceSamples,
@@ -54,6 +55,9 @@ export function MetricsView() {
   const restarts = useRestarts(serviceFilter || undefined, since, until ?? end);
 
   const loading = metrics.isPending;
+  const totalCount = services.data?.length ?? 0;
+  const runningCount =
+    services.data?.filter((s) => s.state === "running").length ?? 0;
 
   const aggregated = useMemo(
     () => aggregateBuckets(metrics.data?.buckets ?? []),
@@ -68,6 +72,12 @@ export function MetricsView() {
   const memorySeries = useMemo(
     () => groupDeviceSamples(deviceSamples.data ?? []),
     [deviceSamples.data],
+  );
+
+  const inputTokens = aggregated.reduce((sum, b) => sum + b.promptTokens, 0);
+  const outputTokens = aggregated.reduce(
+    (sum, b) => sum + b.completionTokens,
+    0,
   );
 
   const errorsRestartsData = useMemo(
@@ -106,6 +116,19 @@ export function MetricsView() {
       </ViewHeader>
 
       <div className="flex-1 overflow-auto p-4">
+        {/* The fleet's totals, which the dashboard header used to carry. */}
+        <div className="mb-4 flex flex-wrap gap-x-6 gap-y-3">
+          <Stat label={t("stats.totalServices")} value={totalCount} />
+          <Stat label={t("stats.runningServices")} value={runningCount} />
+          <Stat
+            label={t("stats.tokensIn")}
+            value={inputTokens.toLocaleString()}
+          />
+          <Stat
+            label={t("stats.tokensOut")}
+            value={outputTokens.toLocaleString()}
+          />
+        </div>
         {loading && !metrics.data ? (
           <div className="flex h-full items-center justify-center">
             <Spinner />
