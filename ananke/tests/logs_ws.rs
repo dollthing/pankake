@@ -6,7 +6,10 @@ mod common;
 use ananke_api::services::LogStreamMessage;
 use ananke_db::logs::{LogLine, Stream};
 use futures::{SinkExt, StreamExt};
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use tokio_tungstenite::{
+    connect_async,
+    tungstenite::{self, client::IntoClientRequest, protocol::Message},
+};
 
 #[tokio::test(flavor = "current_thread")]
 async fn log_line_arrives_over_websocket() {
@@ -137,5 +140,29 @@ async fn lines_for_other_services_are_filtered() {
     );
 
     let _ = ws.send(Message::Close(None)).await;
+    harness.shutdown().await;
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn cross_site_origin_is_rejected() {
+    let harness = common::build_harness(vec![common::minimal_llama_service("demo", 0)]).await;
+    let addr = harness.spawn_management_server().await;
+    let url = format!("ws://{addr}/api/services/demo/logs/stream");
+
+    let mut request = url.as_str().into_client_request().unwrap();
+    request
+        .headers_mut()
+        .insert("origin", "http://evil.example".parse().unwrap());
+    match connect_async(request).await {
+        Err(tungstenite::Error::Http(resp)) => assert_eq!(resp.status(), 403),
+        other => panic!("expected a 403 handshake, got {other:?}"),
+    }
+
+    let mut request = url.as_str().into_client_request().unwrap();
+    request
+        .headers_mut()
+        .insert("origin", format!("http://{addr}").parse().unwrap());
+    assert!(connect_async(request).await.is_ok());
+
     harness.shutdown().await;
 }

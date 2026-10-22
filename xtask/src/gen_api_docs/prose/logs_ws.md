@@ -46,3 +46,7 @@ For historical logs, use `GET /api/services/{name}/logs` with cursor-based pagin
 3. Repeat until `next_cursor` is `null`.
 
 The cursor is an opaque base64-encoded string encoding `(run_id, seq)`. Rows are returned newest-first. Other filters: `since`, `until`, `run`, `stream`.
+
+### Origin
+
+As with `/api/live`, a handshake whose `Origin` header does not match the `Host` header is refused with 403, so a page on another site cannot read service logs through a visitor's browser. Clients that send no `Origin`, such as `anankectl logs --follow`, are allowed.

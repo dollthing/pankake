@@ -5,19 +5,31 @@ use std::time::Duration;
 use ananke_api::{internal::log_line::LogLine, services::logs_stream::LogStreamMessage};
 use axum::{
     extract::{Path, State, WebSocketUpgrade, ws::Message},
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
 use smol_str::SmolStr;
 use tokio::{select, sync::broadcast::error::RecvError};
 use tracing::warn;
 
-use crate::{api::errors::ApiErrorCode, daemon::app_state::AppState};
+use crate::{
+    api::{errors::ApiErrorCode, management::origin::same_origin},
+    daemon::app_state::AppState,
+};
 
 pub async fn get_logs_ws(
     State(state): State<AppState>,
     Path(name): Path<String>,
+    headers: HeaderMap,
     ws: WebSocketUpgrade,
 ) -> Response {
+    if !same_origin(&headers) {
+        return (
+            StatusCode::FORBIDDEN,
+            "logs: the WebSocket origin does not match the host",
+        )
+            .into_response();
+    }
     let service_id = match resolve_service_id(&state, &name).await {
         Some(id) => id,
         None => {
