@@ -7,9 +7,11 @@ pub mod events_ws;
 pub mod handlers;
 pub mod info;
 pub mod lifecycle;
+pub mod live;
 pub mod logs;
 pub mod logs_ws;
 pub mod metrics;
+mod origin;
 
 use axum::{
     Router,
@@ -37,6 +39,7 @@ pub fn register(router: Router, state: AppState) -> Router {
             "/api/events/history",
             get(events_history::get_events_history),
         )
+        .route("/api/live", get(live::get_live_ws))
         .route("/api/info", get(info::get_info))
         .with_state(state.clone());
     handlers::register(router, state.clone())

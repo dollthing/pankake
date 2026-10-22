@@ -424,6 +424,9 @@ export interface components {
       | "persist_failed"
       | "query_failed"
       | "preview_failed"
+      | "invalid_live_request"
+      | "duplicate_subscription_id"
+      | "subscription_limit"
       | "other";
     /**
      * @description OpenAI's error-type taxonomy. `InvalidRequestError` for anything the
@@ -967,6 +970,107 @@ export interface components {
       /** @description Absolute container path. */
       target: string;
     };
+    /** @description A snapshot body, tagged by the resource it belongs to. */
+    LiveData:
+      | {
+          /** @description A `services` snapshot. */
+          body: components["schemas"]["ServicesResponse"];
+          /** @enum {string} */
+          resource: "services";
+        }
+      | {
+          /** @description A `devices` snapshot. */
+          body: components["schemas"]["DeviceSummary"][];
+          /** @enum {string} */
+          resource: "devices";
+        }
+      | {
+          /** @description An `events` snapshot. */
+          body: components["schemas"]["EventHistory"];
+          /** @enum {string} */
+          resource: "events";
+        }
+      | {
+          /** @description An `info` snapshot. */
+          body: components["schemas"]["DaemonInfoResponse"];
+          /** @enum {string} */
+          resource: "info";
+        }
+      | {
+          /** @description A `service` snapshot. */
+          body: components["schemas"]["ServiceDetail"];
+          /** @enum {string} */
+          resource: "service";
+        };
+    /** @description A frame the daemon sends on `/api/live`. */
+    LiveMessage:
+      | {
+          /** @description The resource body, tagged by resource kind. */
+          data: components["schemas"]["LiveData"];
+          /** @description The subscription's id. */
+          id: string;
+          /** @enum {string} */
+          type: "snapshot";
+        }
+      | {
+          /** @description The standard error envelope. */
+          error: components["schemas"]["ApiError"];
+          /**
+           * @description The subscription the error belongs to, or `null` when the frame
+           *     it answers could not be parsed.
+           */
+          id?: string | null;
+          /**
+           * Format: int32
+           * @description The HTTP status the same error would carry.
+           */
+          status: number;
+          /** @enum {string} */
+          type: "error";
+        };
+    /** @description A frame the client sends on `/api/live`. */
+    LiveRequest:
+      | {
+          /**
+           * @description A connection-local id, 1 to 128 bytes, that every reply for this
+           *     subscription carries. It must not be in use on this connection.
+           */
+          id: string;
+          /** @description What to subscribe to. */
+          resource: components["schemas"]["LiveResource"];
+          /** @enum {string} */
+          type: "subscribe";
+        }
+      | {
+          /** @description The id the subscription was started with. */
+          id: string;
+          /** @enum {string} */
+          type: "cancel";
+        };
+    /** @description A resource a client can subscribe to on `/api/live`. */
+    LiveResource:
+      | {
+          /** @enum {string} */
+          kind: "services";
+        }
+      | {
+          /** @enum {string} */
+          kind: "devices";
+        }
+      | {
+          /** @enum {string} */
+          kind: "events";
+        }
+      | {
+          /** @enum {string} */
+          kind: "info";
+        }
+      | {
+          /** @enum {string} */
+          kind: "service";
+          /** @description The service's name. */
+          name: string;
+        };
     /** @description One captured stdout/stderr/combined line. */
     LogLine: {
       /** @description The line content (sans trailing newline). */

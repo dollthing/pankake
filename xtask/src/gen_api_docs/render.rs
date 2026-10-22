@@ -54,6 +54,10 @@ pub fn render_markdown(spec: &Value, prose: &ProseFragments) -> String {
     writeln!(&mut out, "## WebSocket: /api/events\n").unwrap();
     write_prose(&mut out, prose.events_ws);
 
+    // Live subscriptions WebSocket.
+    writeln!(&mut out, "## WebSocket: /api/live\n").unwrap();
+    write_prose(&mut out, prose.live_ws);
+
     // Logs WebSocket.
     writeln!(
         &mut out,
@@ -101,6 +105,7 @@ pub struct ProseFragments {
     pub per_service_proxy: &'static str,
     pub service_states: &'static str,
     pub events_ws: &'static str,
+    pub live_ws: &'static str,
     pub logs_ws: &'static str,
     pub errors: &'static str,
     pub prometheus: &'static str,
@@ -366,6 +371,11 @@ fn render_error_code_table(out: &mut String, spec: &Value) {
                 "The daemon could not read the metrics, restart, or device history you asked for."
             }
             "preview_failed" => "The launch command for this service could not be built.",
+            "invalid_live_request" => "A `/api/live` frame could not be parsed as a request.",
+            "duplicate_subscription_id" => {
+                "A `/api/live` subscribe reused an id already active on the connection."
+            }
+            "subscription_limit" => "A `/api/live` connection reached its subscription limit.",
             "other" => "Forward-compatibility fallback for unknown codes.",
             _ => "",
         };

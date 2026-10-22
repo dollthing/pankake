@@ -14,6 +14,7 @@ pub mod devices;
 pub mod events;
 pub mod info;
 pub mod internal;
+pub mod live;
 pub mod metrics;
 pub mod openai;
 pub mod services;
