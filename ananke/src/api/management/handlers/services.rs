@@ -32,6 +32,11 @@ use crate::{
 #[utoipa::path(
     summary = "List all services",get, path = "/api/services", responses((status = 200, body = ServicesResponse)))]
 pub async fn list_services(State(state): State<AppState>) -> Response {
+    (StatusCode::OK, Json(services_snapshot(&state))).into_response()
+}
+
+/// The `GET /api/services` body; the live `services` resource shares it.
+pub(crate) fn services_snapshot(state: &AppState) -> ServicesResponse {
     let mut services = Vec::new();
     let eff = state.config.effective();
     for svc_cfg in eff.services.iter() {
@@ -52,9 +57,9 @@ pub async fn list_services(State(state): State<AppState>) -> Response {
         // services short-circuit to `Fits` via the live pledge; the
         // estimate cache is usually warm after the first detail view
         // or service start.
-        let entry = model_estimate_entry(&state, svc_cfg);
+        let entry = model_estimate_entry(state, svc_cfg);
         let placement = placement_preview(
-            &state,
+            state,
             svc_cfg,
             entry.as_ref().map(|e| &e.estimate_full),
             running,
@@ -62,7 +67,7 @@ pub async fn list_services(State(state): State<AppState>) -> Response {
         let fit_verdict = placement.as_ref().map(|p| p.verdict.clone());
         // One computation, two fields: the total is the breakdown's sum, so a row
         // showing both cannot show two figures that disagree.
-        let footprint_devices = summary_footprint(&state, svc_cfg, placement.as_ref(), &entry);
+        let footprint_devices = summary_footprint(state, svc_cfg, placement.as_ref(), &entry);
         let footprint_bytes = (!footprint_devices.is_empty())
             .then(|| footprint_devices.iter().map(|d| d.bytes).sum());
         let last_used_ms = state.activity.last_ms(&svc_cfg.name);
@@ -97,11 +102,10 @@ pub async fn list_services(State(state): State<AppState>) -> Response {
         .next()
         .and_then(|p| p.parse::<u16>().ok())
         .unwrap_or_default();
-    let out = ServicesResponse {
+    ServicesResponse {
         services,
         openai_api_port,
-    };
-    (StatusCode::OK, Json(out)).into_response()
+    }
 }
 
 #[utoipa::path(
@@ -114,12 +118,20 @@ pub async fn list_services(State(state): State<AppState>) -> Response {
     )
 )]
 pub async fn service_detail(State(state): State<AppState>, Path(name): Path<String>) -> Response {
+    match service_detail_snapshot(&state, &name).await {
+        Ok(detail) => (StatusCode::OK, Json(detail)).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+/// The `GET /api/services/{name}` body; the live `service` resource shares it.
+pub(crate) async fn service_detail_snapshot(
+    state: &AppState,
+    name: &str,
+) -> Result<ServiceDetail, ApiErrorCode> {
     let eff = state.config.effective();
     let Some(svc_cfg) = eff.services.iter().find(|s| s.name == name) else {
-        return ApiErrorCode::ServiceNotFound {
-            name: name.as_str().into(),
-        }
-        .into_response();
+        return Err(ApiErrorCode::ServiceNotFound { name: name.into() });
     };
     let handle = state.registry.get(&svc_cfg.name);
     let snap = handle.as_ref().map(|h| h.peek());
@@ -136,7 +148,7 @@ pub async fn service_detail(State(state): State<AppState>, Path(name): Path<Stri
         .collect();
 
     let recent_logs: Vec<LogLine> = {
-        let svc_id_opt = state.db.resolve_service_id(&name).await.ok().flatten();
+        let svc_id_opt = state.db.resolve_service_id(name).await.ok().flatten();
         match svc_id_opt {
             Some(svc_id) => {
                 let mut rows = state
@@ -168,7 +180,7 @@ pub async fn service_detail(State(state): State<AppState>, Path(name): Path<Stri
     };
 
     let recent_restarts: Vec<RestartEvent> = {
-        let svc_id_opt = state.db.resolve_service_id(&name).await.ok().flatten();
+        let svc_id_opt = state.db.resolve_service_id(name).await.ok().flatten();
         match svc_id_opt {
             Some(svc_id) => state
                 .db
@@ -190,17 +202,17 @@ pub async fn service_detail(State(state): State<AppState>, Path(name): Path<Stri
     let rc = state.rolling.get(&svc_cfg.name);
     let observed_peak_bytes = state.observation.read_peak(&svc_cfg.name);
 
-    let entry = model_estimate_entry(&state, svc_cfg);
+    let entry = model_estimate_entry(state, svc_cfg);
     let model_info = entry.as_ref().map(|e| e.model_info.clone());
     let estimate = entry.as_ref().map(|e| e.estimate.clone());
     let running = snap.as_ref().and_then(|s| s.pid).is_some();
     let placement_preview = placement_preview(
-        &state,
+        state,
         svc_cfg,
         entry.as_ref().map(|e| &e.estimate_full),
         running,
     );
-    let current_allocation = read_current_allocation(&state, &svc_cfg.name);
+    let current_allocation = read_current_allocation(state, &svc_cfg.name);
 
     let detail = ServiceDetail {
         name: svc_cfg.name.to_string(),
@@ -244,9 +256,9 @@ pub async fn service_detail(State(state): State<AppState>, Path(name): Path<Stri
         recent_restarts,
         runtime: runtime_info(svc_cfg),
         serving: serving_config(svc_cfg),
-        container: container_detail(&state, svc_cfg, &name).await,
+        container: container_detail(state, svc_cfg, name).await,
     };
-    (StatusCode::OK, Json(detail)).into_response()
+    Ok(detail)
 }
 
 #[utoipa::path(
