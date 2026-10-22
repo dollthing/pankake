@@ -7,13 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { useServices } from "../../api/hooks.ts";
 import { CopyButton } from "../ui/CopyButton.tsx";
-import {
-  ChatIcon,
-  ConfigIcon,
-  DashboardIcon,
-  EventsIcon,
-  StatsIcon,
-} from "../ui/icons.tsx";
+import { Icon } from "../ui/icon/Icon.tsx";
 
 type NavItem = {
   to: string;
@@ -25,27 +19,27 @@ const NAV_ITEMS: NavItem[] = [
   {
     to: "/",
     labelKey: "nav.dashboard",
-    icon: <DashboardIcon />,
+    icon: <Icon name="dashboard" />,
   },
   {
     to: "/chat",
     labelKey: "nav.chat",
-    icon: <ChatIcon />,
+    icon: <Icon name="chat" />,
   },
   {
     to: "/config",
     labelKey: "nav.config",
-    icon: <ConfigIcon />,
+    icon: <Icon name="config" />,
   },
   {
     to: "/events",
     labelKey: "nav.events",
-    icon: <EventsIcon />,
+    icon: <Icon name="events" />,
   },
   {
     to: "/stats",
     labelKey: "nav.stats",
-    icon: <StatsIcon />,
+    icon: <Icon name="stats" />,
   },
 ];
 

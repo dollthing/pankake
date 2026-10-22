@@ -29,7 +29,7 @@ import { ButtonLink } from "../ui/ButtonLink.tsx";
 import { EmptyState } from "../ui/EmptyState.tsx";
 import { CopyButton } from "../ui/CopyButton.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { ExternalLinkIcon, TrashIcon } from "../ui/icons.tsx";
+import { Icon } from "../ui/icon/Icon.tsx";
 import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
 import { ModelDropdown } from "./ChatModelDropdown.tsx";
 import { MessageBubble } from "./ChatMessageBubble.tsx";
@@ -259,7 +259,7 @@ export function ChatView() {
                 size="sm"
                 className="w-7 justify-center px-0"
               >
-                <ExternalLinkIcon />
+                <Icon name="open" size="3.5" />
               </ButtonLink>
             )}
             {selectedModel && (
@@ -269,7 +269,7 @@ export function ChatView() {
                 className="w-7 justify-center px-0"
                 onClick={clearConversation}
               >
-                <TrashIcon />
+                <Icon name="trash" size="3.5" />
               </Button>
             )}
           </div>

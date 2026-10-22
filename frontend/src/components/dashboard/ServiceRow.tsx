@@ -9,14 +9,7 @@ import { formatBytes, serviceProxyUrl } from "../../util.ts";
 import { StatusDot } from "../ui/StatusDot.tsx";
 import { Sparkline } from "../ui/Sparkline.tsx";
 import { CHART_PALETTE } from "../ui/chart-palette.ts";
-import {
-  DisableIcon,
-  PlayIcon,
-  PowerIcon,
-  RestartIcon,
-  StarIcon,
-  StopIcon,
-} from "../ui/icons.tsx";
+import { Icon } from "../ui/icon/Icon.tsx";
 
 export function ServiceRow({
   svc,
@@ -63,7 +56,7 @@ export function ServiceRow({
         }`}
         title={favourite ? "Unfavourite" : "Favourite"}
       >
-        <StarIcon filled={favourite} />
+        <Icon name="star" size="3.5" filled={favourite} />
       </button>
       <Link
         to={`/services/${encodeURIComponent(svc.name)}`}
@@ -124,7 +117,7 @@ export function ServiceRow({
             onClick={() => onAction("start")}
             disabled={pending}
           >
-            <PlayIcon />
+            <Icon name="start" size="3.5" />
           </IconButton>
         )}
         {canStop && (
@@ -135,7 +128,7 @@ export function ServiceRow({
               onClick={() => onAction("restart")}
               disabled={pending}
             >
-              <RestartIcon />
+              <Icon name="restart" size="3.5" />
             </IconButton>
             <IconButton
               label={t("services.actions.stop")}
@@ -143,7 +136,7 @@ export function ServiceRow({
               onClick={() => onAction("stop")}
               disabled={pending}
             >
-              <StopIcon />
+              <Icon name="stop" size="3.5" />
             </IconButton>
           </>
         )}
@@ -154,7 +147,7 @@ export function ServiceRow({
             onClick={() => onAction("enable")}
             disabled={pending}
           >
-            <PowerIcon />
+            <Icon name="power" size="3.5" />
           </IconButton>
         ) : (
           <IconButton
@@ -163,7 +156,7 @@ export function ServiceRow({
             onClick={() => onAction("disable")}
             disabled={pending}
           >
-            <DisableIcon />
+            <Icon name="disable" size="3.5" />
           </IconButton>
         )}
       </div>

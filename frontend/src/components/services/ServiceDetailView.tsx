@@ -16,15 +16,7 @@ import { Spinner } from "../ui/Spinner.tsx";
 import { Button } from "../ui/Button.tsx";
 import { ButtonLink } from "../ui/ButtonLink.tsx";
 import { buttonClassName } from "../ui/buttonStyles.ts";
-import {
-  ChatIcon,
-  DisableIcon,
-  ExternalLinkIcon,
-  PlayIcon,
-  PowerIcon,
-  RestartIcon,
-  StopIcon,
-} from "../ui/icons.tsx";
+import { Icon } from "../ui/icon/Icon.tsx";
 import { LogsViewer } from "../logs/LogsViewer.tsx";
 import {
   ModelInfoGrid,
@@ -107,7 +99,7 @@ export function ServiceDetailView() {
                 rel="noopener noreferrer"
                 className={buttonClassName("blue")}
               >
-                <ExternalLinkIcon />
+                <Icon name="open" size="3.5" />
                 {t("serviceDetail.open")}
               </a>
               {d.modality !== "embedding" && (
@@ -115,7 +107,7 @@ export function ServiceDetailView() {
                   variant="iris"
                   to={`/chat?model=${encodeURIComponent(d.name)}`}
                 >
-                  <ChatIcon className="w-3.5 h-3.5" />
+                  <Icon name="chat" size="3.5" />
                   {t("serviceDetail.chat")}
                 </ButtonLink>
               )}
@@ -246,7 +238,7 @@ function LifecycleActions({
           onClick={() => onAction("start")}
           disabled={pending}
         >
-          <PlayIcon />
+          <Icon name="start" size="3.5" />
           {t("services.actions.start")}
         </Button>
       )}
@@ -257,7 +249,7 @@ function LifecycleActions({
             onClick={() => onAction("stop")}
             disabled={pending}
           >
-            <StopIcon />
+            <Icon name="stop" size="3.5" />
             {t("services.actions.stop")}
           </Button>
           <Button
@@ -265,7 +257,7 @@ function LifecycleActions({
             onClick={() => onAction("restart")}
             disabled={pending}
           >
-            <RestartIcon />
+            <Icon name="restart" size="3.5" />
             {t("services.actions.restart")}
           </Button>
         </>
@@ -276,7 +268,7 @@ function LifecycleActions({
           onClick={() => onAction("enable")}
           disabled={pending}
         >
-          <PowerIcon />
+          <Icon name="power" size="3.5" />
           {t("services.actions.enable")}
         </Button>
       ) : (
@@ -285,7 +277,7 @@ function LifecycleActions({
           onClick={() => onAction("disable")}
           disabled={pending}
         >
-          <DisableIcon />
+          <Icon name="disable" size="3.5" />
           {t("services.actions.disable")}
         </Button>
       )}

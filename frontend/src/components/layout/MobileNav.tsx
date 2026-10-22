@@ -4,19 +4,19 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { ChatIcon, DashboardIcon, StatsIcon } from "../ui/icons.tsx";
+import { Icon } from "../ui/icon/Icon.tsx";
 
 const MOBILE_NAV_ITEMS = [
   {
     to: "/",
     labelKey: "nav.dashboard",
-    icon: <DashboardIcon className="w-5 h-5" />,
+    icon: <Icon name="dashboard" size="5" />,
   },
-  { to: "/chat", labelKey: "nav.chat", icon: <ChatIcon className="w-5 h-5" /> },
+  { to: "/chat", labelKey: "nav.chat", icon: <Icon name="chat" size="5" /> },
   {
     to: "/stats",
     labelKey: "nav.stats",
-    icon: <StatsIcon className="w-5 h-5" />,
+    icon: <Icon name="stats" size="5" />,
   },
 ];
 
