@@ -9,10 +9,15 @@
 
 mod common;
 
-use ananke_api::services::LogsResponse;
+use ananke_api::{
+    internal::log_line::LogStream,
+    live::{LiveFeed, LiveMessage, LiveRequest, LogFeed},
+    services::LogsResponse,
+};
 use ananke_db::logs::{LogLine, Stream};
 use ananke_supervise::logs::{spawn_pump_combined, spawn_pump_stderr, spawn_pump_stdout};
 use axum::{body::to_bytes, http::StatusCode};
+use common::live::{DEADLINE, connect, next_message, send};
 use tower::util::ServiceExt;
 
 /// Fetch `/api/services/demo/logs` with an optional `stream` filter.
@@ -135,18 +140,28 @@ async fn native_workload_preserves_split_stdout_stderr() {
     h.cleanup().await;
 }
 
-#[tokio::test(flavor = "current_thread")]
-async fn combined_stream_websocket_delivery() {
-    use futures::StreamExt;
-    use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
-
+#[tokio::test(flavor = "multi_thread")]
+async fn combined_stream_live_follow_delivery() {
     let h = common::build_harness(vec![common::minimal_llama_service("demo", 0)]).await;
     let service_id = h.state.db.upsert_service("demo", 0).await.unwrap();
-    let addr = h.spawn_management_server().await;
-
-    let (mut ws, _) = connect_async(format!("ws://{addr}/api/services/demo/logs/stream"))
-        .await
-        .unwrap();
+    let mut socket = connect(&h).await;
+    send(
+        &mut socket,
+        LiveRequest::Follow {
+            id: "l".into(),
+            feed: LiveFeed::Logs(LogFeed {
+                service: "demo".into(),
+                after: None,
+                run: None,
+                stream: Some(LogStream::Combined),
+            }),
+        },
+    )
+    .await;
+    assert!(matches!(
+        next_message(&mut socket, DEADLINE).await,
+        Some(LiveMessage::LogCaughtUp { .. })
+    ));
 
     h.state.batcher.push(LogLine {
         service_id,
@@ -155,19 +170,15 @@ async fn combined_stream_websocket_delivery() {
         stream: Stream::Combined,
         line: "container says hello".to_string(),
     });
+    h.state.batcher.flush().await;
 
-    let delivered = loop {
-        let Some(Ok(Message::Text(text))) = ws.next().await else {
-            panic!("websocket closed before delivering the line");
-        };
-        let msg: ananke_api::services::logs_stream::LogStreamMessage =
-            serde_json::from_str(&text).unwrap();
-        if let ananke_api::services::logs_stream::LogStreamMessage::Line(line) = msg {
-            break line;
-        }
+    let Some(LiveMessage::LogLines { lines, .. }) = next_message(&mut socket, DEADLINE).await
+    else {
+        panic!("the follow did not deliver the line");
     };
-    assert_eq!(delivered.stream, "combined");
-    assert_eq!(delivered.line, "container says hello");
+    assert_eq!(lines.len(), 1);
+    assert_eq!(lines[0].stream, "combined");
+    assert_eq!(lines[0].line, "container says hello");
 
     h.cleanup().await;
 }

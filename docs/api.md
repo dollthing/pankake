@@ -200,8 +200,14 @@ The management API (`/api/*`) provides read-only inspection and control of the d
 - **Devices**: list with reservations, memory samples.
 - **Config**: get/put/validate the TOML config.
 - **Metrics**: request metrics buckets, device samples.
-- **Events**: WebSocket stream of state changes, allocation changes, etc.
+- **Events**: the recent event history; live through `/api/live`.
 - **Info**: daemon listen addresses.
+
+### Log history
+
+`GET /api/services/{name}/logs` pages a service's captured lines newest first. Filters are `since`, `until`, `run`, and `stream`, and `limit` caps a page at 1000 lines (200 by default). To page further back, pass a response's `next_cursor` as `before` on the next request, until `next_cursor` is `null`. The cursor is opaque. Pages are ordered by position, run id then `seq`, so paging neither skips nor repeats a line.
+
+A page requested without `before` or `until` also carries `follow_after`, the newest position in the service's whole log when it was read. Following from it on `/api/live` continues the page without a gap; see the feeds section of the `/api/live` reference.
 
 ### Error responses
 
@@ -1188,61 +1194,6 @@ A handshake with an `Origin` header must match the `Host` header in scheme, host
 ### Reconnecting
 
 Subscriptions and follows do not survive a disconnect. A client reconnects with backoff and subscribes again; the first frame for each subscription is a full snapshot, so nothing needs replaying. A follow resumes by sending `follow` again with `after` set to the last line it received.
-
-## WebSocket: /api/services/{name}/logs/stream
-
-The `/api/services/{name}/logs/stream` WebSocket delivers a live tail of captured stdout/stderr lines for a single service.
-
-### Frame format
-
-Each frame is a text message containing a single JSON object with a `type` tag.
-
-### Variants
-
-#### `line`
-
-One captured log line.
-
-```json
-{
-  "type": "line",
-  "timestamp_ms": 1700000000000,
-  "stream": "stdout",
-  "line": "model loaded",
-  "run_id": 1,
-  "seq": 42
-}
-```
-
-#### `overflow`
-
-Emitted when the subscriber's broadcast buffer lagged and frames were dropped.
-
-```json
-{
-  "type": "overflow",
-  "dropped": 10
-}
-```
-
-### Heartbeat
-
-The server sends a WebSocket Ping frame every 30 seconds.
-
-### Cursor pagination (REST)
-
-For historical logs, use `GET /api/services/{name}/logs` with cursor-based pagination:
-
-1. Request the first page with `?limit=200`.
-2. If `next_cursor` is present in the response, pass it as `?before=<cursor>`
-   on the next request.
-3. Repeat until `next_cursor` is `null`.
-
-The cursor is an opaque base64-encoded string encoding `(run_id, seq)`. Rows are returned newest-first. Other filters: `since`, `until`, `run`, `stream`.
-
-### Origin
-
-As with `/api/live`, a handshake whose `Origin` header does not match the `Host` header is refused with 403, so a page on another site cannot read service logs through a visitor's browser. Clients that send no `Origin`, such as `anankectl logs --follow`, are allowed.
 
 ## Error codes
 

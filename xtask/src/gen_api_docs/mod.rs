@@ -34,7 +34,6 @@ const PROSE_PER_SERVICE_PROXY: &str = include_str!("prose/per_service_proxy.md")
 const PROSE_SERVICE_STATES: &str = include_str!("prose/service_states.md");
 const PROSE_EVENTS: &str = include_str!("prose/events.md");
 const PROSE_LIVE_WS: &str = include_str!("prose/live_ws.md");
-const PROSE_LOGS_WS: &str = include_str!("prose/logs_ws.md");
 const PROSE_ERRORS: &str = include_str!("prose/errors.md");
 const PROSE_PROMETHEUS: &str = include_str!("prose/prometheus.md");
 const PROSE_OPENAPI_SPEC: &str = include_str!("prose/openapi_spec.md");
@@ -61,7 +60,6 @@ pub fn run(args: GenApiDocsArgs) -> Result<(), Error> {
         service_states: PROSE_SERVICE_STATES,
         events: PROSE_EVENTS,
         live_ws: PROSE_LIVE_WS,
-        logs_ws: PROSE_LOGS_WS,
         errors: PROSE_ERRORS,
         prometheus: PROSE_PROMETHEUS,
         openapi_spec: PROSE_OPENAPI_SPEC,
@@ -316,7 +314,6 @@ mod tests {
             service_states: "",
             events: "",
             live_ws: "",
-            logs_ws: "",
             errors: "",
             prometheus: "",
             openapi_spec: "",

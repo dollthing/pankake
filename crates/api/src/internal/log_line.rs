@@ -1,7 +1,7 @@
 //! One captured stdout/stderr/combined line.
 //!
 //! `LogLine` is both a wire type (returned by `GET /api/services/:name/logs`
-//! and streamed over `WS /api/services/:name/logs/stream`) and a database
+//! and followed over `/api/live`) and a database
 //! row type (used by `db/logs.rs`). Because it straddles the HTTP and DB
 //! boundaries it lives in the internal module rather than under a single
 //! endpoint.

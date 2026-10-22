@@ -111,7 +111,7 @@ anankectl logs <service> --follow
 anankectl logs <service> --stream stderr --run <run-id>
 ```
 
-Pass `--endpoint <url>` (or set `ANANKE_ENDPOINT`) when the management API isn't on the default `http://127.0.0.1:7071`. The same data is reachable over HTTP at `GET /api/services/{name}/logs` (paginated history) and `GET /api/services/{name}/logs/stream` (WebSocket live tail). Reach for these whenever a service reports "child exited during starting" — the daemon log only tells you the exit status; the captured child logs tell you why.
+Pass `--endpoint <url>` (or set `ANANKE_ENDPOINT`) when the management API isn't on the default `http://127.0.0.1:7071`. The same data is reachable over HTTP at `GET /api/services/{name}/logs` (paginated history), and live on the `/api/live` WebSocket as a `follow` with `feed.kind = "logs"`. Reach for these whenever a service reports "child exited during starting" — the daemon log only tells you the exit status; the captured child logs tell you why.
 
 ### The Rust ↔ TypeScript boundary
 

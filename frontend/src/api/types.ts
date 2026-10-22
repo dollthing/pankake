@@ -1164,21 +1164,6 @@ export interface components {
      * @enum {string}
      */
     LogStream: "stdout" | "stderr" | "combined";
-    /** @description Frame sent over `/api/services/{name}/logs/stream`. */
-    LogStreamMessage:
-      | (components["schemas"]["LogLine"] & {
-          /** @enum {string} */
-          type: "line";
-        })
-      | {
-          /**
-           * Format: int64
-           * @description Number of dropped frames.
-           */
-          dropped: number;
-          /** @enum {string} */
-          type: "overflow";
-        };
     /** @description `GET /api/services/{name}/logs` response body. */
     LogsResponse: {
       follow_after?: null | components["schemas"]["LogPosition"];
