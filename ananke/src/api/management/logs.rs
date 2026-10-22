@@ -97,8 +97,10 @@ pub async fn get_logs(
                 .is_none_or(|c| (r.run_id, r.seq) < (c.run_id, c.seq))
     });
 
-    // Newest-first sort by (timestamp_ms DESC, seq DESC).
-    rows.sort_by(|a, b| b.timestamp_ms.cmp(&a.timestamp_ms).then(b.seq.cmp(&a.seq)));
+    // Newest first by position, the same order the cursor compares in, so a
+    // page never skips or repeats a row. Timestamps are not unique and can
+    // step backwards with the wall clock; positions are neither.
+    rows.sort_by_key(|r| std::cmp::Reverse((r.run_id, r.seq)));
 
     let truncated = rows.len() > limit;
     rows.truncate(limit);
