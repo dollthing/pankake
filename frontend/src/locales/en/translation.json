@@ -135,6 +135,22 @@
       "estimated": "estimated",
       "static": "fixed {{bytes}}",
       "dynamic": "{{min}} to {{max}}, borrowers run at least {{runtime}}"
+    },
+    "actionFailed": "The action failed: {{message}}",
+    "queueFull": "The start queue is full; try again shortly.",
+    "detail": {
+      "allServices": "All services",
+      "browse_one": "Browse {{count}} service",
+      "browse_other": "Browse {{count}} services",
+      "pid": "pid {{pid}}",
+      "open": "Open :{{port}}",
+      "chatNotOpenai": "Not on the OpenAI API, so it cannot be chatted with.",
+      "chatEmbedding": "An embedding model cannot be chatted with.",
+      "chatDisabled": "Enable the service to chat with it.",
+      "activity": "Activity",
+      "recentEvents": "Recent events",
+      "allEvents": "All events",
+      "noEvents": "No events for this service in this range."
     }
   },
   "dashboard": {

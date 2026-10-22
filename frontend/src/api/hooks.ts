@@ -135,9 +135,14 @@ export function useConfig(): UseQueryResult<ConfigResponse, Error> {
   });
 }
 
-type LifecycleAction = "start" | "stop" | "restart" | "enable" | "disable";
+export type LifecycleAction =
+  | "start"
+  | "stop"
+  | "restart"
+  | "enable"
+  | "disable";
 
-type LifecycleResponse =
+export type LifecycleResponse =
   | StartResponse
   | StopResponse
   | EnableResponse
@@ -177,6 +182,7 @@ export function useLifecycle(): UseMutationResult<
     // The live socket pushes the outcome; this covers the socket being down.
     onSettled: (_data, _err, vars) => {
       void qc.invalidateQueries({ queryKey: ["service-detail", vars.name] });
+      void qc.invalidateQueries({ queryKey: ["services"] });
     },
   });
 }

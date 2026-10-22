@@ -11,13 +11,6 @@ import type {
   StopResponse,
 } from "../../../api/client.ts";
 
-export type LifecycleAction =
-  | "start"
-  | "stop"
-  | "restart"
-  | "enable"
-  | "disable";
-
 export type AvailableActions = {
   /// Start or Stop, whichever applies; `null` when neither does.
   readonly toggle: "start" | "stop" | null;
