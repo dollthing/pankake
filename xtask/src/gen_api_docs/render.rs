@@ -168,8 +168,6 @@ fn render_management_groups(out: &mut String, spec: &Value) {
             "Devices"
         } else if path.starts_with("/api/metrics") {
             "Metrics"
-        } else if path.starts_with("/api/oneshot") {
-            "Oneshot"
         } else if path.starts_with("/api/info") {
             "Info"
         } else {

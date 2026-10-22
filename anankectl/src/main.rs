@@ -65,54 +65,6 @@ enum ConfigCommand {
 }
 
 #[derive(Subcommand)]
-enum OneshotCommand {
-    /// Submit a oneshot job from a TOML file.
-    Submit {
-        /// Path to the TOML file describing the job.
-        file: std::path::PathBuf,
-    },
-    /// Submit a oneshot job built from inline flags and a trailing command.
-    Run {
-        /// Optional human-readable name.
-        #[arg(long)]
-        name: Option<String>,
-        /// Eviction priority (higher wins).
-        #[arg(long, default_value_t = 50)]
-        priority: u8,
-        /// Time-to-live duration string (e.g. "2h", "30m").
-        #[arg(long)]
-        ttl: Option<String>,
-        /// Working directory for the spawned child.
-        #[arg(long)]
-        workdir: Option<std::path::PathBuf>,
-        /// Device-placement mode.
-        #[arg(long, default_value = "gpu-only")]
-        placement: String,
-        /// Static reservation in GiB; conflicts with --min-reserve-gb/--max-reserve-gb.
-        /// The reservation lands on host RAM for a cpu-only service and on VRAM
-        /// otherwise. `--vram-gb` is accepted as a device-specific alias.
-        #[arg(long, alias = "vram-gb", conflicts_with_all = ["min_reserve_gb", "max_reserve_gb"])]
-        reserve_gb: Option<f32>,
-        /// Dynamic lower bound for the reservation in GiB; requires --max-reserve-gb.
-        #[arg(long, alias = "min-vram-gb", requires = "max_reserve_gb")]
-        min_reserve_gb: Option<f32>,
-        /// Dynamic upper bound for the reservation in GiB.
-        #[arg(long, alias = "max-vram-gb")]
-        max_reserve_gb: Option<f32>,
-        /// Command and arguments to run.
-        #[arg(trailing_var_arg = true, required = true)]
-        command: Vec<String>,
-    },
-    /// List all known oneshot jobs.
-    List,
-    /// Cancel a oneshot job by ID.
-    Kill {
-        /// Oneshot job ID to cancel.
-        id: String,
-    },
-}
-
-#[derive(Subcommand)]
 enum Command {
     /// Show daemon, device, and service snapshot in one view.
     Status,
@@ -184,11 +136,6 @@ enum Command {
         #[arg(long)]
         stream: Option<String>,
     },
-    /// Manage oneshot jobs.
-    Oneshot {
-        #[command(subcommand)]
-        command: OneshotCommand,
-    },
     /// Manage daemon configuration over the management API.
     ServerConfig {
         #[command(subcommand)]
@@ -256,39 +203,6 @@ async fn main() -> ExitCode {
             )
             .await
         }
-        Command::Oneshot { command } => match command {
-            OneshotCommand::Submit { file } => {
-                commands::oneshot::submit(&client, cli.json, &file).await
-            }
-            OneshotCommand::Run {
-                name,
-                priority,
-                ttl,
-                workdir,
-                placement,
-                reserve_gb,
-                min_reserve_gb,
-                max_reserve_gb,
-                command,
-            } => {
-                commands::oneshot::run(
-                    &client,
-                    cli.json,
-                    name,
-                    priority,
-                    ttl,
-                    workdir,
-                    placement,
-                    reserve_gb,
-                    min_reserve_gb,
-                    max_reserve_gb,
-                    command,
-                )
-                .await
-            }
-            OneshotCommand::List => commands::oneshot::list(&client, cli.json).await,
-            OneshotCommand::Kill { id } => commands::oneshot::kill(&client, cli.json, &id).await,
-        },
         Command::ServerConfig { command } => match command {
             ServerConfigCommand::Show => commands::server_config::show(&client, cli.json).await,
             ServerConfigCommand::Validate { file } => {

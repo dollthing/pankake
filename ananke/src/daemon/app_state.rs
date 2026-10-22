@@ -14,7 +14,6 @@ use parking_lot::Mutex;
 
 use crate::{
     config::manager::ConfigManager,
-    oneshot::{OneshotRegistry, PortPool},
     supervise::{estimate_cache::EstimateCacheHandle, registry::SupervisorRegistry},
 };
 
@@ -33,8 +32,6 @@ pub struct AppState {
     /// time-to-first-token stall watchdog to tell a wedged child from a
     /// request queued behind healthy work.
     pub progress: ProgressTable,
-    pub port_pool: Arc<Mutex<PortPool>>,
-    pub oneshots: OneshotRegistry,
     pub batcher: BatcherHandle,
     pub events: EventBus,
     pub system: ananke_system::SystemDeps,

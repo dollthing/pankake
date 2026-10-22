@@ -197,8 +197,6 @@ pub async fn build_harness(services: Vec<ServiceConfig>) -> TestHarness {
         db,
         inflight,
         progress: ananke_tracking::progress::ProgressTable::new(),
-        port_pool: Arc::new(Mutex::new(ananke::oneshot::PortPool::new(18000..19000))),
-        oneshots: ananke::oneshot::OneshotRegistry::new(),
         batcher,
         events: events.clone(),
         system: system.clone(),

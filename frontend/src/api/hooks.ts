@@ -26,9 +26,6 @@ import {
   type LogStreamMessage,
   type MetricsQuery,
   type MetricsResponse,
-  type OneshotRequest,
-  type OneshotResponse,
-  type OneshotStatus,
   type ServiceDetail,
   type StartResponse,
   type StopResponse,
@@ -345,40 +342,6 @@ export function useSaveConfig(): UseMutationResult<
     mutationFn: ({ content, hash }) => api.putConfig(content, hash),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["config"] });
-    },
-  });
-}
-
-const ONESHOT_POLL_MS = 5_000;
-
-export function useOneshots(): UseQueryResult<OneshotStatus[], Error> {
-  return useQuery({
-    queryKey: ["oneshots"],
-    queryFn: () => api.listOneshots(),
-    refetchInterval: () => (isEventsConnected() ? false : ONESHOT_POLL_MS),
-  });
-}
-
-export function useCreateOneshot(): UseMutationResult<
-  OneshotResponse,
-  Error,
-  OneshotRequest
-> {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (req: OneshotRequest) => api.createOneshot(req),
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ["oneshots"] });
-    },
-  });
-}
-
-export function useDeleteOneshot(): UseMutationResult<void, Error, string> {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.deleteOneshot(id),
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ["oneshots"] });
     },
   });
 }

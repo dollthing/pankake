@@ -2,7 +2,6 @@ use ananke_api::{
     config::ConfigResponse,
     devices::list::{DeviceReservation, DeviceSummary},
     internal::{event::Event, log_line::LogLine},
-    oneshot::create::{OneshotAllocation, OneshotDevices, OneshotRequest, OneshotResponse},
     services::{
         command::{EnvVar, LaunchCommand, LaunchCommandSource},
         detail::ServiceDetail,
@@ -98,37 +97,6 @@ fn event_state_changed_tag() {
     let json = serde_json::to_value(&v).unwrap();
     assert_eq!(json["type"], "state_changed");
     assert_eq!(json["service"], "demo");
-}
-
-#[test]
-fn oneshot_request_optional_fields_omitted() {
-    let v = OneshotRequest {
-        name: None,
-        template: "command".into(),
-        command: Some(vec!["python".into(), "batch.py".into()]),
-        workdir: None,
-        allocation: OneshotAllocation {
-            mode: Some("static".into()),
-            reserve_gb: Some(16.0),
-            min_reserve_gb: None,
-            max_reserve_gb: None,
-        },
-        devices: Some(OneshotDevices {
-            placement: Some("gpu-only".into()),
-        }),
-        priority: Some(40),
-        ttl: Some("2h".into()),
-        port: None,
-        health: None,
-        metadata: Default::default(),
-    };
-    let json = serde_json::to_value(&v).unwrap();
-    let obj = json.as_object().unwrap();
-    assert!(!obj.contains_key("name"));
-    assert!(!obj.contains_key("workdir"));
-    assert!(!obj.contains_key("port"));
-    assert!(!obj.contains_key("health"));
-    assert!(!obj.contains_key("metadata"));
 }
 
 #[test]
@@ -317,17 +285,6 @@ fn service_detail_roundtrips_no_runtime() {
             container_id: None,
             container_name: None,
         }),
-    };
-    assert_eq!(v.clone(), roundtrip(v));
-}
-
-#[test]
-fn oneshot_response_roundtrips() {
-    let v = OneshotResponse {
-        id: "oneshot_01H".into(),
-        name: "sd-batch".into(),
-        port: 18001,
-        logs_url: "/api/oneshot/oneshot_01H/logs/stream".into(),
     };
     assert_eq!(v.clone(), roundtrip(v));
 }

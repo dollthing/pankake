@@ -119,9 +119,8 @@
   }
 
   /* iOS Safari auto-zooms inputs with font size below 16px. Force 16px on
-   * small screens only so every input (logs search, oneshots form, chat
-   * textarea, datetime pickers, etc.) is covered without per-input
-   * overrides. Desktop retains the Tailwind text-xs/text-sm sizes. */
+   * small screens only so every input (logs search, chat textarea, datetime
+   * pickers, etc.) is covered without per-input overrides. Desktop retains the Tailwind text-xs/text-sm sizes. */
   @media (max-width: 767px) {
     input[type="text"],
     input[type="number"],

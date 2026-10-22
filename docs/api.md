@@ -11,8 +11,8 @@ The daemon listens on two HTTP sockets:
 - **OpenAI-compatible API** (`127.0.0.1:7070` by default): `/v1/models`,
   `/v1/chat/completions`, `/v1/completions`, `/v1/embeddings`.
 - **Management API** (`127.0.0.1:7071` by default): `/api/services`,
-  `/api/config`, `/api/devices`, `/api/metrics`, `/api/oneshot`, `/api/events`,
-  `/api/info`, and `/api/openapi.json`.
+  `/api/config`, `/api/devices`, `/api/metrics`, `/api/events`, `/api/info`,
+  and `/api/openapi.json`.
 
 Both addresses are configurable via `[daemon]` in the TOML config.
 
@@ -40,10 +40,6 @@ The daemon binds to loopback by default. Do **not** expose the management API or
 | `GET` | `/api/devices/samples` | Get device memory samples |
 | `GET` | `/api/info` | Get daemon listen addresses |
 | `GET` | `/api/metrics` | Get request metrics (time-bucketed) |
-| `GET` | `/api/oneshot` | Create or list oneshot processes |
-| `POST` | `/api/oneshot` | Create or list oneshot processes |
-| `GET` | `/api/oneshot/{id}` | Get or delete a oneshot process |
-| `DELETE` | `/api/oneshot/{id}` | Get or delete a oneshot process |
 | `GET` | `/api/restarts` | Get auto-restart firings |
 | `GET` | `/api/services` | List all services |
 | `GET` | `/api/services/{name}` | Get service detail |
@@ -203,7 +199,6 @@ The management API (`/api/*`) provides read-only inspection and control of the d
 - **Devices**: list with reservations, memory samples.
 - **Config**: get/put/validate the TOML config.
 - **Metrics**: request metrics buckets, device samples.
-- **Oneshot**: create/list/get/delete ephemeral processes.
 - **Events**: WebSocket stream of state changes, allocation changes, etc.
 - **Info**: daemon listen addresses.
 
@@ -384,124 +379,6 @@ Get request metrics (time-bucketed)
   }[]
 }
 ```
-
-### Oneshot
-
-#### GET /api/oneshot
-
-Create or list oneshot processes
-
-| Status | Description | Body |
-| --- | --- | --- |
-| 200 |  | `OneshotStatus[]` |
-
-**Response (200)**:
-
-```typescript
-{
-  ended_at_ms?: number | null
-  exit_code?: number | null
-  id: string
-  logs_url: string
-  name: string
-  port: number
-  started_at_ms?: number | null
-  state: string
-  submitted_at_ms: number
-}[]
-```
-
-#### POST /api/oneshot
-
-Create or list oneshot processes
-
-**Request body**:
-
-```typescript
-{
-  allocation: {
-    max_reserve_gb?: number | null
-    min_reserve_gb?: number | null
-    mode?: string | null
-    reserve_gb?: number | null
-  }
-  command?: string[] | null
-  devices?: {
-    placement?: string | null
-  } | null
-  health?: {
-    http: string
-    probe_interval?: string | null
-    timeout?: string | null
-  } | null
-  metadata?: Record<string, any>
-  name?: string | null
-  port?: number | null
-  priority?: number | null
-  template: string
-  ttl?: string | null
-  workdir?: string | null
-}
-```
-
-| Status | Description | Body |
-| --- | --- | --- |
-| 200 |  | `OneshotResponse` |
-| 400 | invalid_request_error | `ApiError` |
-| 503 | start_failed, start_queue_full | `ApiError` |
-
-**Response (200)**:
-
-```typescript
-{
-  id: string
-  logs_url: string
-  name: string
-  port: number
-}
-```
-
-#### GET /api/oneshot/{id}
-
-Get or delete a oneshot process
-
-| Parameter | In | Required | Description |
-| --- | --- | --- | --- |
-| `id` | path | yes |  |
-
-| Status | Description | Body |
-| --- | --- | --- |
-| 200 |  | `OneshotStatus` |
-| 404 | service_not_found | `ApiError` |
-
-**Response (200)**:
-
-```typescript
-{
-  ended_at_ms?: number | null
-  exit_code?: number | null
-  id: string
-  logs_url: string
-  name: string
-  port: number
-  started_at_ms?: number | null
-  state: string
-  submitted_at_ms: number
-}
-```
-
-#### DELETE /api/oneshot/{id}
-
-Get or delete a oneshot process
-
-| Parameter | In | Required | Description |
-| --- | --- | --- | --- |
-| `id` | path | yes |  |
-
-| Status | Description | Body |
-| --- | --- | --- |
-| 204 |  | — |
-| 404 | service_not_found | `ApiError` |
 
 ### Other
 

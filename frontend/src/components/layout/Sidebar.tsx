@@ -12,7 +12,6 @@ import {
   ConfigIcon,
   DashboardIcon,
   EventsIcon,
-  OneshotsIcon,
   StatsIcon,
 } from "../ui/icons.tsx";
 
@@ -32,11 +31,6 @@ const NAV_ITEMS: NavItem[] = [
     to: "/chat",
     labelKey: "nav.chat",
     icon: <ChatIcon />,
-  },
-  {
-    to: "/oneshots",
-    labelKey: "nav.oneshots",
-    icon: <OneshotsIcon />,
   },
   {
     to: "/config",

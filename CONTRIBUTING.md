@@ -36,7 +36,7 @@ The backend's crates, leaves first. Package names keep the `ananke-` prefix; the
 | `ananke-proxy` | `crates/proxy` | the hyper reverse-proxy data plane and `ApiErrorCode` | `ananke-api`, `ananke-errors`, `axum`, `hyper` |
 | `ananke-allocator` | `crates/allocator` | the feasibility check, eviction planner, and balloon resolver | `ananke-config`, `ananke-events`, `ananke-observation`, `ananke-placement` |
 | `ananke-supervise` | `crates/supervise` | the supervisor state machine, child lifecycle, health, provision + reconcile | `ananke-config`, `ananke-system`, `ananke-devices`, `ananke-tracking`, `ananke-db`, `ananke-allocator`, `ananke-templates`, `ananke-api`, `ananke-events`, `ananke-proxy` |
-| `ananke` | `ananke` | the daemon shell: HTTP surface (`api`), composition root (`daemon`), oneshot services, the input distillers re-exported at `config`, and the placeholder checker | all of the above |
+| `ananke` | `ananke` | the daemon shell: HTTP surface (`api`), composition root (`daemon`), the input distillers re-exported at `config`, and the placeholder checker | all of the above |
 | `anankectl` | `anankectl` | the CLI | `ananke-api` |
 
 Three more live under `calibration/crates/`, because nothing shipped links them — see [`calibration/README.md`](calibration/README.md):

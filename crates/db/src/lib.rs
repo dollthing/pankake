@@ -15,7 +15,6 @@ mod devices;
 mod lock;
 mod metrics;
 mod metrics_query;
-mod oneshots;
 mod restarts;
 mod running;
 mod service_logs;

@@ -153,30 +153,6 @@ impl ApiClient {
         self.read_json(resp).await
     }
 
-    pub async fn delete(&self, path: &str) -> Result<(), ApiClientError> {
-        let url = self
-            .endpoint
-            .join(path)
-            .map_err(|cause| ApiClientError::InvalidPath {
-                endpoint: self.endpoint.to_string(),
-                path: path.to_string(),
-                cause,
-            })?;
-        let resp = self
-            .http
-            .delete(url)
-            .send()
-            .await
-            .map_err(ApiClientError::Connect)?;
-        if resp.status().is_success() {
-            Ok(())
-        } else {
-            let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-            Err(ApiClientError::Http { status, body })
-        }
-    }
-
     pub async fn put_body(
         &self,
         path: &str,

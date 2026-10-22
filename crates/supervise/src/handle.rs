@@ -48,7 +48,7 @@ pub enum SupervisorCommand {
     },
     /// Record that a request was served; resets the idle timer.
     ActivityPing,
-    /// Enter the full drain pipeline for eviction / TTL / user-kill.
+    /// Enter the full drain pipeline for eviction / idle timeout / user-kill.
     BeginDrain {
         reason: crate::drain::DrainReason,
         ack: tokio::sync::oneshot::Sender<()>,

@@ -43,9 +43,6 @@ export type MetricBucketResponse = Schemas["MetricBucketResponse"];
 export type DeviceSamplesResponse = Schemas["DeviceSamplesResponse"];
 export type DeviceSampleResponse = Schemas["DeviceSampleResponse"];
 export type DaemonInfoResponse = Schemas["DaemonInfoResponse"];
-export type OneshotRequest = Schemas["OneshotRequest"];
-export type OneshotResponse = Schemas["OneshotResponse"];
-export type OneshotStatus = Schemas["OneshotStatus"];
 
 export type LogsQuery = {
   since?: number;
@@ -194,22 +191,6 @@ export const api = {
   },
   getPrometheusMetrics: () => fetch("/metrics").then((r) => r.text()),
   getInfo: () => getJson<DaemonInfoResponse>("/api/info"),
-  listOneshots: () =>
-    getJson<
-      paths["/api/oneshot"]["get"]["responses"]["200"]["content"]["application/json"]
-    >("/api/oneshot"),
-  createOneshot: (req: OneshotRequest) =>
-    postJson<OneshotResponse>("/api/oneshot", req),
-  getOneshot: (id: string) =>
-    getJson<OneshotStatus>(`/api/oneshot/${encodeURIComponent(id)}`),
-  deleteOneshot: async (id: string): Promise<void> => {
-    const resp = await fetch(`/api/oneshot/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });
-    if (!resp.ok && resp.status !== 204) {
-      throw new Error(await errorMessage(resp));
-    }
-  },
   start: (name: string) =>
     postJson<StartResponse>(`/api/services/${encodeURIComponent(name)}/start`),
   stop: (name: string) =>

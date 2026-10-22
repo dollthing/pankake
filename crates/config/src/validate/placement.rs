@@ -51,9 +51,7 @@ pub enum AllocationMode {
 
 impl AllocationMode {
     /// Resolve an allocation mode from a `(template, mode)` pair plus the
-    /// associated reservation knobs. Shared by the TOML validator and the
-    /// oneshot API so both paths agree on the semantics of `"static"`,
-    /// `"dynamic"`, and the llama-cpp exclusions.
+    /// associated reservation knobs.
     ///
     /// The returned error is a bare sentence fragment; the caller is
     /// expected to prepend context (e.g. `service {name}: `).
@@ -152,23 +150,6 @@ mod tests {
         parse::parse_toml,
         validate::{test_fixtures::parse_and_merge, validate},
     };
-
-    #[test]
-    fn rejects_oneshot_lifecycle_in_service_block() {
-        let cfg = parse_and_merge(
-            r#"
-[[service]]
-name = "a"
-template = "llama-cpp"
-model = "/m/x.gguf"
-port = 11000
-lifecycle = "oneshot"
-devices.placement_override = { "gpu:0" = 1000 }
-"#,
-        );
-        let err = validate(&cfg).unwrap_err();
-        assert!(format!("{err}").contains("oneshot"));
-    }
 
     #[test]
     fn phase2_accepts_on_demand() {

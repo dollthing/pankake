@@ -15,7 +15,6 @@ pub mod events;
 pub mod info;
 pub mod internal;
 pub mod metrics;
-pub mod oneshot;
 pub mod openai;
 pub mod services;
 pub mod shared;

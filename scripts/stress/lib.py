@@ -261,16 +261,6 @@ class Api:
         )
         return resp.status_code
 
-    async def submit_oneshot(self, body: dict[str, Any]) -> Any:
-        resp = await self._client.post(
-            f"{self.matrix.management}/api/oneshot", json=body, timeout=30.0
-        )
-        resp.raise_for_status()
-        return resp.json()
-
-    async def get_oneshot(self, oneshot_id: str) -> Any:
-        return await self._get(f"/api/oneshot/{oneshot_id}")
-
     async def chat(
         self, model: str, prompt: str, *, timeout: float = 300.0
     ) -> httpx.Response:

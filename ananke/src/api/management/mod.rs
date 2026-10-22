@@ -37,11 +37,7 @@ pub fn register(router: Router, state: AppState) -> Router {
     handlers::register(router, state.clone())
         .merge(metrics::register(Router::new(), state.clone()))
         .merge(crate::api::openapi::register(Router::new(), state.clone()))
-        .merge(crate::api::prometheus::register(
-            Router::new(),
-            state.clone(),
-        ))
-        .merge(crate::oneshot::handlers::register(Router::new(), state))
+        .merge(crate::api::prometheus::register(Router::new(), state))
         .merge(mgmt)
 }
 
