@@ -24,7 +24,7 @@ export function SegmentedToggle<T>({
         <button
           key={opt.label}
           onClick={() => onChange(opt.value)}
-          className={`rounded-sm px-2 py-0.5 text-xs transition-colors ${
+          className={`px-2 py-0.5 text-xs transition-colors ${
             opt.value === selected
               ? "bg-elevated text-primary"
               : "text-tertiary hover:text-secondary"

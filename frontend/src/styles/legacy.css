@@ -1,0 +1,46 @@
+/*
+ * Temporary aliases from the pre-restyle token names onto the new
+ * tokens, so views not yet restyled repaint in the new palette in both
+ * themes. Each view's restyle drops its legacy names; once none are
+ * left, this file is deleted and the lint scope widens to `src/**`.
+ */
+
+@theme inline {
+  --color-base: var(--tone-canvas);
+  --color-elevated: var(--tone-raised);
+  --color-border-default: var(--line);
+  --color-border-strong: var(--line-strong);
+  --color-primary: var(--text);
+  --color-secondary: var(--text-soft);
+  --color-tertiary: var(--text-muted);
+  --color-success: var(--status-ok);
+  --color-warning: var(--status-warn);
+  --color-brass: var(--line-strong);
+  /* `surface`, `accent`, `danger`, `vision`, and `embedding` already
+   * exist under the new names. */
+
+  /* Solid button fills under white text, unchanged until `Button` moves
+   * to semantic tones. They read the same on either theme. */
+  --color-action-slate: oklch(0.48 0.035 255);
+  --color-action-red: oklch(0.48 0.18 25);
+  --color-action-orange: oklch(0.48 0.13 55);
+  --color-action-green: oklch(0.48 0.15 150);
+  --color-action-cyan: oklch(0.48 0.1 205);
+  --color-action-blue: oklch(0.48 0.14 255);
+  --color-action-iris: oklch(0.48 0.15 295);
+  --color-action-magenta: oklch(0.48 0.16 335);
+}
+
+@theme {
+  --header-height: var(--spacing-header);
+}
+
+/* Section label on panels and view headers. */
+@utility eyebrow {
+  font-size: var(--text-2xs);
+  line-height: var(--text-2xs--line-height);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

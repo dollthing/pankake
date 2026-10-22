@@ -22,9 +22,7 @@ export function Card({
   bodyClassName = "",
 }: CardProps) {
   return (
-    <div
-      className={`rounded-md border border-border-default bg-surface ${className}`}
-    >
+    <div className={`border border-border-default bg-surface ${className}`}>
       {header !== undefined && (
         <div className="flex items-center gap-2 border-b border-border-default px-4 py-2.5">
           <span className="eyebrow">{header}</span>

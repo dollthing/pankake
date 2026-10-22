@@ -194,7 +194,7 @@ function Legend({
       {series.map((s, i) => (
         <div key={i} className="flex min-w-0 items-center gap-1.5">
           <span
-            className="inline-block size-2 shrink-0 rounded-sm"
+            className="inline-block size-2 shrink-0"
             style={{ backgroundColor: s.stroke }}
           />
           <span className="min-w-0 truncate font-mono text-tertiary">
