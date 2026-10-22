@@ -5,6 +5,7 @@
 import type { TFunction } from "i18next";
 
 import type { DaemonEvent } from "../../api/client.ts";
+import { formatBytes } from "../../util.ts";
 import { reasonLabelKey, stateLabelKey } from "../ui/status/stateTone.ts";
 
 export function summarizeEvent(event: DaemonEvent, t: TFunction): string {
@@ -23,10 +24,24 @@ export function summarizeEvent(event: DaemonEvent, t: TFunction): string {
               }),
       });
     }
-    case "allocation_changed":
-      return t("events.allocationChanged");
+    case "allocation_changed": {
+      const held = Object.entries(event.reservations)
+        .filter(([, bytes]) => bytes > 0)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([device, bytes]) =>
+          t("events.reservedOn", { bytes: formatBytes(bytes), device }),
+        );
+      return held.length === 0
+        ? t("events.allocationReleased")
+        : t("events.allocationChanged", { devices: held.join(", ") });
+    }
     case "config_reloaded":
-      return t("events.configReloaded");
+      return event.changed_services.length === 0
+        ? t("events.configReloaded")
+        : t("events.configReloadedChanged", {
+            count: event.changed_services.length,
+            services: event.changed_services.join(", "),
+          });
     case "estimator_drift":
       return t("events.estimatorDriftCorrection", {
         class: event.class,

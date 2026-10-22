@@ -211,21 +211,40 @@
   },
   "events": {
     "title": "Events",
-    "emptyState": "No events yet.",
-    "connected": "connected",
-    "disconnected": "disconnected",
-    "forceReconnect": "Force reconnect",
+    "emptyState": "No events or recorded restarts in this range.",
     "time": "Time",
     "type": "Type",
     "service": "Service",
     "summary": "Summary",
     "stateChanged": "{{from}} → {{to}}",
     "stateWithReason": "{{state}} ({{reason}})",
-    "allocationChanged": "device allocation shifted",
-    "configReloaded": "configuration reloaded from disk",
+    "allocationChanged": "holds {{devices}}",
+    "configReloaded": "configuration reloaded from disk, no services changed",
     "estimatorDriftCorrection": "{{class}} correction {{value}}",
     "autoRestarted": "auto-restarted ({{trigger}}): {{detail}}",
-    "autoRestartedShort": "auto-restarted ({{trigger}})"
+    "autoRestartedShort": "auto-restarted ({{trigger}})",
+    "reservedOn": "{{bytes}} on {{device}}",
+    "allocationReleased": "released its reservations",
+    "configReloadedChanged_one": "configuration reloaded from disk, changing {{services}}",
+    "configReloadedChanged_other": "configuration reloaded from disk, changing {{count}} services: {{services}}",
+    "shown_one": "{{count}} shown",
+    "shown_other": "{{count}} shown",
+    "liveSince": "live since {{time}}",
+    "typeFilter": "Filter by event type",
+    "allTypes": "All types",
+    "types": {
+      "state_changed": "State changed",
+      "allocation_changed": "Allocation changed",
+      "config_reloaded": "Config reloaded",
+      "estimator_drift": "Estimate drift",
+      "auto_restarted": "Auto-restarted"
+    },
+    "status": {
+      "open": "Live",
+      "connecting": "Connecting",
+      "reconnecting": "Reconnecting, showing the last events received"
+    },
+    "olderThanLive": "The live history starts at {{time}}; before that, only recorded restarts are shown."
   },
   "stats": {
     "title": "Stats",

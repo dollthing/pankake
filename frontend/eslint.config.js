@@ -14,7 +14,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 const migrated = [
   "src/App.tsx",
   "src/components/chat/**",
-  "src/components/events/eventSummary.ts",
+  "src/components/events/**",
   "src/components/layout/**",
   "src/components/logs/**",
   "src/components/services/**",

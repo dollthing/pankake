@@ -1,150 +1,107 @@
-// Event feed — the daemon's recent event history, kept current by the
-// live socket's `events` subscription. Shows timestamp, event type, service name, and key
-// fields as one-line summaries in a table layout. Oldest events at
-// the top, newest at the bottom; autoscrolls to the bottom when new
-// events arrive unless the user has scrolled up.
+// Events (`/events`): the daemon's event history over the shared time
+// range, merged with the persisted restart log, newest first. The history
+// is a live resource, so new events arrive on their own; the socket
+// reconnects by itself, so the header shows its state rather than a
+// reconnect button.
+//
+// Newest first means following new events needs no code: at the top, a
+// new row appears above the others; scrolled down, the browser's scroll
+// anchoring holds the rows being read in place.
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { DaemonEvent } from "../../api/client.ts";
-import { useEventFeed } from "../../api/hooks.ts";
-import { useLiveSocket, useLiveStatus } from "../../api/live/useLive.ts";
-import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
+import { useLocation } from "react-router-dom";
+
+import { useEventFeed, useRestarts } from "../../api/hooks.ts";
+import type { LiveStatus } from "../../api/live/socket.ts";
+import { useLiveStatus } from "../../api/live/useLive.ts";
 import { formatTimestamp } from "../../util.ts";
-import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { Badge, type BadgeVariant } from "../ui/Badge.tsx";
 import { EmptyState } from "../ui/feedback/EmptyState.tsx";
-import { summarizeEvent } from "./eventSummary.ts";
-
-const EVENT_TYPES = [
-  "state_changed",
-  "allocation_changed",
-  "config_reloaded",
-  "estimator_drift",
-  "auto_restarted",
-] as const satisfies readonly DaemonEvent["type"][];
-
-const NO_EVENTS: readonly DaemonEvent[] = [];
+import { Message } from "../ui/feedback/Message.tsx";
+import { TimeRangeSelect } from "../ui/form/TimeRangeSelect.tsx";
+import { rangeSearch } from "../ui/form/timeRange.ts";
+import { useResolvedRange, useTimeRange } from "../ui/form/useTimeRange.ts";
+import { PageHeader } from "../ui/layout/PageHeader.tsx";
+import { Chip } from "../ui/status/Chip.tsx";
+import type { ChipTone } from "../ui/status/chipVariants.ts";
+import { EventList } from "./EventList.tsx";
+import { EventTypeFilter } from "./EventTypeFilter.tsx";
+import { eventsInRange, type EventType } from "./eventLog.ts";
 
 export function EventsView() {
   const { t } = useTranslation();
-  const events = useEventFeed().data?.events ?? NO_EVENTS;
-  const socket = useLiveSocket();
-  const connected = useLiveStatus() === "open";
-  const [typeFilter, setTypeFilter] = useState<Set<string>>(
-    new Set(EVENT_TYPES),
+  const { search } = useLocation();
+  const [range, setRange] = useTimeRange();
+  const { since, until, end } = useResolvedRange(range);
+  const [types, setTypes] = useState<ReadonlySet<EventType>>(NO_TYPES);
+  const feed = useEventFeed();
+  const restarts = useRestarts(undefined, since, until ?? end);
+  const status = useLiveStatus();
+  const liveSince = feed.data?.since_ms;
+  // A rolling range's end lags the clock by up to a step; events newer
+  // than it still belong.
+  const events = eventsInRange(
+    feed.data?.events ?? [],
+    restarts.data ?? [],
+    since,
+    until ?? Number.MAX_SAFE_INTEGER,
+    types,
   );
-
-  const filtered = events.filter(
-    (e) => typeFilter.size === 0 || typeFilter.has(e.type),
-  );
-
-  function toggleType(type: string) {
-    setTypeFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
-  }
-
-  const { scrollRef, onScroll } = useStickToBottom(events.length);
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Toolbar */}
-      <ViewHeader className="gap-2">
-        <h1 className="eyebrow !text-primary">{t("events.title")}</h1>
-        <div className="mx-2 h-3 w-px bg-border-default" />
-        {EVENT_TYPES.map((type) => (
-          <button
-            key={type}
-            onClick={() => toggleType(type)}
-            className={`rounded-sm px-2 py-0.5 text-xs transition-colors ${
-              typeFilter.has(type)
-                ? "bg-elevated text-primary"
-                : "text-tertiary hover:text-secondary"
-            }`}
-          >
-            {type}
-          </button>
-        ))}
-        <div className="ml-auto flex items-center gap-2 text-xs text-tertiary">
-          {connected ? (
-            <span className="text-success">{t("events.connected")}</span>
-          ) : (
-            <span className="text-danger">{t("events.disconnected")}</span>
-          )}
-          <button
-            onClick={() => socket.reconnect()}
-            className="rounded-sm px-2 py-0.5 text-tertiary transition-colors hover:text-secondary"
-            title={t("events.forceReconnect")}
-          >
-            ↻
-          </button>
-        </div>
-      </ViewHeader>
-
-      {/* Event table */}
-      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-auto">
-        {filtered.length === 0 ? (
-          <EmptyState message={t("events.emptyState")} />
+    <div className="flex h-full min-h-0 flex-col">
+      <PageHeader
+        title={t("events.title")}
+        meta={[
+          t("events.shown", { count: events.length }),
+          liveSince === undefined
+            ? null
+            : t("events.liveSince", { time: formatTimestamp(liveSince) }),
+        ]
+          .filter((part) => part !== null)
+          .join(" · ")}
+        actions={
+          <Chip tone={STATUS_TONE[status]}>{t(`events.status.${status}`)}</Chip>
+        }
+      />
+      <div className="flex shrink-0 flex-col gap-2 border-b border-line bg-surface px-4 py-2">
+        <TimeRangeSelect value={range} onChange={setRange} />
+        <EventTypeFilter selected={types} onChange={setTypes} />
+      </div>
+      <div className="@container/events min-h-0 flex-1 overflow-auto bg-canvas">
+        {liveSince !== undefined && since < liveSince && (
+          <p className="border-b border-line-subtle px-4 py-1.5 text-xs text-muted">
+            {t("events.olderThanLive", {
+              time: formatTimestamp(liveSince),
+            })}
+          </p>
+        )}
+        {feed.error && (
+          <Message kind="error" text={feed.error.message} className="px-4" />
+        )}
+        {restarts.error && (
+          <Message
+            kind="error"
+            text={restarts.error.message}
+            className="px-4"
+          />
+        )}
+        {events.length > 0 ? (
+          <EventList events={events} nowMs={end} range={rangeSearch(search)} />
+        ) : feed.isPending ? (
+          <Message kind="loading" className="px-4" />
         ) : (
-          <table className="min-w-full">
-            <thead className="sticky top-0 bg-surface">
-              <tr className="border-b border-border-default text-left">
-                <th className="w-28 px-4 py-1.5 text-xs font-medium text-tertiary">
-                  {t("events.time")}
-                </th>
-                <th className="w-40 px-4 py-1.5 text-xs font-medium text-tertiary">
-                  {t("events.type")}
-                </th>
-                <th className="w-40 px-4 py-1.5 text-xs font-medium text-tertiary">
-                  {t("events.service")}
-                </th>
-                <th className="px-4 py-1.5 text-xs font-medium text-tertiary">
-                  {t("events.summary")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((event, i) => (
-                <EventRow
-                  key={`${event.at_ms}-${event.type}-${i}`}
-                  event={event}
-                />
-              ))}
-            </tbody>
-          </table>
+          <EmptyState message={t("events.emptyState")} />
         )}
       </div>
     </div>
   );
 }
 
-function EventRow({ event }: { event: DaemonEvent }) {
-  const { t } = useTranslation();
-  const variant = EVENT_VARIANTS[event.type];
-  return (
-    <tr className="border-b border-border-default/50 text-xs hover:bg-elevated/60">
-      <td className="px-4 py-1.5 font-mono text-tertiary">
-        {formatTimestamp(event.at_ms)}
-      </td>
-      <td className="px-4 py-1.5">
-        <Badge variant={variant}>{event.type}</Badge>
-      </td>
-      <td className="px-4 py-1.5 font-mono text-primary">
-        {"service" in event ? event.service : "—"}
-      </td>
-      <td className="px-4 py-1.5 text-secondary">{summarizeEvent(event, t)}</td>
-    </tr>
-  );
-}
+const NO_TYPES: ReadonlySet<EventType> = new Set();
 
-const EVENT_VARIANTS: Record<DaemonEvent["type"], BadgeVariant> = {
-  state_changed: "success",
-  allocation_changed: "accent",
-  config_reloaded: "warning",
-  estimator_drift: "vision",
-  auto_restarted: "warning",
+const STATUS_TONE: Readonly<Record<LiveStatus, ChipTone>> = {
+  open: "ok",
+  connecting: "neutral",
+  reconnecting: "warn",
 };

@@ -6,6 +6,7 @@ import type {
   DaemonEvent,
   ServiceRestartEntry,
 } from "../../../../api/client.ts";
+import { mergeRestarts } from "../../../events/eventLog.ts";
 
 /// Events about `name` within `[since, end]`, newest first. Allocation
 /// changes are dropped: a dynamic service emits one per balloon step, which
@@ -19,28 +20,12 @@ export function serviceEvents(
   end: number,
 ): DaemonEvent[] {
   const inRange = (at: number) => at >= since && at <= end;
-  const events = history.filter(
-    (e) => inRange(e.at_ms) && concernsService(e, name),
-  );
-  const seen = new Set(
-    events
-      .filter((e) => e.type === "auto_restarted")
-      .map((e) => restartKey(e.at_ms, e.trigger)),
-  );
-  for (const r of restarts) {
-    if (r.service !== name || !inRange(r.at_ms)) continue;
-    const key = restartKey(r.at_ms, r.trigger);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    events.push({
-      type: "auto_restarted",
-      service: r.service,
-      trigger: r.trigger,
-      detail: r.detail,
-      at_ms: r.at_ms,
-    });
-  }
-  return events.sort((a, b) => b.at_ms - a.at_ms);
+  return mergeRestarts(
+    history.filter((e) => concernsService(e, name)),
+    restarts.filter((r) => r.service === name),
+  )
+    .filter((e) => inRange(e.at_ms))
+    .sort((a, b) => b.at_ms - a.at_ms);
 }
 
 function concernsService(event: DaemonEvent, name: string): boolean {
@@ -58,8 +43,4 @@ function concernsService(event: DaemonEvent, name: string): boolean {
       return unreachable;
     }
   }
-}
-
-function restartKey(atMs: number, trigger: string): string {
-  return `${atMs}:${trigger}`;
 }

@@ -140,6 +140,9 @@
    * `detail-2col`. Both panes resize, so these are container widths. */
   --container-list-spark: 20rem;
   --container-detail-2col: 48rem;
+  /* The events list lays its rows out as columns under a sticky header
+   * above `events-cols`, and stacks each row's fields below it. */
+  --container-events-cols: 50rem;
 }
 
 /* Breakpoints are replaced rather than extended. `static` always emits

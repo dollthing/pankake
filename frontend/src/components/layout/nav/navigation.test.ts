@@ -75,7 +75,8 @@ describe("sectionHref", () => {
       "/stats?from=1&to=2",
     );
     expect(sectionHref("chat", qwen, "?range=6h")).toBe("/chat?model=qwen");
-    expect(sectionHref("events", qwen, "?range=6h")).toBe("/events");
+    expect(sectionHref("events", qwen, "?range=6h")).toBe("/events?range=6h");
+    expect(sectionHref("config", qwen, "?range=6h")).toBe("/config");
   });
 
   it("leads back to the list from within Services", () => {

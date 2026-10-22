@@ -1,8 +1,8 @@
-// The time range the service history, its logs, and the Stats view share,
-// kept in the URL: `?range=1h` for a rolling preset that ends now, or
-// `?from=<ms>&to=<ms>` for a fixed range. No parameter means the default
-// preset. The URL is the only store, so a link or a reload keeps the range,
-// and the nav carries it between a service and Stats.
+// The time range the service history, its logs, and the Events and Stats
+// views share, kept in the URL: `?range=1h` for a rolling preset that ends
+// now, or `?from=<ms>&to=<ms>` for a fixed range. No parameter means the
+// default preset. The URL is the only store, so a link or a reload keeps
+// the range, and the nav carries it between those views.
 
 import type { LogWindow } from "../../../api/logs/logWindow.ts";
 

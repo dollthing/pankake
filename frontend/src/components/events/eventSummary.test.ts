@@ -51,4 +51,41 @@ describe("summarizeEvent", () => {
       ),
     ).toBe("auto-restarted (error_rate): 6 of 10 failed");
   });
+
+  it("lists where an allocation now sits, by device", () => {
+    expect(
+      summarizeEvent(
+        {
+          type: "allocation_changed",
+          service: "qwen",
+          reservations: { "gpu:1": 2 * 1024 ** 3, cpu: 0, "gpu:0": 1024 ** 3 },
+          at_ms: 1,
+        },
+        t,
+      ),
+    ).toBe("holds 1.00 GiB on gpu:0, 2.00 GiB on gpu:1");
+  });
+
+  it("says when an allocation is released", () => {
+    expect(
+      summarizeEvent(
+        {
+          type: "allocation_changed",
+          service: "qwen",
+          reservations: {},
+          at_ms: 1,
+        },
+        t,
+      ),
+    ).toBe("released its reservations");
+  });
+
+  it("names the services a reload changed", () => {
+    expect(
+      summarizeEvent(
+        { type: "config_reloaded", changed_services: ["a", "b"], at_ms: 1 },
+        t,
+      ),
+    ).toBe("configuration reloaded from disk, changing 2 services: a, b");
+  });
 });

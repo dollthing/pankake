@@ -46,8 +46,8 @@ export type LastService = Pick<
 /// except from within Services, where it leads back to the list (on a
 /// phone, the only other way back is the page's own link). Chat preselects
 /// the last service when it is a chat model. `range` is the current time
-/// range's query (`rangeSearch`), carried into the two sections that read
-/// it, Services and Stats, so moving between them keeps the range.
+/// range's query (`rangeSearch`), carried into the sections that read
+/// it, Services, Events, and Stats, so moving between them keeps the range.
 export function sectionHref(
   section: Section,
   lastService: LastService | undefined,
@@ -63,11 +63,11 @@ export function sectionHref(
       return lastService !== undefined && isChatModel(lastService)
         ? `/chat?model=${encodeURIComponent(lastService.name)}`
         : "/chat";
-    case "stats":
-      return `/stats${range}`;
     case "events":
+    case "stats":
+      return `/${section}${range}`;
     case "config":
-      return `/${section}`;
+      return "/config";
     default: {
       const unreachable: never = section;
       return unreachable;

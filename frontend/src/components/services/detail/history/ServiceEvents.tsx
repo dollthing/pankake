@@ -3,12 +3,13 @@
 // and reloads that touched it.
 
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { useEventFeed, useRestarts } from "../../../../api/hooks.ts";
 import { formatTimestamp, relativeTime } from "../../../../util.ts";
 import { summarizeEvent } from "../../../events/eventSummary.ts";
 import { EmptyState } from "../../../ui/feedback/EmptyState.tsx";
+import { rangeSearch } from "../../../ui/form/timeRange.ts";
 import type { ResolvedRange } from "../../../ui/form/useTimeRange.ts";
 import { Panel } from "../../../ui/layout/Panel.tsx";
 import { serviceEvents } from "./serviceEvents.ts";
@@ -23,6 +24,7 @@ export function ServiceEvents({
   readonly resolved: ResolvedRange;
 }) {
   const { t } = useTranslation();
+  const { search } = useLocation();
   const feed = useEventFeed();
   const { since, until, end } = resolved;
   const restarts = useRestarts(name, since, until ?? end);
@@ -41,7 +43,10 @@ export function ServiceEvents({
     <Panel
       heading={t("services.detail.recentEvents")}
       actions={
-        <Link to="/events" className="text-xs text-accent-text hover:underline">
+        <Link
+          to={`/events${rangeSearch(search)}`}
+          className="text-xs text-accent-text hover:underline"
+        >
           {t("services.detail.allEvents")}
         </Link>
       }
