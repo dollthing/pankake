@@ -13,8 +13,8 @@ import type { LogLine } from "../../api/client.ts";
 import { formatTimestamp } from "../../util.ts";
 import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
 import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
-import { Spinner } from "../ui/Spinner.tsx";
-import { EmptyState } from "../ui/EmptyState.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
+import { EmptyState } from "../ui/feedback/EmptyState.tsx";
 import { filterLines, type StreamFilter } from "./logFilter.ts";
 
 type LogsViewerProps = {

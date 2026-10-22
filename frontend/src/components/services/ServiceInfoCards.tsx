@@ -18,7 +18,7 @@ import {
   formatTimestamp,
   relativeTime,
 } from "../../util.ts";
-import { CopyButton } from "../ui/CopyButton.tsx";
+import { CopyButton } from "../ui/feedback/CopyButton.tsx";
 
 export function ModelInfoGrid({ model }: { model: ModelInfo }) {
   const { t } = useTranslation();

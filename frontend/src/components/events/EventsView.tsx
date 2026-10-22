@@ -16,7 +16,7 @@ import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
 import { formatTimestamp } from "../../util.ts";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Badge, type BadgeVariant } from "../ui/Badge.tsx";
-import { EmptyState } from "../ui/EmptyState.tsx";
+import { EmptyState } from "../ui/feedback/EmptyState.tsx";
 
 const EVENT_TYPES = [
   "state_changed",

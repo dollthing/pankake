@@ -12,7 +12,7 @@ import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Stat } from "../ui/Stat.tsx";
 import { Chip } from "../ui/status/Chip.tsx";
 import { StatusDot } from "../ui/status/StatusDot.tsx";
-import { Spinner } from "../ui/Spinner.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { Button } from "../ui/button/Button.tsx";
 import { ButtonLink } from "../ui/button/ButtonLink.tsx";
 import { LogsViewer } from "../logs/LogsViewer.tsx";

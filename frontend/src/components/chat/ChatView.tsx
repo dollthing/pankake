@@ -23,11 +23,11 @@ import {
   setInput,
   useChat,
 } from "../../api/chatStore.ts";
-import { Spinner } from "../ui/Spinner.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { Button } from "../ui/button/Button.tsx";
 import { ButtonLink } from "../ui/button/ButtonLink.tsx";
-import { EmptyState } from "../ui/EmptyState.tsx";
-import { CopyButton } from "../ui/CopyButton.tsx";
+import { EmptyState } from "../ui/feedback/EmptyState.tsx";
+import { CopyButton } from "../ui/feedback/CopyButton.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
 import { ModelDropdown } from "./ChatModelDropdown.tsx";

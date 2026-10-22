@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next";
 
 import { useServiceCommand } from "../../api/hooks.ts";
 import type { LaunchCommand } from "../../api/client.ts";
-import { Spinner } from "../ui/Spinner.tsx";
-import { CopyButton } from "../ui/CopyButton.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
+import { CopyButton } from "../ui/feedback/CopyButton.tsx";
 import { renderCommand } from "./launchCommandFormat.ts";
 
 export function LaunchCommandSection({ name }: { name: string }) {

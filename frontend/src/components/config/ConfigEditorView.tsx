@@ -16,7 +16,7 @@ import type { ValidationError } from "../../api/client.ts";
 import { Button } from "../ui/button/Button.tsx";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { Spinner } from "../ui/Spinner.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { Chip } from "../ui/status/Chip.tsx";
 import { CodeMirrorEditor } from "./CodeMirrorEditor.tsx";
 

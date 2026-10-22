@@ -21,7 +21,7 @@ import { toggleFavourite, useFavourites } from "../../api/favourites.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Stat } from "../ui/Stat.tsx";
-import { Spinner } from "../ui/Spinner.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
 import { DeviceCard } from "./DeviceCard.tsx";
 import { ServiceRow } from "./ServiceRow.tsx";

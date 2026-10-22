@@ -6,7 +6,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { useServices } from "../../api/hooks.ts";
-import { CopyButton } from "../ui/CopyButton.tsx";
+import { CopyButton } from "../ui/feedback/CopyButton.tsx";
 import { ThemeToggle } from "../ui/theme/ThemeToggle.tsx";
 import { Icon } from "../ui/icon/Icon.tsx";
 

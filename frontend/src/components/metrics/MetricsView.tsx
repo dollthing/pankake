@@ -25,7 +25,7 @@ import { CHART_PALETTE } from "../ui/chart-palette.ts";
 import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
 import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
 
-import { Spinner } from "../ui/Spinner.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
 import {
   groupDeviceSamples,
   resolveField,
