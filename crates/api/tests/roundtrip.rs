@@ -1,7 +1,10 @@
 use ananke_api::{
     config::ConfigResponse,
     devices::list::{DeviceReservation, DeviceSummary},
-    internal::{event::Event, log_line::LogLine},
+    internal::{
+        event::Event,
+        log_line::{LogLine, LogPosition},
+    },
     services::{
         command::{EnvVar, LaunchCommand, LaunchCommandSource},
         detail::ServiceDetail,
@@ -110,6 +113,7 @@ fn logs_response_roundtrips() {
             seq: 1,
         }],
         next_cursor: None,
+        follow_after: Some(LogPosition { run_id: 1, seq: 1 }),
     };
     assert_eq!(v.clone(), roundtrip(v));
 }

@@ -11,7 +11,10 @@ use ananke_api::{
     },
     events::{Event, EventHistory},
     info::get::DaemonInfoResponse,
-    internal::{fit_verdict::FitVerdict, log_line::LogLine},
+    internal::{
+        fit_verdict::FitVerdict,
+        log_line::{LogLine, LogPosition, LogStream},
+    },
     live::{LiveData, LiveMessage, LiveRequest, LiveResource},
     metrics::{
         get::{MetricBucketResponse, MetricsResponse},
@@ -112,6 +115,8 @@ use crate::{
         LaunchContainer,
         LaunchMount,
         LogLine,
+        LogPosition,
+        LogStream,
         LogsResponse,
         LogStreamMessage,
         DeviceSummary,

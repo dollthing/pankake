@@ -1090,6 +1090,27 @@ export interface components {
        */
       timestamp_ms: number;
     };
+    /**
+     * @description Where a line sits in its service's log. Positions order by `(run_id, seq)`:
+     *     a later run always has a larger id, and `seq` counts up within a run.
+     */
+    LogPosition: {
+      /**
+       * Format: int64
+       * @description The run the line belongs to.
+       */
+      run_id: number;
+      /**
+       * Format: int64
+       * @description The line's sequence number within the run.
+       */
+      seq: number;
+    };
+    /**
+     * @description Which output stream a line came from, as a filter.
+     * @enum {string}
+     */
+    LogStream: "stdout" | "stderr" | "combined";
     /** @description Frame sent over `/api/services/{name}/logs/stream`. */
     LogStreamMessage:
       | (components["schemas"]["LogLine"] & {
@@ -1107,6 +1128,7 @@ export interface components {
         };
     /** @description `GET /api/services/{name}/logs` response body. */
     LogsResponse: {
+      follow_after?: null | components["schemas"]["LogPosition"];
       /** @description Newest-first page of log lines. */
       logs: components["schemas"]["LogLine"][];
       /** @description Opaque cursor for paging further back; `None` when exhausted. */

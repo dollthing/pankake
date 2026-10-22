@@ -813,6 +813,10 @@ Get service logs (paginated)
 
 ```typescript
 {
+  follow_after?: {
+    run_id: number
+    seq: number
+  } | null
   logs: {
     line: string
     run_id: number
