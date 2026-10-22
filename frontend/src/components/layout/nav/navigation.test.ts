@@ -38,23 +38,36 @@ describe("sectionHref", () => {
   });
 
   it("reopens the last service, escaped", () => {
-    expect(sectionHref("services", { name: "a/b" })).toBe("/services/a%2Fb");
+    expect(sectionHref("services", { name: "a/b", openai_compat: true })).toBe(
+      "/services/a%2Fb",
+    );
   });
 
   it("preselects a chat model in chat", () => {
-    expect(sectionHref("chat", { name: "qwen" })).toBe("/chat?model=qwen");
-    expect(sectionHref("chat", { name: "qwen", modality: "chat" })).toBe(
+    expect(sectionHref("chat", { name: "qwen", openai_compat: true })).toBe(
       "/chat?model=qwen",
     );
   });
 
   it("does not preselect an embedding model in chat", () => {
-    expect(sectionHref("chat", { name: "bge", modality: "embedding" })).toBe(
+    expect(
+      sectionHref("chat", {
+        name: "bge",
+        modality: "embedding",
+        openai_compat: true,
+      }),
+    ).toBe("/chat");
+  });
+
+  it("does not preselect a service outside the OpenAI API in chat", () => {
+    expect(sectionHref("chat", { name: "comfy", openai_compat: false })).toBe(
       "/chat",
     );
   });
 
   it("ignores the last service elsewhere", () => {
-    expect(sectionHref("config", { name: "qwen" })).toBe("/config");
+    expect(sectionHref("config", { name: "qwen", openai_compat: true })).toBe(
+      "/config",
+    );
   });
 });

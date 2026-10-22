@@ -2,6 +2,7 @@
 // shapes (the list at `/` and one service at `/services/:name`), so
 // activeness is decided here rather than by `NavLink`'s own matching.
 
+import { isChatModel } from "../../../api/chatModels.ts";
 import type { ServiceSummary } from "../../../api/client.ts";
 
 export type Section = "services" | "chat" | "events" | "stats" | "config";
@@ -36,7 +37,10 @@ export function serviceFromPath(pathname: string): string | undefined {
   }
 }
 
-export type LastService = Pick<ServiceSummary, "name" | "modality">;
+export type LastService = Pick<
+  ServiceSummary,
+  "name" | "modality" | "openai_compat"
+>;
 
 /// Where a section's nav item points. Services reopens the last service,
 /// and Chat preselects it when it is a chat model.
@@ -68,8 +72,4 @@ const SERVICE_PREFIX = "/services/";
 
 function trimTrailingSlash(pathname: string): string {
   return pathname.replace(/\/+$/, "");
-}
-
-function isChatModel(service: LastService): boolean {
-  return service.modality === undefined || service.modality === "chat";
 }

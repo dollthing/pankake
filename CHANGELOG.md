@@ -53,6 +53,7 @@ The audience is an operator deciding whether to upgrade and what they will have 
 - `anankectl logs` accepts human-friendly `--since` and `--until` values: RFC 3339 timestamps, local datetimes and dates, or relative ages like `2h` and `30m`, in addition to epoch milliseconds.
 - Llama.cpp-native endpoints on the OpenAI listener. `/tokenize`, `/detokenize`, `/apply-template`, `/completion`, `/infill`, `/embedding`, `/embeddings`, `/rerank`, `/reranking`, `/props`, `/slots`, `/slots/{id}`, `/lora-adapters`, `/health`, `/v1/health`, and `/metrics` are now served on the main inference URL and forwarded verbatim to the upstream of a `llama-cpp` template service (started on demand). A `model` field in the body selects the service; without one, the sole llama-cpp service is the target. The OpenAI-shape aliases (`/v1/*`, `/models`, `/completions`, `/chat/completions`, …) are not proxied.
 - `GET /api/info` and the live `info` resource report `uptime_ms`, the time since the daemon started.
+- The service detail reports the placement constraints a service runs under (`placement`: policy, allowed GPUs, split mode and tensor-split weights, GPU headroom, and allocation mode), a command service's settings (`command`: upstream model, shutdown command, whether the private port is fixed, and working directory), and the configured `n_gpu_layers`, `context`, and resolved prompt-cache cap under `serving`. The list and detail report `openai_compat` and `description`.
 - The service list and detail report why a disabled service is disabled, as `disabled_reason` (`launch_failed`, `health_timeout`, `oom`, `user_disabled`, or `auto_restart_loop`), and `state_changed` events carry it. `anankectl services` shows it beside the state, `anankectl status` counts the services disabled after a fault, and the web UI colours those services as failed and counts them on the Services tab.
 
 ### Changed
@@ -69,6 +70,9 @@ The audience is an operator deciding whether to upgrade and what they will have 
 - Container removal waits for the log follower to finish, so the tail of a stopped container's output (the part saying why it stopped) is no longer lost to the removal that deletes the runtime's log store.
 - A runtime that cannot be reached is no longer read as a container that is not there. Reconciliation kept deleting the record in that case, which strands a running container with nothing pointing at it. The startup leak sweep also asks every runtime the records name, rather than whichever this process defaults to: on a Podman-only host it was running `docker ps` and finding nothing.
 - The daemon removes every container it owns on shutdown when a drain overruns `shutdown_timeout`, rather than exiting and leaving the workload holding its reservation.
+- The service detail's serving settings resolve `parallel`, `kv_unified`, `flash_attn`, and `ubatch_size` through `extra_args` the way the launch command does, rather than reading the config keys alone, so they no longer disagree with the running server.
+- When both `cache_ram_mb` and `-cram` in `extra_args` are set, the estimate uses the `extra_args` value, which is the one llama-server receives.
+- A command service without an `openai_proxy` block is no longer offered for chat in the web UI. It is not on the OpenAI-compatible API, so the chat could only fail.
 - `pid 0` is no longer registered for memory attribution. It parents init, so attributing its descendants summed the whole machine into one service.
 
 ### Notes

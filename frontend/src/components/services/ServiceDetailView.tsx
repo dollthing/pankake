@@ -1,6 +1,7 @@
 // Service detail page (`/services/:name`). Shows model info, VRAM
 // estimate, placement preview, launch command, and a logs viewer.
 
+import { isChatModel } from "../../api/chatModels.ts";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -96,7 +97,7 @@ export function ServiceDetailView() {
               <ButtonLink href={serviceProxyUrl(d.port)} external>
                 {t("serviceDetail.open")}
               </ButtonLink>
-              {d.modality !== "embedding" && (
+              {isChatModel(d) && (
                 <ButtonLink
                   tone="primary"
                   icon="chat"

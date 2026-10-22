@@ -491,6 +491,7 @@ List all services
   openai_api_port: number
   services: {
     ananke_metadata?: Record<string, any>
+    description?: string | null
     disabled_reason?: "launch_failed" | "health_timeout" | "oom" | "user_disabled" | "auto_restart_loop" | null
     elastic_borrower?: string | null
     fit_verdict?:
@@ -522,6 +523,7 @@ List all services
     lifecycle: "persistent" | "on_demand"
     modality?: "chat" | "embedding"
     name: string
+    openai_compat: boolean
     pid?: number | null
     port: number
     priority: number
@@ -549,6 +551,12 @@ Get service detail
 ```typescript
 {
   ananke_metadata?: Record<string, any>
+  command?: {
+    private_port_fixed: boolean
+    shutdown_command?: string[] | null
+    upstream_model?: string | null
+    workdir?: string | null
+  } | null
   container?: {
     container_id?: string | null
     container_name?: string | null
@@ -557,6 +565,7 @@ Get service detail
     runtime: string
   } | null
   current_allocation: Record<string, number>
+  description?: string | null
   disabled_reason?: "launch_failed" | "health_timeout" | "oom" | "user_disabled" | "auto_restart_loop" | null
   elastic_borrower?: string | null
   estimate?: {
@@ -584,7 +593,34 @@ Get service detail
   } | null
   name: string
   observed_peak_bytes: number
+  openai_compat: boolean
   pid?: number | null
+  placement: {
+    allocation:
+      // estimated
+      | {
+        kind: "estimated"
+      }
+      // static
+      | {
+        kind: "static"
+        reserve_bytes: number
+      }
+      // dynamic
+      | {
+        kind: "dynamic"
+        max_bytes: number
+        min_borrower_runtime_ms: number
+        min_bytes: number
+      }
+    gpu_allow?: number[]
+    gpu_headroom_bytes: number
+    policy: "gpu-only" | "cpu-only" | "hybrid"
+    split?: {
+      mode: "layer" | "row" | "tensor"
+      tensor_split_weights?: number[] | null
+    } | null
+  }
   placement_override: Record<string, number>
   placement_preview?: {
     devices: {
@@ -641,8 +677,10 @@ Get service detail
   serving?: {
     batch_size?: number | null
     binary: string
+    cache_ram_bytes: number
     cache_type_k: string
     cache_type_v: string
+    context?: number | null
     draft_model?: string | null
     effective_context_per_slot?: number | null
     expert_offload: string
@@ -650,6 +688,7 @@ Get service detail
     kv_unified: boolean
     mlock: boolean
     mmap: boolean
+    n_gpu_layers?: number | null
     numa?: string | null
     parallel: number
     spec_type?: string | null

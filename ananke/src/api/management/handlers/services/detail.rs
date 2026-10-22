@@ -19,7 +19,7 @@ use crate::{
         management::handlers::{
             model_estimate_entry, placement_preview, read_current_allocation,
             services::{
-                config_view::{runtime_info, serving_config},
+                config_view::{command_detail, placement_config, runtime_info, serving_config},
                 list::wire_state,
             },
         },
@@ -112,6 +112,10 @@ pub(crate) async fn service_detail_snapshot(
         port: svc_cfg.port,
         private_port: svc_cfg.private_port,
         template: svc_cfg.template().as_str().to_string(),
+        description: svc_cfg.description.clone(),
+        openai_compat: svc_cfg.openai_compat,
+        placement: placement_config(svc_cfg),
+        command: command_detail(svc_cfg),
         placement_override,
         idle_timeout_ms: svc_cfg.idle_timeout_ms,
         run_id: snap.as_ref().and_then(|s| s.run_id),

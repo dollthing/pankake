@@ -27,6 +27,12 @@ pub struct ServicesResponse {
 pub struct ServiceSummary {
     /// Service name (matches `[[service]]` table in config).
     pub name: String,
+    /// Free-form description from the service's config.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Whether the service is reachable through the OpenAI-compatible API,
+    /// and so can be chatted with or embedded against.
+    pub openai_compat: bool,
     /// Current state.
     pub state: ServiceStateKind,
     /// Why the service is disabled; present exactly when `state` is

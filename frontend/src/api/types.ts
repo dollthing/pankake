@@ -366,6 +366,40 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** @description How the allocator sizes a service's reservation. */
+    AllocationConfig:
+      | {
+          /** @enum {string} */
+          kind: "estimated";
+        }
+      | {
+          /** @enum {string} */
+          kind: "static";
+          /**
+           * Format: int64
+           * @description The reservation, in bytes.
+           */
+          reserve_bytes: number;
+        }
+      | {
+          /** @enum {string} */
+          kind: "dynamic";
+          /**
+           * Format: int64
+           * @description The upper bound, in bytes.
+           */
+          max_bytes: number;
+          /**
+           * Format: int64
+           * @description How long a borrower must run before its memory may be reclaimed.
+           */
+          min_borrower_runtime_ms: number;
+          /**
+           * Format: int64
+           * @description The lower bound, in bytes.
+           */
+          min_bytes: number;
+        };
     /**
      * @description `{"error": {"code", "message", "type"}}`. The shared wire DTO; the
      *     daemon-side `ApiErrorCode` enum is the source of truth for which
@@ -446,6 +480,26 @@ export interface components {
     } & {
       /** @description Model name (maps to an ananke service name). */
       model: string;
+    };
+    /**
+     * @description A command-template service's settings that its launch command does not
+     *     show.
+     */
+    CommandDetail: {
+      /**
+       * @description `true` when the config fixes the private port; `false` when it comes
+       *     from the daemon's pool.
+       */
+      private_port_fixed: boolean;
+      /** @description The command run to stop the workload, when set. */
+      shutdown_command?: string[] | null;
+      /**
+       * @description The model name rewritten into proxied OpenAI requests, when the
+       *     service has an `openai_proxy` block.
+       */
+      upstream_model?: string | null;
+      /** @description The working directory the command runs in, when set. */
+      workdir?: string | null;
     };
     /**
      * @description `POST /v1/completions` request envelope.
@@ -1379,6 +1433,27 @@ export interface components {
       /** @description Always `"list"`. */
       object: string;
     };
+    /** @description The placement constraints a service's config sets, as validated. */
+    PlacementConfig: {
+      /** @description How the allocator sizes the service's reservation. */
+      allocation: components["schemas"]["AllocationConfig"];
+      /** @description GPU indices the service may use; empty means every GPU. */
+      gpu_allow?: number[];
+      /**
+       * Format: int64
+       * @description VRAM this service keeps free on each GPU it uses, on top of the global
+       *     reserves.
+       */
+      gpu_headroom_bytes: number;
+      /** @description Which device classes the service may land on. */
+      policy: components["schemas"]["PlacementPolicy"];
+      split?: null | components["schemas"]["SplitConfig"];
+    };
+    /**
+     * @description Which device classes a service may be placed on, spelled as in config.
+     * @enum {string}
+     */
+    PlacementPolicy: "gpu-only" | "cpu-only" | "hybrid";
     /**
      * @description Where a service's memory would land per device under current conditions, and
      *     whether it fits without the daemon having to evict or reclaim. Computed by
@@ -1446,6 +1521,7 @@ export interface components {
        *     [`crate::services::list::ServiceSummary::ananke_metadata`].
        */
       ananke_metadata?: Record<string, never>;
+      command?: null | components["schemas"]["CommandDetail"];
       container?: null | components["schemas"]["ContainerDetail"];
       /**
        * @description What pledge the service is currently holding on each device.
@@ -1455,6 +1531,8 @@ export interface components {
       current_allocation: {
         [key: string]: number;
       };
+      /** @description Free-form description from the service's config. */
+      description?: string | null;
       disabled_reason?: null | components["schemas"]["DisableReason"];
       /** @description Placeholder for elastic-borrower tracking. */
       elastic_borrower?: string | null;
@@ -1487,10 +1565,17 @@ export interface components {
        */
       observed_peak_bytes: number;
       /**
+       * @description Whether the service is reachable through the OpenAI-compatible API,
+       *     and so can be chatted with or embedded against.
+       */
+      openai_compat: boolean;
+      /**
        * Format: int32
        * @description Child PID if any.
        */
       pid?: number | null;
+      /** @description The validated placement constraints the packer works under. */
+      placement: components["schemas"]["PlacementConfig"];
       /** @description Manual placement override, keyed by device slot string. */
       placement_override: {
         [key: string]: number;
@@ -1601,6 +1686,8 @@ export interface components {
        *     metadata.
        */
       ananke_metadata?: Record<string, never>;
+      /** @description Free-form description from the service's config. */
+      description?: string | null;
       disabled_reason?: null | components["schemas"]["DisableReason"];
       /** @description Placeholder for elastic-borrower tracking (future work). */
       elastic_borrower?: string | null;
@@ -1668,6 +1755,11 @@ export interface components {
       /** @description Service name (matches `[[service]]` table in config). */
       name: string;
       /**
+       * @description Whether the service is reachable through the OpenAI-compatible API,
+       *     and so can be chatted with or embedded against.
+       */
+      openai_compat: boolean;
+      /**
        * Format: int32
        * @description Child PID if currently running.
        */
@@ -1718,10 +1810,21 @@ export interface components {
        *     a service uses is a first-class fact.
        */
       binary: string;
+      /**
+       * Format: int64
+       * @description The prompt cache's host RAM cap (`-cram`), resolved the way the
+       *     launch command resolves it. Zero when the cache is disabled.
+       */
+      cache_ram_bytes: number;
       /** @description KV cache type for keys (`f16` when unset). */
       cache_type_k: string;
       /** @description KV cache type for values (`f16` when unset). */
       cache_type_v: string;
+      /**
+       * Format: int32
+       * @description The configured context window, before any default applies.
+       */
+      context?: number | null;
       /**
        * @description Draft model file name (not full path), when a separate draft
        *     GGUF is configured.
@@ -1744,6 +1847,11 @@ export interface components {
       mlock: boolean;
       /** @description Model file memory-mapped (llama.cpp's default is `true`). */
       mmap: boolean;
+      /**
+       * Format: int32
+       * @description Layers offloaded to the GPU (`-ngl`), when set.
+       */
+      n_gpu_layers?: number | null;
       /** @description `--numa` strategy, when set. */
       numa?: string | null;
       /**
@@ -1769,6 +1877,18 @@ export interface components {
        */
       ubatch_size?: number | null;
     };
+    /** @description A llama-cpp service's inter-GPU split. */
+    SplitConfig: {
+      /** @description The split strategy. */
+      mode: components["schemas"]["SplitMode"];
+      /** @description Per-GPU `--tensor-split` weights in ascending GPU order, when set. */
+      tensor_split_weights?: number[] | null;
+    };
+    /**
+     * @description How llama.cpp spreads a model across GPUs, spelled as in config.
+     * @enum {string}
+     */
+    SplitMode: "layer" | "row" | "tensor";
     /**
      * @description `POST /api/services/{name}/start` response body.
      *

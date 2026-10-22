@@ -64,6 +64,8 @@ pub(crate) fn services_snapshot(state: &AppState) -> ServicesResponse {
 
         services.push(ServiceSummary {
             name: svc_cfg.name.to_string(),
+            description: svc_cfg.description.clone(),
+            openai_compat: svc_cfg.openai_compat,
             state: state_kind,
             disabled_reason,
             lifecycle: svc_cfg.lifecycle,

@@ -86,6 +86,7 @@ export function service(
     name,
     state,
     lifecycle: "on_demand",
+    openai_compat: true,
     port: 8000,
     priority: 50,
     ...extra,

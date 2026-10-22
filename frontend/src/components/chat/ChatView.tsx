@@ -6,6 +6,7 @@
 // state) lives in the module-level chatStore so it survives navigation
 // away and back within the same tab session.
 
+import { isChatModel } from "../../api/chatModels.ts";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -40,17 +41,12 @@ export function ChatView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const chat = useChat();
 
-  const chatModels = (services.data ?? [])
-    .filter(
-      (s) =>
-        s.modality !== "embedding" && !s.name.toLowerCase().includes("comfyui"),
-    )
-    .sort((a, b) => {
-      const ar = a.state === "running" ? 0 : 1;
-      const br = b.state === "running" ? 0 : 1;
-      if (ar !== br) return ar - br;
-      return a.name.localeCompare(b.name);
-    });
+  const chatModels = (services.data ?? []).filter(isChatModel).sort((a, b) => {
+    const ar = a.state === "running" ? 0 : 1;
+    const br = b.state === "running" ? 0 : 1;
+    if (ar !== br) return ar - br;
+    return a.name.localeCompare(b.name);
+  });
   const paramModel = searchParams.get("model");
 
   // Sync URL → store, but only when the URL explicitly specifies a
