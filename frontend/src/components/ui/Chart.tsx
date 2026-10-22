@@ -47,6 +47,8 @@ export function Chart({ data, series, height = 160, xMin, xMax }: ChartProps) {
 
     const border = readVar("--color-border-default", "#232b3a");
     const tertiary = readVar("--color-text-tertiary", "#5b6477");
+    // Canvas text cannot take `var()`, so pass the resolved family.
+    const font = `10px ${readVar("--font-mono", "monospace")}`;
 
     const opts: uPlot.Options = {
       width: el.clientWidth || 600,
@@ -82,14 +84,14 @@ export function Chart({ data, series, height = 160, xMin, xMax }: ChartProps) {
           grid: { stroke: border, width: 1 },
           ticks: { stroke: border, width: 1 },
           stroke: tertiary,
-          font: "10px 'IBM Plex Mono'",
+          font,
           size: 32,
         },
         {
           grid: { stroke: border, width: 1 },
           ticks: { stroke: border, width: 1 },
           stroke: tertiary,
-          font: "10px 'IBM Plex Mono'",
+          font,
           size: 36,
         },
       ],

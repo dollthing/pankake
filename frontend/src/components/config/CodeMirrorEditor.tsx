@@ -73,7 +73,7 @@ export function CodeMirrorEditor({
         fontSize: "13px",
       },
       ".cm-scroller": {
-        fontFamily: "'IBM Plex Mono', monospace",
+        fontFamily: "var(--font-mono)",
         overflow: "auto",
       },
       ".cm-content": { padding: "8px 0" },
@@ -84,7 +84,7 @@ export function CodeMirrorEditor({
         borderRight: "1px solid var(--color-border-default)",
       },
       ".cm-lineNumbers .cm-gutterElement": {
-        fontFamily: "'IBM Plex Mono', monospace",
+        fontFamily: "var(--font-mono)",
         fontSize: "11px",
         padding: "0 8px 0 12px",
       },

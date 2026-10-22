@@ -86,11 +86,8 @@
 }
 
 @theme {
-  --font-sans:
-    "IBM Plex Sans Variable", ui-sans-serif, system-ui, -apple-system,
-    sans-serif;
-  --font-mono:
-    "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  --font-sans: "Work Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Iosevka Extended", ui-monospace, monospace;
   /* Slashed zero, so 0 and O never get confused in ids and hashes. */
   --font-mono--font-feature-settings: "zero" 1;
 
