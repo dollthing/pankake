@@ -49,12 +49,14 @@ async fn combined_stream_batches_and_broadcasts() {
 
     // The live broadcast carries the label, so a websocket subscriber can
     // render it without waiting for the row to land.
-    for expected in ["loading model", "listen 0.0.0.0:8000"] {
-        let (id, line) = live.recv().await.unwrap();
-        assert_eq!(id, service_id);
-        assert_eq!(line.stream, "combined");
-        assert_eq!(line.line, expected);
+    let mut received = Vec::new();
+    while received.len() < 2 {
+        let batch = live.recv().await.unwrap();
+        received.extend(batch.for_service(service_id).cloned());
     }
+    assert!(received.iter().all(|l| l.stream == "combined"));
+    let texts: Vec<&str> = received.iter().map(|l| l.line.as_str()).collect();
+    assert_eq!(texts, ["loading model", "listen 0.0.0.0:8000"]);
 
     h.state.batcher.flush().await;
     let rows = h.state.db.fetch_service_logs(service_id).await.unwrap();

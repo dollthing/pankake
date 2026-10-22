@@ -1,8 +1,9 @@
 //! `GET /api/services/{name}/logs/stream` WebSocket — live log tail for a single service.
 
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-use ananke_api::{internal::log_line::LogLine, services::logs_stream::LogStreamMessage};
+use ananke_api::services::logs_stream::LogStreamMessage;
+use ananke_db::logs::LogBatch;
 use axum::{
     extract::{Path, State, WebSocketUpgrade, ws::Message},
     http::{HeaderMap, StatusCode},
@@ -47,20 +48,21 @@ pub async fn get_logs_ws(
 async fn serve_logs(
     mut socket: axum::extract::ws::WebSocket,
     service_id: i64,
-    mut rx: tokio::sync::broadcast::Receiver<(i64, LogLine)>,
+    mut rx: tokio::sync::broadcast::Receiver<Arc<LogBatch>>,
 ) {
     loop {
         select! {
             recv = rx.recv() => match recv {
-                Ok((sid, line)) if sid == service_id => {
-                    let msg = LogStreamMessage::Line(line);
-                    let json = match serde_json::to_string(&msg) {
-                        Ok(s) => s,
-                        Err(e) => { warn!(error = %e, "log line serialise failed"); continue; }
-                    };
-                    if socket.send(Message::Text(json)).await.is_err() { return; }
+                Ok(batch) => {
+                    for line in batch.for_service(service_id) {
+                        let msg = LogStreamMessage::Line(line.clone());
+                        let json = match serde_json::to_string(&msg) {
+                            Ok(s) => s,
+                            Err(e) => { warn!(error = %e, "log line serialise failed"); continue; }
+                        };
+                        if socket.send(Message::Text(json)).await.is_err() { return; }
+                    }
                 }
-                Ok(_) => continue,
                 Err(RecvError::Lagged(n)) => {
                     let msg = LogStreamMessage::Overflow { dropped: n };
                     if let Ok(s) = serde_json::to_string(&msg)
