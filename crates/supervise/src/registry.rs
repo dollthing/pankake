@@ -58,6 +58,7 @@ mod tests {
             inflight: ananke_tracking::inflight::InflightTable::new(),
             activity: ananke_tracking::activity::ActivityTable::new(),
             estimate_cache: crate::estimate_cache::EstimateCacheHandle::new(),
+            mirror_changed: ananke_events::ChangeSignal::new(),
         };
         let handle = Arc::new(spawn_supervisor(init, svc.clone(), deps));
 

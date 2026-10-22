@@ -7,7 +7,7 @@ use std::sync::Arc;
 use ananke_config::validate::ServiceConfig;
 use ananke_db::{Database, logs::BatcherHandle};
 use ananke_devices::Allocation;
-use ananke_events::EventBus;
+use ananke_events::{ChangeSignal, EventBus};
 use ananke_observation::ObservationTable;
 use ananke_proxy::InflightCounter;
 use ananke_tracking::rolling::RollingTable;
@@ -338,6 +338,9 @@ pub struct SupervisorDeps {
     /// `ServiceDetail` handler sees the same numbers without doing a
     /// second GGUF read.
     pub estimate_cache: EstimateCacheHandle,
+    /// Bumped whenever any supervisor's mirrored state, run id, or pid
+    /// changes. The run id and pid move without an event of their own.
+    pub mirror_changed: ChangeSignal,
 }
 
 /// Identity fields that don't change across a reload. Everything else a

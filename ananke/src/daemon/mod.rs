@@ -127,6 +127,7 @@ pub async fn run() -> Result<(), ExpectedError> {
         events: events.clone(),
         system: system.clone(),
         estimate_cache: crate::supervise::estimate_cache::EstimateCacheHandle::new(),
+        mirror_changed: ananke_events::ChangeSignal::new(),
     };
 
     let provisioning_deps = app_state.provisioning_deps(shutdown_rx.clone());

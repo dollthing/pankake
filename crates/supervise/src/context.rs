@@ -91,6 +91,7 @@ impl RunLoop {
             m.state = new_state.clone();
             prior
         };
+        self.deps.mirror_changed.notify();
         info!(
             service = %self.init.identity.name,
             from = %prior_state.name(),
@@ -109,9 +110,12 @@ impl RunLoop {
     /// right after `insert_running_row` assigns the run_id, so every
     /// `SupervisorHandle::peek()` from that point sees the identifiers.
     pub(crate) fn set_running_ids(&mut self, run_id: i64, pid: i32) {
-        let mut m = self.mirror.lock();
-        m.run_id = Some(run_id);
-        m.pid = Some(pid);
+        {
+            let mut m = self.mirror.lock();
+            m.run_id = Some(run_id);
+            m.pid = Some(pid);
+        }
+        self.deps.mirror_changed.notify();
     }
 
     /// Clear `run_id` + `pid` from the shared mirror. Called from every
@@ -119,9 +123,12 @@ impl RunLoop {
     /// the `delete_running_row` DB update, so peeks don't keep reporting a
     /// stale child. Prefer [`Self::end_run`] at call sites that need both.
     pub(crate) fn clear_running_ids(&mut self) {
-        let mut m = self.mirror.lock();
-        m.run_id = None;
-        m.pid = None;
+        {
+            let mut m = self.mirror.lock();
+            m.run_id = None;
+            m.pid = None;
+        }
+        self.deps.mirror_changed.notify();
     }
 
     /// Combined teardown: delete the DB `running_services` row and clear the

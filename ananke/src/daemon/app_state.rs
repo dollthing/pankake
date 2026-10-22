@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use ananke_allocator::AllocationTable;
 use ananke_db::{Database, logs::BatcherHandle};
-use ananke_events::EventBus;
+use ananke_events::{ChangeSignal, EventBus};
 use ananke_observation::{ObservationTable, SharedSnapshot};
 use ananke_tracking::{
     activity::ActivityTable, inflight::InflightTable, progress::ProgressTable,
@@ -39,6 +39,9 @@ pub struct AppState {
     /// name. Populated lazily by the management `ServiceDetail`
     /// handler so successive detail polls don't re-parse the GGUF.
     pub estimate_cache: EstimateCacheHandle,
+    /// Bumped whenever any supervisor's mirrored state, run id, or pid
+    /// changes; shared with every supervisor through `SupervisorDeps`.
+    pub mirror_changed: ChangeSignal,
 }
 
 impl AppState {
@@ -59,6 +62,7 @@ impl AppState {
             inflight: self.inflight.clone(),
             activity: self.activity.clone(),
             estimate_cache: self.estimate_cache.clone(),
+            mirror_changed: self.mirror_changed.clone(),
         }
     }
 
