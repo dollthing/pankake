@@ -14,6 +14,7 @@ import { useSearchParams } from "react-router-dom";
 import { useServices, useInfo } from "../../api/hooks.ts";
 import { openaiBaseUrlFromListen } from "../../util.ts";
 import {
+  activeRun,
   addAttachment,
   cancel as cancelSend,
   clearConversation,
@@ -127,7 +128,7 @@ export function ChatView() {
     );
   }
 
-  const inputDisabled = !selectedModel || chat.chatState.kind === "starting";
+  const inputDisabled = !selectedModel;
 
   return (
     <div className="flex h-full flex-col">
@@ -155,7 +156,7 @@ export function ChatView() {
         ) : (
           chat.messages.map((msg, i) => (
             <MessageBubble
-              key={msg.timestamp}
+              key={msg.id}
               message={msg}
               modelName={selectedModel}
               liveStats={
@@ -290,12 +291,10 @@ export function ChatView() {
               />
               +
             </label>
-            {chat.chatState.kind === "streaming" ||
-            chat.chatState.kind === "starting" ? (
+            {activeRun(chat.chatState) ? (
               <Button
                 tone="stop"
                 onClick={cancelSend}
-                disabled={chat.chatState.kind === "starting"}
                 className="h-auto self-stretch"
               >
                 {t("chat.stop")}

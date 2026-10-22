@@ -7,54 +7,72 @@
 import { useSyncExternalStore } from "react";
 
 export type StreamStats = {
-  ttftMs: number | null;
-  promptTokens: number | null;
-  completionTokens: number | null;
+  readonly ttftMs: number | null;
+  readonly promptTokens: number | null;
+  readonly completionTokens: number | null;
   /// Decode throughput: completion tokens divided by the engine-reported
   /// decode window (`timings.predicted_ms`). Null when the engine does
   /// not emit timings, in which case `predictedPerSecond` is the fallback.
-  outputTokPerSec: number | null;
+  readonly outputTokPerSec: number | null;
   /// Prefill throughput: cache-aware prompt tokens (`timings.prompt_n`)
   /// divided by prefill time (`timings.prompt_ms`). Null when absent.
-  inputTokPerSec: number | null;
+  readonly inputTokPerSec: number | null;
   /// Effective end-to-end rate: completion tokens over total wall-clock
   /// elapsed. Always computable; shown only as a fallback when the engine
   /// does not provide the input/output split.
-  predictedPerSecond: number | null;
+  readonly predictedPerSecond: number | null;
 };
 
 export type Attachment = {
-  name: string;
-  size: number;
-  type: "text" | "image";
-  content: string;
+  readonly name: string;
+  readonly size: number;
+  readonly type: "text" | "image";
+  readonly content: string;
 };
 
 export type Message = {
-  role: "system" | "user" | "assistant";
-  content: string;
-  reasoning?: string;
+  /// Unique within the tab; timestamps only have second resolution.
+  readonly id: number;
+  readonly role: "system" | "user" | "assistant";
+  readonly content: string;
+  readonly reasoning?: string;
   /// The model that wrote an assistant message.
-  model?: string;
-  images?: string[];
-  stats?: StreamStats;
-  timestamp: string;
+  readonly model?: string;
+  readonly images?: readonly string[];
+  readonly stats?: StreamStats;
+  readonly timestamp: string;
 };
 
-type ChatState =
-  | { kind: "idle" }
-  | { kind: "starting"; controller: AbortController }
-  | { kind: "streaming"; controller: AbortController }
-  | { kind: "error"; message: string };
+/// One send, from the moment it takes the composer's text until it ends.
+/// Every write it makes checks that it is still the store's run, so a
+/// reset, a cancel, or a later send leaves it nowhere to write.
+export type Run = {
+  readonly controller: AbortController;
+  /// The user message the run added, and the composer it came from, so a
+  /// run that ends before any reply can give the text back.
+  readonly turn: Message;
+  readonly draft: {
+    readonly input: string;
+    readonly attachments: readonly Attachment[];
+  };
+};
 
-type ChatSnapshot = {
-  messages: Message[];
-  systemPrompt: string;
-  currentModel: string | null;
-  chatState: ChatState;
-  stats: StreamStats;
-  input: string;
-  attachments: Attachment[];
+export type ChatState =
+  | { readonly kind: "idle" }
+  /// Checking the model, or waiting for the reply's first byte.
+  | { readonly kind: "sending"; readonly run: Run }
+  | { readonly kind: "starting"; readonly run: Run }
+  | { readonly kind: "streaming"; readonly run: Run }
+  | { readonly kind: "error"; readonly message: string };
+
+export type ChatSnapshot = {
+  readonly messages: readonly Message[];
+  readonly systemPrompt: string;
+  readonly currentModel: string | null;
+  readonly chatState: ChatState;
+  readonly stats: StreamStats;
+  readonly input: string;
+  readonly attachments: readonly Attachment[];
 };
 
 export const EMPTY_STATS: StreamStats = {
@@ -94,6 +112,41 @@ function subscribe(l: () => void): () => void {
 
 export function getSnapshot(): ChatSnapshot {
   return snapshot;
+}
+
+let nextMessageId = 1;
+
+export function newMessageId(): number {
+  return nextMessageId++;
+}
+
+/// The run in flight, if any.
+export function activeRun(state: ChatState): Run | null {
+  return state.kind === "sending" ||
+    state.kind === "starting" ||
+    state.kind === "streaming"
+    ? state.run
+    : null;
+}
+
+/// Ends `run` in `next`. A run that got no reply takes its message back
+/// out and returns its text and attachments to an empty composer, so a
+/// retry needs no retyping and the history never holds an unanswered turn.
+export function endRun(
+  prev: ChatSnapshot,
+  run: Run,
+  next: ChatState,
+): ChatSnapshot {
+  const last = prev.messages[prev.messages.length - 1];
+  if (last !== run.turn) return { ...prev, chatState: next };
+  return {
+    ...prev,
+    chatState: next,
+    messages: prev.messages.slice(0, -1),
+    input: prev.input || run.draft.input,
+    attachments:
+      prev.attachments.length > 0 ? prev.attachments : run.draft.attachments,
+  };
 }
 
 // --- Actions ---
@@ -146,34 +199,24 @@ export function removeAttachment(index: number): void {
   }));
 }
 
+/// Starts a new conversation. The run in flight is aborted and, because
+/// the store no longer names it, every write it would still make is
+/// dropped.
 export function clearConversation(): void {
-  // Abort any in-flight send so it does not re-add the user message
-  // after the conversation is cleared. Without this, a queued-start
-  // send() that is still polling for the model to come online would
-  // re-read the snapshot after loading completes and push the user
-  // message back into the cleared conversation.
-  if (
-    snapshot.chatState.kind === "streaming" ||
-    snapshot.chatState.kind === "starting"
-  ) {
-    snapshot.chatState.controller.abort();
-  }
+  activeRun(snapshot.chatState)?.controller.abort();
   setSnapshot((prev) => ({
     ...prev,
     messages: [],
-    stats: { ...EMPTY_STATS },
+    stats: EMPTY_STATS,
     chatState: { kind: "idle" },
   }));
 }
 
 export function cancel(): void {
-  if (
-    snapshot.chatState.kind === "streaming" ||
-    snapshot.chatState.kind === "starting"
-  ) {
-    snapshot.chatState.controller.abort();
-    setSnapshot((prev) => ({ ...prev, chatState: { kind: "idle" } }));
-  }
+  const run = activeRun(snapshot.chatState);
+  if (!run) return;
+  run.controller.abort();
+  setSnapshot((prev) => endRun(prev, run, { kind: "idle" }));
 }
 
 // --- Send ---

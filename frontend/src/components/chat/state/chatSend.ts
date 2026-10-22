@@ -4,9 +4,14 @@
 
 import { api } from "../../../api/client.ts";
 import {
-  getSnapshot,
-  setSnapshot,
+  activeRun,
   EMPTY_STATS,
+  endRun,
+  getSnapshot,
+  newMessageId,
+  setSnapshot,
+  type ChatSnapshot,
+  type Run,
   type StreamStats,
 } from "./chatStore.ts";
 
@@ -36,15 +41,49 @@ export async function send(
   openaiBaseUrl: string,
 ): Promise<void> {
   const snap = getSnapshot();
-  if (
-    !selectedModel ||
-    !snap.input.trim() ||
-    snap.chatState.kind === "streaming"
-  )
-    return;
+  const text = snap.input.trim();
+  if (!selectedModel || !text || activeRun(snap.chatState)) return;
 
-  // Create the controller early so cancel() works during the start loop.
+  // The run takes the composer's text and claims the store before the
+  // first await, so a second send, a cancel, or a reset all see it.
   const controller = new AbortController();
+  const imageAttachments = snap.attachments.filter((a) => a.type === "image");
+  const textAttachments = snap.attachments.filter((a) => a.type === "text");
+  let fullContent = text;
+  for (const att of textAttachments) {
+    fullContent += `\n\n${att.name}:\n${att.content}`;
+  }
+  const displayImages = imageAttachments.map((a) => a.content);
+  const run: Run = {
+    controller,
+    turn: {
+      id: newMessageId(),
+      role: "user",
+      content: text,
+      images: displayImages.length > 0 ? displayImages : undefined,
+      timestamp: localISO(),
+    },
+    draft: { input: snap.input, attachments: snap.attachments },
+  };
+  setSnapshot((prev) => ({
+    ...prev,
+    messages: [...prev.messages, run.turn],
+    attachments: [],
+    input: "",
+    stats: EMPTY_STATS,
+    chatState: { kind: "sending", run },
+  }));
+
+  /// Applies `updater` only while this send is still the store's run.
+  function update(updater: (prev: ChatSnapshot) => ChatSnapshot): void {
+    setSnapshot((prev) =>
+      activeRun(prev.chatState) === run ? updater(prev) : prev,
+    );
+  }
+  function fail(message: string): void {
+    update((prev) => endRun(prev, run, { kind: "error", message }));
+  }
+  const stale = () => activeRun(getSnapshot().chatState) !== run;
 
   // Check if the model is running; start it if not.
   // If the state is unknown, send anyway and let the daemon start the model.
@@ -52,89 +91,44 @@ export async function send(
     (r) => r.services.find((s) => s.name === selectedModel),
     () => undefined,
   );
+  if (stale()) return;
   const needsStart = svc != null && svc.state !== "running";
   if (needsStart) {
-    setSnapshot((prev) => ({
-      ...prev,
-      chatState: { kind: "starting", controller },
-    }));
+    update((prev) => ({ ...prev, chatState: { kind: "starting", run } }));
     try {
       await api.start(selectedModel);
       const deadline = Date.now() + 3 * 60 * 1000;
       while (Date.now() < deadline) {
-        if (controller.signal.aborted) return;
+        if (stale()) return;
         await new Promise((r) => setTimeout(r, 2000));
-        if (controller.signal.aborted) return;
+        if (stale()) return;
         const resp = await api.listServices();
+        if (stale()) return;
         const s = resp.services.find((x) => x.name === selectedModel);
         if (s?.state === "running") break;
         if (s?.state === "failed") {
-          setSnapshot((prev) => ({
-            ...prev,
-            chatState: {
-              kind: "error",
-              message: `service ${selectedModel} failed to start`,
-            },
-          }));
+          fail(`service ${selectedModel} failed to start`);
           return;
         }
       }
     } catch (e) {
-      if (controller.signal.aborted) return;
-      setSnapshot((prev) => ({
-        ...prev,
-        chatState: {
-          kind: "error",
-          message: `failed to start ${selectedModel}: ${e instanceof Error ? e.message : String(e)}`,
-        },
-      }));
+      fail(
+        `failed to start ${selectedModel}: ${e instanceof Error ? e.message : String(e)}`,
+      );
       return;
     }
+    if (stale()) return;
+    update((prev) => ({ ...prev, chatState: { kind: "sending", run } }));
   }
-
-  // Re-read after the (possibly long) start sequence — the user may
-  // have typed more or added attachments.
-  const snap2 = getSnapshot();
-  const currentInput = snap2.input.trim();
-  if (!currentInput) return;
-
-  const imageAttachments = snap2.attachments.filter((a) => a.type === "image");
-  const textAttachments = snap2.attachments.filter((a) => a.type === "text");
-
-  let fullContent = currentInput;
-  for (const att of textAttachments) {
-    fullContent += `\n\n${att.name}:\n${att.content}`;
-  }
-
-  const displayImages = imageAttachments.map((a) => a.content);
-
-  setSnapshot((prev) => ({
-    ...prev,
-    messages: [
-      ...prev.messages,
-      {
-        role: "user",
-        content: currentInput,
-        images: displayImages.length > 0 ? displayImages : undefined,
-        timestamp: localISO(),
-      },
-    ],
-    attachments: [],
-    input: "",
-    stats: { ...EMPTY_STATS },
-  }));
-
-  setSnapshot((prev) => ({
-    ...prev,
-    chatState: { kind: "streaming", controller },
-  }));
 
   const startTime = performance.now();
   let firstTokenTime: number | null = null;
-  const finalStats: StreamStats = { ...EMPTY_STATS };
+  const finalStats: { -readonly [K in keyof StreamStats]: StreamStats[K] } = {
+    ...EMPTY_STATS,
+  };
 
   function attachStats() {
-    setSnapshot((prev) => {
+    update((prev) => {
       const next = [...prev.messages];
       const last = next[next.length - 1];
       if (last?.role === "assistant") {
@@ -144,12 +138,12 @@ export async function send(
     });
   }
 
-  // Build API messages from the snapshot at send time.
+  // The history is everything before this run's turn.
   const apiMessages: ApiMessage[] = [];
-  if (snap2.systemPrompt.trim()) {
-    apiMessages.push({ role: "system", content: snap2.systemPrompt.trim() });
+  if (snap.systemPrompt.trim()) {
+    apiMessages.push({ role: "system", content: snap.systemPrompt.trim() });
   }
-  for (const m of snap2.messages) {
+  for (const m of snap.messages) {
     apiMessages.push({ role: m.role, content: m.content });
   }
   if (imageAttachments.length > 0) {
@@ -176,20 +170,17 @@ export async function send(
     });
 
     if (!resp.ok) {
-      const text = await resp.text();
-      setSnapshot((prev) => ({
-        ...prev,
-        input: "",
-        chatState: {
-          kind: "error",
-          message: `${resp.status} ${resp.statusText}: ${text}`,
-        },
-      }));
+      const body = await resp.text();
+      fail(`${resp.status} ${resp.statusText}: ${body}`);
       return;
     }
 
     const reader = resp.body?.getReader();
-    if (!reader) return;
+    if (!reader) {
+      fail("the response has no body");
+      return;
+    }
+    update((prev) => ({ ...prev, chatState: { kind: "streaming", run } }));
     const decoder = new TextDecoder();
     let buffer = "";
 
@@ -234,13 +225,9 @@ export async function send(
             if (firstTokenTime === null) {
               firstTokenTime = performance.now();
               finalStats.ttftMs = firstTokenTime - startTime;
-              setSnapshot((prev) => ({
-                ...prev,
-                stats: { ...finalStats },
-                input: "",
-              }));
+              update((prev) => ({ ...prev, stats: { ...finalStats } }));
             }
-            setSnapshot((prev) => {
+            update((prev) => {
               const next = [...prev.messages];
               const last = next[next.length - 1];
               if (last?.role === "assistant") {
@@ -255,6 +242,7 @@ export async function send(
                 };
               } else {
                 next.push({
+                  id: newMessageId(),
                   role: "assistant",
                   content: contentDelta ?? "",
                   reasoning: reasoningDelta || undefined,
@@ -305,29 +293,21 @@ export async function send(
               }
             }
 
-            setSnapshot((prev) => ({ ...prev, stats: { ...finalStats } }));
+            update((prev) => ({ ...prev, stats: { ...finalStats } }));
           }
         } catch {
           // Skip unparseable lines.
         }
       }
     }
-    setSnapshot((prev) => ({ ...prev, input: "" }));
     attachStats();
-    setSnapshot((prev) => ({ ...prev, chatState: { kind: "idle" } }));
+    update((prev) => ({ ...prev, chatState: { kind: "idle" } }));
   } catch (e) {
-    setSnapshot((prev) => ({ ...prev, input: "" }));
     attachStats();
     if (e instanceof DOMException && e.name === "AbortError") {
-      setSnapshot((prev) => ({ ...prev, chatState: { kind: "idle" } }));
+      update((prev) => endRun(prev, run, { kind: "idle" }));
     } else {
-      setSnapshot((prev) => ({
-        ...prev,
-        chatState: {
-          kind: "error",
-          message: e instanceof Error ? e.message : String(e),
-        },
-      }));
+      fail(e instanceof Error ? e.message : String(e));
     }
   }
 }

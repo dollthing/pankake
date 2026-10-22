@@ -7,20 +7,13 @@ import {
   service,
 } from "../../test/renderLive.tsx";
 import { ChatView } from "./ChatView.tsx";
-import { EMPTY_STATS, getSnapshot, setSnapshot } from "./state/chatStore.ts";
+import { getSnapshot, setSnapshot } from "./state/chatStore.ts";
+import { resetChat } from "./state/chatTestKit.ts";
 
 beforeEach(() => {
   installLiveFakes();
   localStorage.clear();
-  setSnapshot(() => ({
-    messages: [],
-    systemPrompt: "",
-    currentModel: null,
-    chatState: { kind: "idle" },
-    stats: EMPTY_STATS,
-    input: "",
-    attachments: [],
-  }));
+  resetChat();
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -31,7 +24,7 @@ describe("ChatView", () => {
     setSnapshot((prev) => ({
       ...prev,
       currentModel: "alpha",
-      messages: [{ role: "user", content: "hello", timestamp: "t1" }],
+      messages: [{ id: 1, role: "user", content: "hello", timestamp: "t1" }],
     }));
     renderLive(<ChatView />, { route: "/chat?model=alpha", services });
 
