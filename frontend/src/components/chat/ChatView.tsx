@@ -23,7 +23,7 @@ import {
   send,
   setInput,
   useChat,
-} from "../../api/chatStore.ts";
+} from "./state/chatStore.ts";
 import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { Button } from "../ui/button/Button.tsx";
 import { ButtonLink } from "../ui/button/ButtonLink.tsx";

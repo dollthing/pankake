@@ -2,7 +2,7 @@
 // the OpenAI-compatible chat completion and folds deltas into the
 // chat store snapshot.
 
-import { api } from "./client.ts";
+import { api } from "../../../api/client.ts";
 import {
   getSnapshot,
   setSnapshot,

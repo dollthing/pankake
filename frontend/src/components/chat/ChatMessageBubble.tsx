@@ -4,7 +4,7 @@
 import { useTranslation } from "react-i18next";
 
 import { formatTokenRate } from "../../util.ts";
-import { type Message, type StreamStats } from "../../api/chatStore.ts";
+import { type Message, type StreamStats } from "./state/chatStore.ts";
 import { MarkdownContent } from "./ChatMarkdown.tsx";
 
 export function MessageBubble({
