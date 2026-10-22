@@ -1,18 +1,12 @@
 // Dashboard overview — the landing page and primary management view.
-// Answers "what's happening right now?" with quick stats, device cards
-// with memory sparklines, and a full service list with inline activity
-// sparklines. A header time range toggle controls all charts.
+// Answers "what's happening right now?" with quick stats and a full
+// service list with inline activity sparklines. A header time range
+// toggle controls all charts. Device memory lives in the shell's band.
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  useDevices,
-  useServices,
-  useMetrics,
-  useDeviceSamples,
-  useLifecycle,
-} from "../../api/hooks.ts";
+import { useServices, useMetrics, useLifecycle } from "../../api/hooks.ts";
 import { metricsWindow } from "../../util.ts";
 import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
 import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
@@ -23,7 +17,6 @@ import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Stat } from "../ui/data/Stat.tsx";
 import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
-import { DeviceCard } from "./DeviceCard.tsx";
 import { ServiceRow } from "./ServiceRow.tsx";
 import { buildServiceSparkline } from "./dashboardSparkline.ts";
 
@@ -41,7 +34,6 @@ function isActive(state: string): boolean {
 export function DashboardView() {
   const { t } = useTranslation();
   const services = useServices();
-  const devices = useDevices();
   const lifecycle = useLifecycle();
   const favourites = useFavourites();
 
@@ -63,7 +55,6 @@ export function DashboardView() {
     localStorage.setItem("ananke-sort-order", sortOrder);
   }, [sortOrder]);
   const metrics = useMetrics({ since, until, bucket });
-  const deviceSamples = useDeviceSamples(undefined, since);
 
   const serviceSpark = useMemo(
     () => buildServiceSparkline(metrics.data?.buckets ?? []),
@@ -132,29 +123,6 @@ export function DashboardView() {
       </ViewHeader>
 
       <div className="flex-1 space-y-4 overflow-auto p-4">
-        {/* Device cards with memory sparklines */}
-        <Card header={t("nav.devices")}>
-          {devices.isPending ? (
-            <Spinner />
-          ) : devices.data ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {devices.data.map((d) => (
-                <DeviceCard
-                  key={d.id}
-                  device={d}
-                  samples={deviceSamples.data ?? []}
-                  xMin={xMin}
-                  xMax={xMax}
-                />
-              ))}
-            </div>
-          ) : (
-            <span className="text-sm text-danger">
-              {devices.error?.message}
-            </span>
-          )}
-        </Card>
-
         {/* Service list with activity sparklines */}
         <Card
           header={t("nav.services")}

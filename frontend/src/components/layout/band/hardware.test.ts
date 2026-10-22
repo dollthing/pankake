@@ -7,6 +7,7 @@ import {
   deviceUsage,
   formatUptime,
   gpuGrid,
+  gpuShortId,
   shortDeviceName,
   splitDevices,
   usageTone,
@@ -93,6 +94,13 @@ describe("splitDevices", () => {
     ]);
     expect(gpus.map((d) => d.id)).toEqual(["gpu:2", "gpu:10"]);
     expect(cpu?.id).toBe("cpu");
+  });
+});
+
+describe("gpuShortId", () => {
+  it("keeps only the index of a GPU id", () => {
+    expect(gpuShortId("gpu:3")).toBe("3");
+    expect(gpuShortId("cpu")).toBe("cpu");
   });
 });
 

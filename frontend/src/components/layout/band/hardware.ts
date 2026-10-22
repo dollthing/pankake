@@ -67,6 +67,11 @@ export function splitDevices(devices: readonly DeviceSummary[]): BandDevices {
   return { gpus, cpu: devices.find((d) => d.id === CPU_ID) };
 }
 
+/// The index alone, for a dense cell's label: "gpu:3" becomes "3".
+export function gpuShortId(id: string): string {
+  return id.startsWith(GPU_PREFIX) ? id.slice(GPU_PREFIX.length) : id;
+}
+
 /// When the busiest GPU is this many points above the mean, the summary
 /// appends it: a mean of 45 % over one full card and one empty one hides
 /// the card that blocks placement.
