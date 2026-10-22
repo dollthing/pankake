@@ -16,7 +16,7 @@ use ananke_api::{
         stop::StopResponse,
     },
     shared::{
-        DisableReason, ServiceStateKind,
+        DisableReason, Lifecycle, ServiceStateKind,
         errors::{ApiErrorBody, ApiErrorCodeSlug, ApiErrorKind},
     },
 };
@@ -40,7 +40,7 @@ fn service_summary_roundtrips() {
         name: "demo".into(),
         state: ServiceStateKind::Running,
         disabled_reason: None,
-        lifecycle: "persistent".into(),
+        lifecycle: Lifecycle::Persistent,
         priority: 50,
         port: 11435,
         run_id: Some(1),
@@ -90,6 +90,18 @@ fn start_response_tagged_union() {
                 "type": "server_error",
             }
         })
+    );
+}
+
+#[test]
+fn lifecycle_is_spelled_as_in_config() {
+    assert_eq!(
+        serde_json::to_value(Lifecycle::OnDemand).unwrap(),
+        "on_demand"
+    );
+    assert_eq!(
+        serde_json::to_value(Lifecycle::Persistent).unwrap(),
+        "persistent"
     );
 }
 
@@ -172,7 +184,7 @@ fn service_detail_roundtrips() {
         name: "demo".into(),
         state: ServiceStateKind::Idle,
         disabled_reason: None,
-        lifecycle: "persistent".into(),
+        lifecycle: Lifecycle::Persistent,
         priority: 50,
         port: 11435,
         private_port: 40000,
@@ -240,7 +252,7 @@ fn service_detail_roundtrips_mainline() {
         name: "demo".into(),
         state: ServiceStateKind::Idle,
         disabled_reason: None,
-        lifecycle: "persistent".into(),
+        lifecycle: Lifecycle::Persistent,
         priority: 50,
         port: 11435,
         private_port: 40000,
@@ -279,7 +291,7 @@ fn service_detail_roundtrips_no_runtime() {
         name: "demo".into(),
         state: ServiceStateKind::Idle,
         disabled_reason: None,
-        lifecycle: "persistent".into(),
+        lifecycle: Lifecycle::Persistent,
         priority: 50,
         port: 11435,
         private_port: 40000,

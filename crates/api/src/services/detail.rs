@@ -8,6 +8,7 @@ use utoipa::ToSchema;
 use crate::{
     internal::fit_verdict::FitVerdict,
     shared::{
+        lifecycle::Lifecycle,
         metadata::AnankeMetadata,
         modality::Modality,
         service_state::{DisableReason, ServiceStateKind},
@@ -25,8 +26,8 @@ pub struct ServiceDetail {
     /// `disabled`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disabled_reason: Option<DisableReason>,
-    /// `"persistent"` or `"ondemand"`.
-    pub lifecycle: String,
+    /// When the service starts and stops.
+    pub lifecycle: Lifecycle,
     /// Eviction priority.
     pub priority: u8,
     /// Public port.

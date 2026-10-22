@@ -80,7 +80,7 @@ pub fn print_services_table(services: &[ServiceSummary], show_all: bool) {
         table.add_row(vec![
             Cell::new(&s.name),
             state_cell,
-            Cell::new(&s.lifecycle),
+            Cell::new(s.lifecycle),
             Cell::new(s.priority).set_alignment(CellAlignment::Right),
             Cell::new(s.port).set_alignment(CellAlignment::Right),
             Cell::new(s.pid.map(|p| p.to_string()).unwrap_or_else(|| "—".into()))

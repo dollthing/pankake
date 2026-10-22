@@ -979,6 +979,11 @@ export interface components {
       /** @description Absolute container path. */
       target: string;
     };
+    /**
+     * @description When a service starts and stops relative to the daemon's own lifecycle.
+     * @enum {string}
+     */
+    Lifecycle: "persistent" | "on_demand";
     /** @description A snapshot body, tagged by the resource it belongs to. */
     LiveData:
       | {
@@ -1466,8 +1471,8 @@ export interface components {
        *     service has never been started.
        */
       last_used_ms?: number | null;
-      /** @description `"persistent"` or `"ondemand"`. */
-      lifecycle: string;
+      /** @description When the service starts and stops. */
+      lifecycle: components["schemas"]["Lifecycle"];
       /**
        * @description What kind of OpenAI endpoint the service serves. See
        *     [`crate::services::list::ServiceSummary::modality`] for the rendering rule.
@@ -1651,8 +1656,8 @@ export interface components {
        *     service has never been started.
        */
       last_used_ms?: number | null;
-      /** @description `"persistent"` or `"ondemand"`. */
-      lifecycle: string;
+      /** @description When the service starts and stops. */
+      lifecycle: components["schemas"]["Lifecycle"];
       /**
        * @description What kind of OpenAI endpoint the service serves. Elided from
        *     JSON when [`Modality::Chat`] (the default), so a chat service's

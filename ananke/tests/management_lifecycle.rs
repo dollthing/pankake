@@ -97,7 +97,10 @@ async fn disabled_reason_is_reported_only_while_disabled() {
     let row = &list["services"][0];
     assert_eq!(row["state"], "disabled");
     assert_eq!(row["disabled_reason"], "user_disabled");
+    // The lifecycle is spelled as it is in config, on both endpoints.
+    assert_eq!(row["lifecycle"], "on_demand");
     let detail = get_json(&app, "/api/services/demo").await;
+    assert_eq!(detail["lifecycle"], "on_demand");
     assert_eq!(detail["state"], "disabled");
     assert_eq!(detail["disabled_reason"], "user_disabled");
 

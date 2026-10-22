@@ -47,7 +47,7 @@ impl ServiceStateKind {
 
 impl std::fmt::Display for ServiceStateKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
+        f.pad(self.as_str())
     }
 }
 
@@ -88,6 +88,6 @@ impl DisableReason {
 
 impl std::fmt::Display for DisableReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
+        f.pad(self.as_str())
     }
 }

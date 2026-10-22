@@ -3,6 +3,10 @@
 
 use std::collections::BTreeMap;
 
+// The wire enum is the config one, so the API spells a lifecycle the way a
+// config file does.
+pub use ananke_api::shared::Lifecycle;
+
 pub use crate::placement::{DeviceReserves, DeviceSlot, PlacementPolicy};
 use crate::validate::gib_to_mib;
 
@@ -95,25 +99,6 @@ impl AllocationMode {
                     Err("command template requires allocation.mode (static|dynamic)".to_string())
                 }
             },
-        }
-    }
-}
-
-/// When a service starts and stops relative to the daemon's own lifecycle.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Lifecycle {
-    /// Started at boot and restarted when it exits.
-    Persistent,
-    /// Started on first request and stopped after `idle_timeout`.
-    OnDemand,
-}
-
-impl Lifecycle {
-    /// The lifecycle name as it appears in config files.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Lifecycle::Persistent => "persistent",
-            Lifecycle::OnDemand => "ondemand",
         }
     }
 }

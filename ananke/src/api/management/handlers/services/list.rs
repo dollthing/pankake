@@ -66,7 +66,7 @@ pub(crate) fn services_snapshot(state: &AppState) -> ServicesResponse {
             name: svc_cfg.name.to_string(),
             state: state_kind,
             disabled_reason,
-            lifecycle: svc_cfg.lifecycle.as_str().to_string(),
+            lifecycle: svc_cfg.lifecycle,
             priority: svc_cfg.priority,
             port: svc_cfg.port,
             run_id: peek.as_ref().and_then(|p| p.run_id),

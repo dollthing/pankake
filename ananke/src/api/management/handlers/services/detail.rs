@@ -107,7 +107,7 @@ pub(crate) async fn service_detail_snapshot(
         name: svc_cfg.name.to_string(),
         state: state_kind,
         disabled_reason,
-        lifecycle: format!("{:?}", svc_cfg.lifecycle).to_lowercase(),
+        lifecycle: svc_cfg.lifecycle,
         priority: svc_cfg.priority,
         port: svc_cfg.port,
         private_port: svc_cfg.private_port,

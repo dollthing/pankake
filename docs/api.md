@@ -519,7 +519,7 @@ List all services
     has_mmproj?: boolean | null
     inflight_count?: number
     last_used_ms?: number | null
-    lifecycle: string
+    lifecycle: "persistent" | "on_demand"
     modality?: "chat" | "embedding"
     name: string
     pid?: number | null
@@ -568,7 +568,7 @@ Get service detail
   } | null
   idle_timeout_ms: number
   last_used_ms?: number | null
-  lifecycle: string
+  lifecycle: "persistent" | "on_demand"
   modality?: "chat" | "embedding"
   model_info?: {
     architecture: string
