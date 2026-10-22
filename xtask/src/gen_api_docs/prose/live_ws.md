@@ -30,6 +30,12 @@ Cancelling an unknown id does nothing.
 
 The daemon sends JSON text frames, each a `LiveMessage`.
 
+The first frame on every connection is a hello carrying a build identifier: the daemon's version plus a hash of its embedded frontend. A client that sees it change after reconnecting is talking to an upgraded daemon; the embedded frontend responds by offering to reload.
+
+```json
+{"type": "hello", "build": "0.2.0+3f9a1c2b7d4e"}
+```
+
 A snapshot carries the subscription id and a body tagged with its resource:
 
 ```json

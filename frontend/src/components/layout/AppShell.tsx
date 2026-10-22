@@ -2,6 +2,7 @@
 // mobile, with the routed content filling the rest.
 
 import type { ReactNode } from "react";
+import { DaemonUpdatedNotice } from "./DaemonUpdatedNotice.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 import { MobileNav } from "./MobileNav.tsx";
 
@@ -12,6 +13,7 @@ type AppShellProps = {
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="flex h-dvh flex-col bg-base text-primary">
+      <DaemonUpdatedNotice />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-auto overscroll-contain pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">

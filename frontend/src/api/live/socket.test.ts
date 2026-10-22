@@ -166,6 +166,32 @@ describe("LiveSocket", () => {
     ]);
   });
 
+  it("flags a daemon update only when the build changes across connections", () => {
+    const live = newSocket();
+    const changed = vi.fn();
+    live.onChange(changed);
+    live.subscribe({ kind: "info" }, listener());
+
+    const first = FakeWebSocket.latest();
+    first.accept();
+    first.receive({ type: "hello", build: "0.2.0+aaaa" });
+    first.close();
+    vi.advanceTimersByTime(BACKOFF_INITIAL_MS);
+
+    const second = FakeWebSocket.latest();
+    second.accept();
+    second.receive({ type: "hello", build: "0.2.0+aaaa" });
+    expect(live.getDaemonUpdated()).toBe(false);
+    second.close();
+    vi.advanceTimersByTime(BACKOFF_INITIAL_MS);
+
+    changed.mockClear();
+    const third = FakeWebSocket.latest();
+    third.receive({ type: "hello", build: "0.2.1+bbbb" });
+    expect(live.getDaemonUpdated()).toBe(true);
+    expect(changed).toHaveBeenCalledOnce();
+  });
+
   it("reconnects on demand without waiting for the backoff", () => {
     const live = newSocket();
     live.subscribe({ kind: "info" }, listener());

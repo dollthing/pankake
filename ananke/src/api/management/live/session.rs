@@ -4,6 +4,7 @@
 
 use std::{borrow::Cow, collections::BTreeMap, time::Duration};
 
+use ananke_api::live::LiveMessage;
 use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code};
 use futures::{SinkExt, StreamExt, stream::SplitSink};
 use tokio::{
@@ -15,6 +16,7 @@ use tracing::{debug, warn};
 use crate::{
     api::{
         errors::ApiErrorCode,
+        frontend::build_id,
         management::live::{
             protocol::{Effect, Session, error_message},
             subscription,
@@ -37,6 +39,18 @@ pub(crate) async fn serve(socket: WebSocket, state: AppState) {
     let (sink, mut stream) = socket.split();
     let (out, outbox) = mpsc::channel::<Message>(OUTBOX_CAPACITY);
     let mut writer = tokio::spawn(write_loop(sink, outbox));
+
+    // Queued before any subscription exists, so it is always the first frame.
+    let hello = LiveMessage::Hello { build: build_id() };
+    match serde_json::to_string(&hello) {
+        Ok(frame) => {
+            if out.send(Message::Text(frame)).await.is_err() {
+                writer.abort();
+                return;
+            }
+        }
+        Err(e) => warn!(error = %e, "live: failed to serialise the hello"),
+    }
 
     let mut session = Session::default();
     let mut tasks = JoinSet::new();

@@ -60,6 +60,13 @@ pub enum LiveResource {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum LiveMessage {
+    /// The first frame on every connection. A client that sees `build`
+    /// change across reconnects is talking to an upgraded daemon and
+    /// should offer to reload.
+    Hello {
+        /// Identifies the daemon's version and embedded frontend build.
+        build: String,
+    },
     /// The full current body of a subscribed resource.
     Snapshot {
         /// The subscription's id.

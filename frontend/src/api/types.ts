@@ -996,6 +996,12 @@ export interface components {
     /** @description A frame the daemon sends on `/api/live`. */
     LiveMessage:
       | {
+          /** @description Identifies the daemon's version and embedded frontend build. */
+          build: string;
+          /** @enum {string} */
+          type: "hello";
+        }
+      | {
           /** @description The resource body, tagged by resource kind. */
           data: components["schemas"]["LiveData"];
           /** @description The subscription's id. */

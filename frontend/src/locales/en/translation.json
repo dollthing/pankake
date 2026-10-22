@@ -28,6 +28,10 @@
       "dark": "Switch to dark theme"
     }
   },
+  "app": {
+    "daemonUpdated": "The daemon was updated. Reload to use the matching interface.",
+    "reload": "Reload"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "services": "Services",

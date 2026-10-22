@@ -30,9 +30,18 @@ export function useLiveSocket(): LiveSocket {
 export function useLiveStatus(): LiveStatus {
   const socket = useLiveSocket();
   return useSyncExternalStore(
-    socket.onStatus,
+    socket.onChange,
     socket.getStatus,
     socket.getStatus,
+  );
+}
+
+export function useDaemonUpdated(): boolean {
+  const socket = useLiveSocket();
+  return useSyncExternalStore(
+    socket.onChange,
+    socket.getDaemonUpdated,
+    socket.getDaemonUpdated,
   );
 }
 

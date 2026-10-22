@@ -42,11 +42,18 @@ type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 const DEADLINE: Duration = Duration::from_secs(5);
 const GIB: u64 = 1024 * 1024 * 1024;
 
+/// Connect and consume the hello, which is always the first frame.
 async fn connect(h: &TestHarness) -> Socket {
     let addr = h.spawn_management_server().await;
-    let (socket, _) = connect_async(format!("ws://{addr}/api/live"))
+    let (mut socket, _) = connect_async(format!("ws://{addr}/api/live"))
         .await
         .unwrap();
+    match next_message(&mut socket, DEADLINE).await {
+        Some(LiveMessage::Hello { build }) => {
+            assert!(build.starts_with(env!("CARGO_PKG_VERSION")), "{build}");
+        }
+        other => panic!("expected a hello first, got {other:?}"),
+    }
     socket
 }
 

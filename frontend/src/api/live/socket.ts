@@ -4,7 +4,9 @@
 // here; `useLive.ts` adapts it.
 //
 // The server answers every subscribe with a full snapshot, so reconnecting
-// is just resubscribing: nothing is replayed or patched.
+// is just resubscribing: nothing is replayed or patched. Each connection
+// opens with a hello naming the daemon's build; a different build after a
+// reconnect means the daemon was upgraded under this tab.
 
 import { api } from "../client.ts";
 import type {
@@ -75,13 +77,15 @@ export class LiveSocket {
   readonly #random: () => number;
   readonly #entries = new Map<string, Entry>();
   readonly #byId = new Map<string, Entry>();
-  readonly #statusListeners = new Set<() => void>();
+  readonly #listeners = new Set<() => void>();
   #nextId = 0;
   #socket: WebSocket | null = null;
   #open = false;
   #status: LiveStatus = "connecting";
   #attempt = 0;
   #retry: ReturnType<typeof setTimeout> | null = null;
+  #build: string | null = null;
+  #daemonUpdated = false;
 
   constructor(options: LiveSocketOptions) {
     this.#url = options.url;
@@ -109,10 +113,15 @@ export class LiveSocket {
 
   readonly getStatus = (): LiveStatus => this.#status;
 
-  readonly onStatus = (listener: () => void): (() => void) => {
-    this.#statusListeners.add(listener);
+  /// Whether a reconnect reached a daemon with a different build than the
+  /// one this tab first connected to.
+  readonly getDaemonUpdated = (): boolean => this.#daemonUpdated;
+
+  /// Notified when the status or `getDaemonUpdated` changes.
+  readonly onChange = (listener: () => void): (() => void) => {
+    this.#listeners.add(listener);
     return () => {
-      this.#statusListeners.delete(listener);
+      this.#listeners.delete(listener);
     };
   };
 
@@ -204,6 +213,15 @@ export class LiveSocket {
 
   #deliver(message: LiveMessage): void {
     switch (message.type) {
+      case "hello": {
+        if (this.#build === null) {
+          this.#build = message.build;
+        } else if (this.#build !== message.build && !this.#daemonUpdated) {
+          this.#daemonUpdated = true;
+          this.#notify();
+        }
+        return;
+      }
       case "snapshot": {
         const entry = this.#byId.get(message.id);
         if (!entry) return;
@@ -256,7 +274,11 @@ export class LiveSocket {
   #setStatus(status: LiveStatus): void {
     if (this.#status === status) return;
     this.#status = status;
-    for (const listener of [...this.#statusListeners]) listener();
+    this.#notify();
+  }
+
+  #notify(): void {
+    for (const listener of [...this.#listeners]) listener();
   }
 }
 
@@ -279,5 +301,9 @@ function isLiveMessage(value: unknown): value is LiveMessage {
   if (typeof value !== "object" || value === null || !("type" in value)) {
     return false;
   }
-  return value.type === "snapshot" || value.type === "error";
+  return (
+    value.type === "hello" ||
+    value.type === "snapshot" ||
+    value.type === "error"
+  );
 }
