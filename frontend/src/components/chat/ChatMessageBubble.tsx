@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { formatTokenRate } from "../../util.ts";
 import { type Message, type StreamStats } from "./state/chatStore.ts";
 import { MarkdownContent } from "./ChatMarkdown.tsx";
+import { Reasoning } from "./ChatReasoning.tsx";
 
 export function MessageBubble({
   message,
@@ -84,17 +85,7 @@ export function MessageBubble({
         } ${isSystem ? "text-secondary" : "text-primary"}`}
       >
         {isAssistant && message.reasoning && (
-          <details
-            open
-            className="open:mb-2 open:border-b open:border-border-default open:pb-2 [&_summary]:list-none"
-          >
-            <summary className="cursor-pointer select-none text-xs text-secondary hover:text-primary">
-              {t("chat.reasoning")}
-            </summary>
-            <div className="mt-1 max-h-40 overflow-y-auto break-words text-xs text-secondary">
-              <MarkdownContent>{message.reasoning}</MarkdownContent>
-            </div>
-          </details>
+          <Reasoning text={message.reasoning} />
         )}
         {isAssistant ? (
           message.content ? (
