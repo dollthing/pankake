@@ -16,7 +16,16 @@ const twMerge = extendTailwindMerge({
   extend: {
     theme: {
       text: ["2xs", "md"],
-      spacing: ["control-sm", "control", "control-lg", "touch", "header"],
+      spacing: [
+        "control-sm",
+        "control",
+        "control-lg",
+        "touch",
+        "header",
+        "band",
+        "band-identity",
+        "nav",
+      ],
     },
   },
 });

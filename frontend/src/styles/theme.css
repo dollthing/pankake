@@ -120,9 +120,21 @@
   --spacing-touch: 2.75rem;
   --spacing-header: 3.5rem;
 
+  /* App shell: the hardware band's height and identity block, and the
+   * navigation rail's width (`h-band`, `w-band-identity`, `w-nav`). */
+  --spacing-band: 5.5rem;
+  --spacing-band-identity: 19.75rem;
+  --spacing-nav: 11rem;
+
   /* Component widths for container queries (`@chart-2:`). */
   --container-chart-2: 47.5rem;
   --container-chart-3: 82.5rem;
+  /* The band's cell area stops growing here, and a device cell switches
+   * from compact to full above `cell-full` and to dense below
+   * `cell-dense` (`@min-cell-full/cell:`). */
+  --container-band-cells: 70rem;
+  --container-cell-full: 13rem;
+  --container-cell-dense: 8.75rem;
 }
 
 /* Breakpoints are replaced rather than extended. `static` always emits
