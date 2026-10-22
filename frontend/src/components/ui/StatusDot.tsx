@@ -20,7 +20,7 @@ function dotColour(state: string): string {
 export function StatusDot({ state, className = "" }: StatusDotProps) {
   return (
     <span
-      className={`inline-block h-2 w-2 shrink-0 rounded-full ${dotColour(state)} ${className}`}
+      className={`inline-block size-2 shrink-0 rounded-full ${dotColour(state)} ${className}`}
       title={state}
     />
   );

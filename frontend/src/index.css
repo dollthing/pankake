@@ -160,22 +160,21 @@
   }
 }
 
-@layer components {
-  /*
-   * Eyebrow: the structural device. Tracked-out mono capitals mark
-   * every section and panel header, echoing an instrument's engraved
-   * labels. Expressible as utilities but centralised here because it
-   * recurs on every panel and view header.
-   */
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    line-height: 1rem;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-tertiary);
-  }
+/*
+ * Eyebrow: the structural device. Tracked-out mono capitals mark
+ * every section and panel header, echoing an instrument's engraved
+ * labels. Expressible as utilities but centralised here because it
+ * recurs on every panel and view header. Declared with `@utility` so
+ * Tailwind (and its linter) treat it as a known class.
+ */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-tertiary);
 }
 
 /*

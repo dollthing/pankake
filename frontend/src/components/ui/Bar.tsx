@@ -32,7 +32,7 @@ const TICKS =
 export function Bar({ total, segments, className = "" }: BarProps) {
   return (
     <div
-      className={`relative h-2.5 overflow-hidden rounded-[3px] bg-base ring-1 ring-inset ring-border-default ${className}`}
+      className={`relative h-2.5 overflow-hidden rounded-[3px] bg-base ring-1 ring-border-default ring-inset ${className}`}
     >
       {total > 0 && (
         <div className="flex h-full">

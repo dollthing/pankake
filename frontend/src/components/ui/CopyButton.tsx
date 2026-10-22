@@ -29,7 +29,7 @@ export function CopyButton({ value, className = "" }: CopyButtonProps) {
       type="button"
       onClick={onClick}
       title={copied ? t("common.copied") : t("common.copy")}
-      className={`inline-flex items-center text-tertiary hover:text-secondary transition-colors ${className}`}
+      className={`inline-flex items-center text-tertiary transition-colors hover:text-secondary ${className}`}
     >
       {copied ? (
         <svg
