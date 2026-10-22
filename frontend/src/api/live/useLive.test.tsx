@@ -19,7 +19,11 @@ function infoDef(fetch: () => Promise<DaemonInfoResponse>) {
 }
 
 function info(openai: string): DaemonInfoResponse {
-  return { openai_listen: openai, management_listen: "127.0.0.1:7071" };
+  return {
+    openai_listen: openai,
+    management_listen: "127.0.0.1:7071",
+    uptime_ms: 0,
+  };
 }
 
 function Probe({ def }: { def: LiveQueryDef<DaemonInfoResponse> }) {

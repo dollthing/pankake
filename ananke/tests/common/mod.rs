@@ -205,6 +205,7 @@ pub async fn build_harness(services: Vec<ServiceConfig>) -> TestHarness {
         system: system.clone(),
         estimate_cache,
         mirror_changed,
+        started_at: tokio::time::Instant::now(),
     };
 
     // Drain-on-remove + spawn-on-add reconciler. Matches what daemon::run

@@ -39,7 +39,7 @@ The daemon binds to loopback by default. Do **not** expose the management API or
 | `GET` | `/api/devices` | List devices and reservations |
 | `GET` | `/api/devices/samples` | Get device memory samples |
 | `GET` | `/api/events/history` | List recent events |
-| `GET` | `/api/info` | Get daemon listen addresses |
+| `GET` | `/api/info` | Get daemon listen addresses and uptime |
 | `GET` | `/api/metrics` | Get request metrics (time-bucketed) |
 | `GET` | `/api/restarts` | Get auto-restart firings |
 | `GET` | `/api/services` | List all services |
@@ -333,7 +333,7 @@ Get device memory samples
 
 #### GET /api/info
 
-Get daemon listen addresses
+Get daemon listen addresses and uptime
 
 | Status | Description | Body |
 | --- | --- | --- |
@@ -345,6 +345,7 @@ Get daemon listen addresses
 {
   management_listen: string
   openai_listen: string
+  uptime_ms: number
 }
 ```
 

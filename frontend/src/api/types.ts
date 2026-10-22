@@ -97,7 +97,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Get daemon listen addresses */
+    /** Get daemon listen addresses and uptime */
     get: operations["get_info"];
     put?: never;
     post?: never;
@@ -503,6 +503,13 @@ export interface components {
       management_listen: string;
       /** @description The OpenAI-compatible API listen address (e.g. `"0.0.0.0:7070"`). */
       openai_listen: string;
+      /**
+       * Format: int64
+       * @description Milliseconds since the daemon started. A duration rather than a start
+       *     timestamp, so a client adds its own elapsed time instead of comparing
+       *     against a clock that may disagree with the daemon's.
+       */
+      uptime_ms: number;
     };
     /** @description One device's share of a [`ServiceSummary`]'s footprint. */
     DeviceFootprint: {

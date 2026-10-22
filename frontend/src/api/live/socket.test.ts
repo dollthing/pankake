@@ -15,6 +15,7 @@ const INFO: LiveData = {
   body: {
     openai_listen: "127.0.0.1:7070",
     management_listen: "127.0.0.1:7071",
+    uptime_ms: 0,
   },
 };
 

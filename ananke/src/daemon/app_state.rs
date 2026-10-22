@@ -11,6 +11,7 @@ use ananke_tracking::{
     rolling::RollingTable,
 };
 use parking_lot::Mutex;
+use tokio::time::Instant;
 
 use crate::{
     config::manager::ConfigManager,
@@ -42,6 +43,9 @@ pub struct AppState {
     /// Bumped whenever any supervisor's mirrored state, run id, or pid
     /// changes; shared with every supervisor through `SupervisorDeps`.
     pub mirror_changed: ChangeSignal,
+    /// When the daemon started, for the uptime `GET /api/info` reports. A
+    /// `tokio` instant so tests on paused time see a deterministic uptime.
+    pub started_at: Instant,
 }
 
 impl AppState {
