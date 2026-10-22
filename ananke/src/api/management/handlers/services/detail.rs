@@ -18,7 +18,10 @@ use crate::{
         errors::ApiErrorCode,
         management::handlers::{
             model_estimate_entry, placement_preview, read_current_allocation,
-            services::config_view::{runtime_info, serving_config},
+            services::{
+                config_view::{runtime_info, serving_config},
+                list::wire_state,
+            },
         },
     },
     config::{DeviceSlot, ServiceConfig},
@@ -99,12 +102,11 @@ pub(crate) async fn service_detail_snapshot(
     );
     let current_allocation = read_current_allocation(state, &svc_cfg.name);
 
+    let (state_kind, disabled_reason) = wire_state(snap.as_ref().map(|s| &s.state));
     let detail = ServiceDetail {
         name: svc_cfg.name.to_string(),
-        state: snap
-            .as_ref()
-            .map(|s| s.state.name().to_string())
-            .unwrap_or_else(|| "unknown".into()),
+        state: state_kind,
+        disabled_reason,
         lifecycle: format!("{:?}", svc_cfg.lifecycle).to_lowercase(),
         priority: svc_cfg.priority,
         port: svc_cfg.port,

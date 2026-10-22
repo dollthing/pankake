@@ -72,8 +72,8 @@
     "config": "Config",
     "events": "Events",
     "stats": "Stats",
-    "failedServices_one": "{{count}} service failed",
-    "failedServices_other": "{{count}} services failed"
+    "attentionServices_one": "{{count}} service needs attention",
+    "attentionServices_other": "{{count}} services need attention"
   },
   "services": {
     "title": "Services",
@@ -103,7 +103,15 @@
       "stopped": "stopped",
       "evicted": "evicted",
       "failed": "failed",
-      "disabled": "disabled"
+      "disabled": "disabled",
+      "unknown": "unknown"
+    },
+    "disabledReasons": {
+      "launch_failed": "launch failed",
+      "health_timeout": "health timeout",
+      "oom": "out of memory",
+      "user_disabled": "by operator",
+      "auto_restart_loop": "restart loop"
     },
     "footprintNeeded": "needed"
   },

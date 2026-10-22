@@ -103,6 +103,7 @@ pub(crate) async fn snapshot(
 
 #[cfg(test)]
 mod tests {
+    use ananke_api::shared::ServiceStateKind;
     use smol_str::SmolStr;
 
     use super::*;
@@ -137,8 +138,9 @@ mod tests {
         };
         let state_changed = |service: &str| Event::StateChanged {
             service: SmolStr::new(service),
-            from: "idle".into(),
-            to: "starting".into(),
+            from: ServiceStateKind::Idle,
+            to: ServiceStateKind::Starting,
+            disabled_reason: None,
             at_ms: 0,
         };
         assert!(wants_event(&resource, &state_changed("demo")));

@@ -52,6 +52,7 @@ The audience is an operator deciding whether to upgrade and what they will have 
 - `anankectl logs` accepts human-friendly `--since` and `--until` values: RFC 3339 timestamps, local datetimes and dates, or relative ages like `2h` and `30m`, in addition to epoch milliseconds.
 - Llama.cpp-native endpoints on the OpenAI listener. `/tokenize`, `/detokenize`, `/apply-template`, `/completion`, `/infill`, `/embedding`, `/embeddings`, `/rerank`, `/reranking`, `/props`, `/slots`, `/slots/{id}`, `/lora-adapters`, `/health`, `/v1/health`, and `/metrics` are now served on the main inference URL and forwarded verbatim to the upstream of a `llama-cpp` template service (started on demand). A `model` field in the body selects the service; without one, the sole llama-cpp service is the target. The OpenAI-shape aliases (`/v1/*`, `/models`, `/completions`, `/chat/completions`, …) are not proxied.
 - `GET /api/info` and the live `info` resource report `uptime_ms`, the time since the daemon started.
+- The service list and detail report why a disabled service is disabled, as `disabled_reason` (`launch_failed`, `health_timeout`, `oom`, `user_disabled`, or `auto_restart_loop`), and `state_changed` events carry it. `anankectl services` shows it beside the state, `anankectl status` counts the services disabled after a fault, and the web UI colours those services as failed and counts them on the Services tab.
 
 ### Changed
 

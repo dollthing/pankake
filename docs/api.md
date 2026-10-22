@@ -406,9 +406,10 @@ List recent events
     // state_changed
     | {
       at_ms: number
-      from: string
+      disabled_reason?: "launch_failed" | "health_timeout" | "oom" | "user_disabled" | "auto_restart_loop" | null
+      from: "idle" | "starting" | "running" | "draining" | "stopped" | "evicted" | "failed" | "disabled" | "unknown"
       service: string
-      to: string
+      to: "idle" | "starting" | "running" | "draining" | "stopped" | "evicted" | "failed" | "disabled" | "unknown"
       type: "state_changed"
     }
     // allocation_changed
@@ -490,6 +491,7 @@ List all services
   openai_api_port: number
   services: {
     ananke_metadata?: Record<string, any>
+    disabled_reason?: "launch_failed" | "health_timeout" | "oom" | "user_disabled" | "auto_restart_loop" | null
     elastic_borrower?: string | null
     fit_verdict?:
       // fits
@@ -524,7 +526,7 @@ List all services
     port: number
     priority: number
     run_id?: number | null
-    state: string
+    state: "idle" | "starting" | "running" | "draining" | "stopped" | "evicted" | "failed" | "disabled" | "unknown"
   }[]
 }
 ```
@@ -555,6 +557,7 @@ Get service detail
     runtime: string
   } | null
   current_allocation: Record<string, number>
+  disabled_reason?: "launch_failed" | "health_timeout" | "oom" | "user_disabled" | "auto_restart_loop" | null
   elastic_borrower?: string | null
   estimate?: {
     compute_buffer_bytes_per_device: number
@@ -654,7 +657,7 @@ Get service detail
     threads_batch?: number | null
     ubatch_size?: number | null
   } | null
-  state: string
+  state: "idle" | "starting" | "running" | "draining" | "stopped" | "evicted" | "failed" | "disabled" | "unknown"
   template: string
 }
 ```
@@ -994,7 +997,7 @@ Each service is in exactly one state at any time. The state machine drives lifec
 
 ### Disabled reasons
 
-A `disabled` state carries a reason that explains why:
+A `disabled` service says why in `disabled_reason`, which the service list, the service detail, and the `state_changed` event carry exactly when the state is `disabled`:
 
 | Reason | Description |
 | --- | --- |

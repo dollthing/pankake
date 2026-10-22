@@ -13,6 +13,7 @@ import { vi } from "vitest";
 import type {
   DaemonInfoResponse,
   DeviceSummary,
+  ServiceStateKind,
   ServiceSummary,
 } from "../api/client.ts";
 import { FakeWebSocket } from "../api/live/fakeWebSocket.ts";
@@ -78,7 +79,7 @@ export async function setServices(
 
 export function service(
   name: string,
-  state = "idle",
+  state: ServiceStateKind = "idle",
   extra: Partial<ServiceSummary> = {},
 ): ServiceSummary {
   return {

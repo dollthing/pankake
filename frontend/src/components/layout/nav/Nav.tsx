@@ -1,6 +1,7 @@
 // The section navigation: a rail with icons from `md` up, a scrolling
 // tab row below it. One element for both, so every section is reachable
-// at every width. Services carries a count of failed services.
+// at every width. Services carries a count of the services that failed or
+// that the daemon disabled after a fault.
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +12,7 @@ import { cn } from "../../ui/cn.ts";
 import { Icon } from "../../ui/icon/Icon.tsx";
 import type { IconName } from "../../ui/icon/iconGeometry.tsx";
 import { Chip } from "../../ui/status/Chip.tsx";
+import { needsAttention } from "../../ui/status/stateTone.ts";
 import { navItemVariants } from "./navItemVariants.ts";
 import {
   SECTIONS,
@@ -32,7 +34,7 @@ export function Nav({ className }: { readonly className?: string }) {
   const [lastName, setLastName] = useState(viewing);
   if (viewing !== undefined && viewing !== lastName) setLastName(viewing);
   const lastService = services.data?.find((s) => s.name === lastName);
-  const failed = services.data?.filter((s) => s.state === "failed").length;
+  const attention = services.data?.filter(needsAttention).length;
 
   // Keep the active tab in view in the narrow tab row, so a deep link to
   // a section past the fold still shows which one is open.
@@ -73,14 +75,16 @@ export function Nav({ className }: { readonly className?: string }) {
           >
             <Icon name={SECTION_ICON[section]} className="max-md:hidden" />
             {t(SECTION_LABEL[section])}
-            {section === "services" && failed !== undefined && failed > 0 && (
-              <Chip tone="danger" className="ml-auto font-normal">
-                <span aria-hidden="true">{failed}</span>
-                <span className="sr-only">
-                  {t("nav.failedServices", { count: failed })}
-                </span>
-              </Chip>
-            )}
+            {section === "services" &&
+              attention !== undefined &&
+              attention > 0 && (
+                <Chip tone="danger" className="ml-auto font-normal">
+                  <span aria-hidden="true">{attention}</span>
+                  <span className="sr-only">
+                    {t("nav.attentionServices", { count: attention })}
+                  </span>
+                </Chip>
+              )}
           </Link>
         );
       })}

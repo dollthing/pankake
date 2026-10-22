@@ -642,6 +642,16 @@ export interface components {
       total_bytes: number;
     };
     /**
+     * @description Why a `disabled` service is disabled.
+     * @enum {string}
+     */
+    DisableReason:
+      | "launch_failed"
+      | "health_timeout"
+      | "oom"
+      | "user_disabled"
+      | "auto_restart_loop";
+    /**
      * @description `POST /api/services/{name}/disable` response body.
      *
      *     The `status` tag tells the caller the outcome of the disable request. All
@@ -742,12 +752,13 @@ export interface components {
            * @description When the transition happened, in unix milliseconds.
            */
           at_ms: number;
-          /** @description The state it left, e.g. `"starting"` or `"running"`. */
-          from: string;
+          disabled_reason?: null | components["schemas"]["DisableReason"];
+          /** @description The state it left. */
+          from: components["schemas"]["ServiceStateKind"];
           /** @description The service that changed state. */
           service: string;
           /** @description The state it entered. */
-          to: string;
+          to: components["schemas"]["ServiceStateKind"];
           /** @enum {string} */
           type: "state_changed";
         }
@@ -1439,6 +1450,7 @@ export interface components {
       current_allocation: {
         [key: string]: number;
       };
+      disabled_reason?: null | components["schemas"]["DisableReason"];
       /** @description Placeholder for elastic-borrower tracking. */
       elastic_borrower?: string | null;
       estimate?: null | components["schemas"]["EstimateSummary"];
@@ -1530,8 +1542,8 @@ export interface components {
       run_id?: number | null;
       runtime?: null | components["schemas"]["RuntimeInfo"];
       serving?: null | components["schemas"]["ServingConfig"];
-      /** @description Current state name. */
-      state: string;
+      /** @description Current state. */
+      state: components["schemas"]["ServiceStateKind"];
       /** @description Template name, e.g. `"llamacpp"` or `"command"`. */
       template: string;
     };
@@ -1561,6 +1573,20 @@ export interface components {
        */
       trigger: string;
     };
+    /**
+     * @description The state a service is in. `docs/api.md` describes each one.
+     * @enum {string}
+     */
+    ServiceStateKind:
+      | "idle"
+      | "starting"
+      | "running"
+      | "draining"
+      | "stopped"
+      | "evicted"
+      | "failed"
+      | "disabled"
+      | "unknown";
     /** @description One entry in `GET /api/services`. */
     ServiceSummary: {
       /**
@@ -1570,6 +1596,7 @@ export interface components {
        *     metadata.
        */
       ananke_metadata?: Record<string, never>;
+      disabled_reason?: null | components["schemas"]["DisableReason"];
       /** @description Placeholder for elastic-borrower tracking (future work). */
       elastic_borrower?: string | null;
       fit_verdict?: null | components["schemas"]["FitVerdict"];
@@ -1655,8 +1682,8 @@ export interface components {
        * @description Active run id if currently running.
        */
       run_id?: number | null;
-      /** @description State like `"idle"`, `"running"`, `"disabled_user_disabled"`. */
-      state: string;
+      /** @description Current state. */
+      state: components["schemas"]["ServiceStateKind"];
     };
     /** @description Response from `GET /api/services`. */
     ServicesResponse: {

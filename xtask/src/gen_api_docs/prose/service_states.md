@@ -16,7 +16,7 @@ Each service is in exactly one state at any time. The state machine drives lifec
 
 ### Disabled reasons
 
-A `disabled` state carries a reason that explains why:
+A `disabled` service says why in `disabled_reason`, which the service list, the service detail, and the `state_changed` event carry exactly when the state is `disabled`:
 
 | Reason | Description |
 | --- | --- |

@@ -100,8 +100,9 @@ impl RunLoop {
         );
         self.deps.events.publish(Event::StateChanged {
             service: self.init.identity.name.clone(),
-            from: prior_state.name().to_string(),
-            to: new_state.name().to_string(),
+            from: prior_state.kind(),
+            to: new_state.kind(),
+            disabled_reason: new_state.disabled_reason(),
             at_ms: ananke_tracking::now_unix_ms(),
         });
     }

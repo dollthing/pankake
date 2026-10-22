@@ -35,7 +35,7 @@ export function ServiceRow({
 
   const canStart = ["idle", "stopped", "failed", "evicted"].includes(svc.state);
   const canStop = ["running", "starting", "draining"].includes(svc.state);
-  const isDisabled = svc.state.startsWith("disabled");
+  const isDisabled = svc.state === "disabled";
 
   // Sparkline data — zeroFillGaps (applied inside Sparkline) handles
   // the no-data and single-point cases.
@@ -61,7 +61,7 @@ export function ServiceRow({
         to={`/services/${encodeURIComponent(svc.name)}`}
         className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden"
       >
-        <StatusDot state={svc.state} />
+        <StatusDot state={svc.state} reason={svc.disabled_reason} />
         {/* Name over footprint. The tags beside it stay centred against the
             pair rather than against the name alone, which is why the stack is
             its own flex item instead of the row being two lines. */}

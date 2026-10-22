@@ -5,7 +5,11 @@ use utoipa::ToSchema;
 
 use crate::{
     internal::fit_verdict::FitVerdict,
-    shared::{metadata::AnankeMetadata, modality::Modality},
+    shared::{
+        metadata::AnankeMetadata,
+        modality::Modality,
+        service_state::{DisableReason, ServiceStateKind},
+    },
 };
 
 /// Response from `GET /api/services`.
@@ -22,8 +26,12 @@ pub struct ServicesResponse {
 pub struct ServiceSummary {
     /// Service name (matches `[[service]]` table in config).
     pub name: String,
-    /// State like `"idle"`, `"running"`, `"disabled_user_disabled"`.
-    pub state: String,
+    /// Current state.
+    pub state: ServiceStateKind,
+    /// Why the service is disabled; present exactly when `state` is
+    /// `disabled`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disabled_reason: Option<DisableReason>,
     /// `"persistent"` or `"ondemand"`.
     pub lifecycle: String,
     /// Eviction priority.

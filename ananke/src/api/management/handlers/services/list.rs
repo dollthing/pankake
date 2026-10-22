@@ -6,6 +6,7 @@ use ananke_api::{
         detail::PlacementPreview,
         list::{DeviceFootprint, ServiceSummary, ServicesResponse},
     },
+    shared::{DisableReason, ServiceStateKind},
 };
 use axum::{
     Json,
@@ -18,7 +19,7 @@ use crate::{
     api::management::handlers::{model_estimate_entry, placement_preview},
     config::{ServiceConfig, placement_inputs},
     daemon::app_state::AppState,
-    supervise::estimate_cache::EstimateCacheEntry,
+    supervise::{estimate_cache::EstimateCacheEntry, state::ServiceState},
 };
 
 #[utoipa::path(
@@ -38,10 +39,7 @@ pub(crate) fn services_snapshot(state: &AppState) -> ServicesResponse {
         // a supervisor is mid-drain or mid-spawn, and `run_id` / `pid`
         // are always populated for any service with a live child.
         let peek = handle.as_ref().map(|h| h.peek());
-        let state_name = peek
-            .as_ref()
-            .map(|p| p.state.name().to_string())
-            .unwrap_or_else(|| "unknown".into());
+        let (state_kind, disabled_reason) = wire_state(peek.as_ref().map(|p| &p.state));
         let running = peek.as_ref().and_then(|p| p.pid).is_some();
 
         // Compute the fit verdict so the frontend can flag services
@@ -66,7 +64,8 @@ pub(crate) fn services_snapshot(state: &AppState) -> ServicesResponse {
 
         services.push(ServiceSummary {
             name: svc_cfg.name.to_string(),
-            state: state_name,
+            state: state_kind,
+            disabled_reason,
             lifecycle: svc_cfg.lifecycle.as_str().to_string(),
             priority: svc_cfg.priority,
             port: svc_cfg.port,
@@ -97,6 +96,17 @@ pub(crate) fn services_snapshot(state: &AppState) -> ServicesResponse {
     ServicesResponse {
         services,
         openai_api_port,
+    }
+}
+
+/// A supervisor's state as the wire reports it; `unknown` when the service
+/// has no supervisor yet.
+pub(crate) fn wire_state(
+    state: Option<&ServiceState>,
+) -> (ServiceStateKind, Option<DisableReason>) {
+    match state {
+        Some(state) => (state.kind(), state.disabled_reason()),
+        None => (ServiceStateKind::Unknown, None),
     }
 }
 

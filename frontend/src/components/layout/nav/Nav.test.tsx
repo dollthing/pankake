@@ -36,16 +36,19 @@ describe("Nav", () => {
     );
   });
 
-  it("counts failed services on the Services item", () => {
+  it("counts services that need attention on the Services item", () => {
     renderLive(<Nav />, {
       services: [
         service("a", "failed"),
         service("b", "running"),
-        service("c", "failed"),
+        service("c", "disabled", { disabled_reason: "oom" }),
+        service("d", "disabled", { disabled_reason: "user_disabled" }),
       ],
     });
     expect(
-      sections().getByRole("link", { name: "Services 2 services failed" }),
+      sections().getByRole("link", {
+        name: "Services 2 services need attention",
+      }),
     ).toBeInTheDocument();
   });
 

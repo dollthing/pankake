@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use utoipa::ToSchema;
 
+use crate::shared::service_state::{DisableReason, ServiceStateKind};
+
 /// One daemon lifecycle event. The `type` tag discriminates the variant, and
 /// every variant carries `at_ms`. The same
 /// `Event` is used as a broadcast bus message internally, so it must stay
@@ -24,10 +26,14 @@ pub enum Event {
         /// The service that changed state.
         #[schema(value_type = String)]
         service: SmolStr,
-        /// The state it left, e.g. `"starting"` or `"running"`.
-        from: String,
+        /// The state it left.
+        from: ServiceStateKind,
         /// The state it entered.
-        to: String,
+        to: ServiceStateKind,
+        /// Why the service is disabled; present exactly when `to` is
+        /// `disabled`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        disabled_reason: Option<DisableReason>,
         /// When the transition happened, in unix milliseconds.
         at_ms: i64,
     },

@@ -15,7 +15,10 @@ use ananke_api::{
         start::StartResponse,
         stop::StopResponse,
     },
-    shared::errors::{ApiErrorBody, ApiErrorCodeSlug, ApiErrorKind},
+    shared::{
+        DisableReason, ServiceStateKind,
+        errors::{ApiErrorBody, ApiErrorCodeSlug, ApiErrorKind},
+    },
 };
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
@@ -35,7 +38,8 @@ fn service_summary_roundtrips() {
     ananke_metadata.insert("discord_visible".into(), serde_json::json!(true));
     let v = ServiceSummary {
         name: "demo".into(),
-        state: "running".into(),
+        state: ServiceStateKind::Running,
+        disabled_reason: None,
         lifecycle: "persistent".into(),
         priority: 50,
         port: 11435,
@@ -93,13 +97,31 @@ fn start_response_tagged_union() {
 fn event_state_changed_tag() {
     let v = Event::StateChanged {
         service: SmolStr::new("demo"),
-        from: "idle".into(),
-        to: "starting".into(),
+        from: ServiceStateKind::Idle,
+        to: ServiceStateKind::Starting,
+        disabled_reason: None,
         at_ms: 1,
     };
     let json = serde_json::to_value(&v).unwrap();
     assert_eq!(json["type"], "state_changed");
     assert_eq!(json["service"], "demo");
+    assert_eq!(json["from"], "idle");
+    assert!(json.get("disabled_reason").is_none());
+}
+
+#[test]
+fn event_state_changed_carries_the_disable_reason() {
+    let v = Event::StateChanged {
+        service: SmolStr::new("demo"),
+        from: ServiceStateKind::Starting,
+        to: ServiceStateKind::Disabled,
+        disabled_reason: Some(DisableReason::HealthTimeout),
+        at_ms: 1,
+    };
+    let json = serde_json::to_value(&v).unwrap();
+    assert_eq!(json["to"], "disabled");
+    assert_eq!(json["disabled_reason"], "health_timeout");
+    assert_eq!(roundtrip(v.clone()), v);
 }
 
 #[test]
@@ -148,7 +170,8 @@ fn device_summary_roundtrips() {
 fn service_detail_roundtrips() {
     let v = ServiceDetail {
         name: "demo".into(),
-        state: "idle".into(),
+        state: ServiceStateKind::Idle,
+        disabled_reason: None,
         lifecycle: "persistent".into(),
         priority: 50,
         port: 11435,
@@ -215,7 +238,8 @@ fn service_detail_roundtrips() {
 fn service_detail_roundtrips_mainline() {
     let v = ServiceDetail {
         name: "demo".into(),
-        state: "idle".into(),
+        state: ServiceStateKind::Idle,
+        disabled_reason: None,
         lifecycle: "persistent".into(),
         priority: 50,
         port: 11435,
@@ -253,7 +277,8 @@ fn service_detail_roundtrips_mainline() {
 fn service_detail_roundtrips_no_runtime() {
     let v = ServiceDetail {
         name: "demo".into(),
-        state: "idle".into(),
+        state: ServiceStateKind::Idle,
+        disabled_reason: None,
         lifecycle: "persistent".into(),
         priority: 50,
         port: 11435,

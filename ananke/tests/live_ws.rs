@@ -22,7 +22,7 @@ use ananke_api::{
     internal::fit_verdict::FitVerdict,
     live::{LiveData, LiveMessage, LiveRequest, LiveResource},
     services::list::ServiceSummary,
-    shared::errors::ApiErrorCodeSlug,
+    shared::{ServiceStateKind, errors::ApiErrorCodeSlug},
 };
 use ananke_placement::devices::{CpuSnapshot, DeviceSnapshot, GpuSnapshot};
 use ananke_proxy::InflightGuard;
@@ -268,7 +268,7 @@ async fn pid_cleared_after_stop() {
         s.pid.is_none() && s.run_id.is_none()
     })
     .await;
-    assert_eq!(service(&last, "demo").state, "idle");
+    assert_eq!(service(&last, "demo").state, ServiceStateKind::Idle);
 
     h.cleanup().await;
 }

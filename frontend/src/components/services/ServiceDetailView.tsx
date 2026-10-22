@@ -5,7 +5,7 @@ import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { useServiceDetail, useLifecycle } from "../../api/hooks.ts";
-import type { RestartEvent } from "../../api/client.ts";
+import type { RestartEvent, ServiceStateKind } from "../../api/client.ts";
 import { formatTimestamp, relativeTime, serviceProxyUrl } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
@@ -70,7 +70,11 @@ export function ServiceDetailView() {
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
         </Link>
-        <StatusDot state={d.state} className="size-2.5" />
+        <StatusDot
+          state={d.state}
+          reason={d.disabled_reason}
+          className="size-2.5"
+        />
         <h1 className="min-w-0 truncate font-mono text-sm font-semibold tracking-[0.02em] text-primary">
           {d.name}
         </h1>
@@ -209,7 +213,7 @@ function LifecycleActions({
   pending,
   onAction,
 }: {
-  state: string;
+  state: ServiceStateKind;
   pending: boolean;
   onAction: (
     action: "start" | "stop" | "restart" | "enable" | "disable",
@@ -218,7 +222,7 @@ function LifecycleActions({
   const { t } = useTranslation();
   const canStart = ["idle", "stopped", "failed", "evicted"].includes(state);
   const canStop = ["running", "starting", "draining"].includes(state);
-  const isDisabled = state.startsWith("disabled");
+  const isDisabled = state === "disabled";
 
   return (
     <div className="flex flex-wrap items-center gap-2">
