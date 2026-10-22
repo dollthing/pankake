@@ -2,13 +2,14 @@
 //! exchanged over its mailbox, [`SupervisorHandle`] itself, and
 //! [`spawn_supervisor`], which starts the actor task and returns a handle to it.
 
-use std::sync::{Arc, atomic::AtomicU64};
+use std::sync::Arc;
 
 use ananke_config::validate::ServiceConfig;
 use ananke_db::{Database, logs::BatcherHandle};
 use ananke_devices::Allocation;
 use ananke_events::EventBus;
 use ananke_observation::ObservationTable;
+use ananke_proxy::InflightCounter;
 use ananke_tracking::rolling::RollingTable;
 use parking_lot::Mutex as SyncMutex;
 use tokio::{sync::mpsc, task::JoinHandle};
@@ -371,7 +372,7 @@ pub struct SupervisorInit {
     pub allocation: Allocation,
     pub service_id: i64,
     pub last_activity: ananke_tracking::activity::ActivityStamp,
-    pub inflight: Arc<AtomicU64>,
+    pub inflight: Arc<InflightCounter>,
 }
 
 /// Spawn a supervisor task. `boot_svc` seeds the `current_svc()` fallback

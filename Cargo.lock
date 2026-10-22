@@ -318,6 +318,7 @@ version = "0.2.0"
 dependencies = [
  "ananke-api",
  "ananke-errors",
+ "ananke-events",
  "axum 0.7.9",
  "bytes",
  "futures",
@@ -412,6 +413,7 @@ dependencies = [
  "ananke-events",
  "ananke-observation",
  "ananke-placement",
+ "ananke-proxy",
  "ananke-time",
  "parking_lot",
  "smol_str",

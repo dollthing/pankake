@@ -40,7 +40,7 @@ mod tests {
             allocation: Allocation::from_override(&svc.placement_override),
             service_id: 1,
             last_activity: Arc::new(parking_lot::Mutex::new(tokio::time::Instant::now())),
-            inflight: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+            inflight: ananke_proxy::InflightCounter::detached(),
         };
         let deps = crate::SupervisorDeps {
             db: db.clone(),
