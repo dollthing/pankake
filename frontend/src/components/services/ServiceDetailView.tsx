@@ -9,7 +9,7 @@ import type { RestartEvent } from "../../api/client.ts";
 import { formatTimestamp, relativeTime, serviceProxyUrl } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { Stat } from "../ui/Stat.tsx";
+import { Stat } from "../ui/data/Stat.tsx";
 import { Chip } from "../ui/status/Chip.tsx";
 import { StatusDot } from "../ui/status/StatusDot.tsx";
 import { Spinner } from "../ui/feedback/Spinner.tsx";

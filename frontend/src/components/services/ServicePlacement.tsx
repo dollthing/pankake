@@ -11,7 +11,7 @@ import type {
 } from "../../api/client.ts";
 import { formatBytes } from "../../util.ts";
 import { Chip } from "../ui/status/Chip.tsx";
-import { Bar, type BarSegment } from "../ui/Bar.tsx";
+import { MemoryBar } from "../ui/data/MemoryBar.tsx";
 
 export function PlacementSection({
   current,
@@ -164,38 +164,6 @@ function PlacementBar({
   const hasBar = total_bytes > 0;
   const canGrow = max_bytes > bytes;
 
-  const thisVariant: BarSegment["variant"] =
-    verdict.kind === "needs_eviction" ? "growth" : "used";
-
-  const segments: BarSegment[] = [
-    {
-      variant: "reserved",
-      bytes: used_by_others_bytes,
-      label: t("serviceDetail.usedByOthers"),
-    },
-    {
-      variant: thisVariant,
-      bytes,
-      label: t("serviceDetail.thisService"),
-    },
-    ...(canGrow
-      ? [
-          {
-            variant: thisVariant,
-            bytes: max_bytes - bytes,
-            label: t("serviceDetail.growthHeadroom"),
-          } satisfies BarSegment,
-        ]
-      : []),
-    {
-      variant: "headroom",
-      bytes: Math.max(
-        0,
-        total_bytes - used_by_others_bytes - Math.max(bytes, max_bytes),
-      ),
-    },
-  ];
-
   return (
     <div className="text-xs">
       <div className="flex items-baseline justify-between gap-2">
@@ -207,7 +175,20 @@ function PlacementBar({
         </span>
       </div>
       {hasBar && (
-        <Bar total={total_bytes} segments={segments} className="mt-0.5" />
+        <MemoryBar
+          variant="placement"
+          total={total_bytes}
+          others={used_by_others_bytes}
+          self={bytes}
+          growth={canGrow ? max_bytes - bytes : 0}
+          needsEviction={verdict.kind === "needs_eviction"}
+          label={t("serviceDetail.placementBar", {
+            self: formatBytes(bytes),
+            others: formatBytes(used_by_others_bytes),
+            total: formatBytes(total_bytes),
+          })}
+          className="mt-0.5"
+        />
       )}
     </div>
   );

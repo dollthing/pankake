@@ -20,7 +20,7 @@ import { TIME_WINDOW_PRESETS, type TimeWindow } from "../ui/form/timeWindow.ts";
 import { toggleFavourite, useFavourites } from "../../api/favourites.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { Stat } from "../ui/Stat.tsx";
+import { Stat } from "../ui/data/Stat.tsx";
 import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
 import { DeviceCard } from "./DeviceCard.tsx";

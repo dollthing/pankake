@@ -11,7 +11,7 @@ import {
 } from "../../api/metrics-aggregate.ts";
 import { bucketMsOf, metricsWindow } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
-import { Stat } from "../ui/Stat.tsx";
+import { Stat } from "../ui/data/Stat.tsx";
 import { TimeWindowSelect } from "../ui/form/TimeWindowSelect.tsx";
 import {
   TIME_WINDOW_PRESETS,

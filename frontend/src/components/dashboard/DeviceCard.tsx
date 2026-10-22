@@ -1,11 +1,12 @@
 // Device VRAM card (usage bar + memory sparkline) for DashboardView.
 
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import type { DeviceSummary, DeviceSampleResponse } from "../../api/client.ts";
 import { formatBytes } from "../../util.ts";
-import { Bar, type BarSegment } from "../ui/Bar.tsx";
+import { MemoryBar } from "../ui/data/MemoryBar.tsx";
 import { Chip } from "../ui/status/Chip.tsx";
 import { Chart } from "../ui/Chart.tsx";
 import { CHART_PALETTE } from "../ui/chart-palette.ts";
@@ -21,16 +22,11 @@ export function DeviceCard({
   xMin: number;
   xMax: number;
 }) {
+  const { t } = useTranslation();
   const total = device.total_bytes;
   const used = total - device.free_bytes;
   const pledged = device.reservations.reduce((sum, r) => sum + r.bytes, 0);
   const pledgedExtra = pledged > used ? pledged - used : 0;
-
-  const segments: BarSegment[] = [
-    { variant: "used", bytes: used, label: "used" },
-    { variant: "growth", bytes: pledgedExtra, label: "pledged" },
-    { variant: "headroom", bytes: Math.max(0, total - used - pledgedExtra) },
-  ];
 
   const chartData = useMemo(() => {
     const filtered = samples
@@ -62,7 +58,17 @@ export function DeviceCard({
         xMin={xMin}
         xMax={xMax}
       />
-      <Bar total={total} segments={segments} />
+      <MemoryBar
+        variant="device"
+        total={total}
+        used={used}
+        pledged={pledgedExtra}
+        label={t("devices.memoryBar", {
+          used: formatBytes(used),
+          total: formatBytes(total),
+          pledged: formatBytes(pledgedExtra),
+        })}
+      />
       <div className="text-xs text-tertiary">
         {formatBytes(used)} / {formatBytes(total)}
         {pledged > 0 && <> · {formatBytes(pledged)} pledged</>}

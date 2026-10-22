@@ -70,6 +70,7 @@
     "footprintNeeded": "needed"
   },
   "devices": {
+    "memoryBar": "{{used}} of {{total}} in use, {{pledged}} more pledged",
     "title": "Devices",
     "totalVram": "Total VRAM",
     "freeVram": "Free VRAM",
@@ -237,6 +238,7 @@
     "currentPledge": "Current pledge",
     "configuredOverride": "Configured override",
     "configuredOverrideTitle": "Manual override declared in config",
+    "placementBar": "{{self}} for this service and {{others}} for others, of {{total}}",
     "usedByOthers": "used by others",
     "thisService": "this service",
     "growthHeadroom": "growth headroom",

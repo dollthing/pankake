@@ -5,7 +5,7 @@
 
 import { useMemo } from "react";
 
-import { zeroFillGaps } from "../../util.ts";
+import { zeroFillGaps } from "../../../util.ts";
 
 type SparklineProps = {
   data: (number | null)[][];
