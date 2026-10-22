@@ -10,7 +10,7 @@ import type {
   ServiceDetail,
 } from "../../api/client.ts";
 import { formatBytes } from "../../util.ts";
-import { Badge } from "../ui/Badge.tsx";
+import { Chip } from "../ui/status/Chip.tsx";
 import { Bar, type BarSegment } from "../ui/Bar.tsx";
 
 export function PlacementSection({
@@ -217,15 +217,15 @@ function FitBadge({ verdict }: { verdict: PlacementPreview["verdict"] }) {
   const { t } = useTranslation();
   const map: Record<
     PlacementPreview["verdict"]["kind"],
-    { variant: "success" | "warning" | "danger"; label: string }
+    { tone: "ok" | "warn" | "danger"; label: string }
   > = {
-    fits: { variant: "success", label: t("serviceDetail.fitsNow") },
+    fits: { tone: "ok", label: t("serviceDetail.fitsNow") },
     needs_eviction: {
-      variant: "warning",
+      tone: "warn",
       label: t("serviceDetail.needsEviction"),
     },
-    does_not_fit: { variant: "danger", label: t("serviceDetail.doesNotFit") },
+    does_not_fit: { tone: "danger", label: t("serviceDetail.doesNotFit") },
   };
-  const { variant, label } = map[verdict.kind];
-  return <Badge variant={variant}>{label}</Badge>;
+  const { tone, label } = map[verdict.kind];
+  return <Chip tone={tone}>{label}</Chip>;
 }

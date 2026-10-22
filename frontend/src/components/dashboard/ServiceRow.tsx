@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 
 import type { FitVerdict, ServiceSummary } from "../../api/client.ts";
 import { formatBytes, serviceProxyUrl } from "../../util.ts";
-import { StatusDot } from "../ui/StatusDot.tsx";
+import { StatusDot } from "../ui/status/StatusDot.tsx";
 import { Sparkline } from "../ui/Sparkline.tsx";
 import { CHART_PALETTE } from "../ui/chart-palette.ts";
 import { Icon } from "../ui/icon/Icon.tsx";

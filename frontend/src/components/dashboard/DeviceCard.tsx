@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import type { DeviceSummary, DeviceSampleResponse } from "../../api/client.ts";
 import { formatBytes } from "../../util.ts";
 import { Bar, type BarSegment } from "../ui/Bar.tsx";
-import { Badge } from "../ui/Badge.tsx";
+import { Chip } from "../ui/status/Chip.tsx";
 import { Chart } from "../ui/Chart.tsx";
 import { CHART_PALETTE } from "../ui/chart-palette.ts";
 
@@ -80,7 +80,7 @@ export function DeviceCard({
               <span className="font-mono text-xs text-tertiary">
                 {formatBytes(r.bytes)}
               </span>
-              {r.elastic && <Badge variant="accent">elastic</Badge>}
+              {r.elastic && <Chip tone="accent">elastic</Chip>}
             </div>
           ))}
         </div>

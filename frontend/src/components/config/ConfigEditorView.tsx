@@ -17,7 +17,7 @@ import { Button } from "../ui/button/Button.tsx";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
 import { Spinner } from "../ui/Spinner.tsx";
-import { Badge } from "../ui/Badge.tsx";
+import { Chip } from "../ui/status/Chip.tsx";
 import { CodeMirrorEditor } from "./CodeMirrorEditor.tsx";
 
 const VALIDATE_DEBOUNCE_MS = 600;
@@ -125,13 +125,9 @@ export function ConfigEditorView() {
     <div className="flex h-full flex-col">
       <ViewHeader>
         <h1 className="eyebrow !text-primary">{t("nav.config")}</h1>
-        {readOnly && (
-          <Badge variant="neutral">{t("config.readOnlyBadge")}</Badge>
-        )}
-        {dirty && <Badge variant="warning">{t("config.unsaved")}</Badge>}
-        {saveMut.isPending && (
-          <Badge variant="accent">{t("config.saving")}</Badge>
-        )}
+        {readOnly && <Chip>{t("config.readOnlyBadge")}</Chip>}
+        {dirty && <Chip tone="warn">{t("config.unsaved")}</Chip>}
+        {saveMut.isPending && <Chip tone="accent">{t("config.saving")}</Chip>}
         <div className="ml-auto flex items-center gap-2">
           {!serverReadOnly && (
             <button

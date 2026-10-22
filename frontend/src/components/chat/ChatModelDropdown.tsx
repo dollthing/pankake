@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { type ServiceSummary } from "../../api/client.ts";
-import { Badge } from "../ui/Badge.tsx";
-import { StatusDot } from "../ui/StatusDot.tsx";
+import { Chip } from "../ui/status/Chip.tsx";
+import { StatusDot } from "../ui/status/StatusDot.tsx";
 
 export function ModelDropdown({
   models,
@@ -81,9 +81,9 @@ export function ModelDropdown({
                 {selectedSvc.name}
               </span>
               {selectedSvc.has_mmproj && (
-                <Badge variant="vision" className="shrink-0">
+                <Chip tone="vision" className="shrink-0">
                   vision
-                </Badge>
+                </Chip>
               )}
             </>
           ) : (
@@ -126,7 +126,7 @@ export function ModelDropdown({
               >
                 <StatusDot state={s.state} />
                 <span className="font-mono text-sm text-primary">{s.name}</span>
-                {s.has_mmproj && <Badge variant="vision">vision</Badge>}
+                {s.has_mmproj && <Chip tone="vision">vision</Chip>}
               </button>
             ))
           )}

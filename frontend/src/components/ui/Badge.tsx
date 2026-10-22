@@ -1,5 +1,5 @@
-// Coloured pill badge for states, modalities, and fit verdicts.
-// Semantic colours map to the theme tokens.
+// Legacy badge, kept only for the events view until its restyle moves it
+// to `status/Chip`; use `Chip` everywhere else.
 
 import type { ReactNode } from "react";
 

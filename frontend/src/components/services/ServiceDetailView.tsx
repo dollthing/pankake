@@ -9,9 +9,9 @@ import type { RestartEvent } from "../../api/client.ts";
 import { formatTimestamp, relativeTime, serviceProxyUrl } from "../../util.ts";
 import { Card } from "../ui/Card.tsx";
 import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { Badge } from "../ui/Badge.tsx";
 import { Stat } from "../ui/Stat.tsx";
-import { StatusDot } from "../ui/StatusDot.tsx";
+import { Chip } from "../ui/status/Chip.tsx";
+import { StatusDot } from "../ui/status/StatusDot.tsx";
 import { Spinner } from "../ui/Spinner.tsx";
 import { Button } from "../ui/button/Button.tsx";
 import { ButtonLink } from "../ui/button/ButtonLink.tsx";
@@ -70,14 +70,12 @@ export function ServiceDetailView() {
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
         </Link>
-        <StatusDot state={d.state} className="h-2.5 w-2.5" />
+        <StatusDot state={d.state} className="size-2.5" />
         <h1 className="min-w-0 truncate font-mono text-sm font-semibold tracking-[0.02em] text-primary">
           {d.name}
         </h1>
-        {d.model_info?.has_mmproj && <Badge variant="vision">vision</Badge>}
-        {d.modality === "embedding" && (
-          <Badge variant="embedding">embedding</Badge>
-        )}
+        {d.model_info?.has_mmproj && <Chip tone="vision">vision</Chip>}
+        {d.modality === "embedding" && <Chip tone="embedding">embedding</Chip>}
         <div className="ml-auto flex flex-wrap items-center gap-4">
           <Stat label={t("serviceDetail.port")} value={`:${d.port}`} />
           <Stat label={t("serviceDetail.pid")} value={d.pid ?? "—"} />
@@ -198,7 +196,7 @@ function RestartHistory({ restarts }: { restarts: readonly RestartEvent[] }) {
           >
             {relativeTime(r.at_ms)}
           </span>
-          <Badge variant="warning">{r.trigger}</Badge>
+          <Chip tone="warn">{r.trigger}</Chip>
           <span className="text-primary">{r.detail}</span>
         </li>
       ))}

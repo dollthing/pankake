@@ -7,6 +7,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 
 import type { IconSize } from "../icon/Icon.tsx";
+import { toneBox } from "../tone.ts";
 
 export const buttonVariants = cva(
   "inline-flex shrink-0 items-center justify-center gap-1.5 border font-medium whitespace-nowrap hover:brightness-115 disabled:opacity-40 disabled:hover:brightness-100",
@@ -15,8 +16,8 @@ export const buttonVariants = cva(
       tone: {
         neutral: "border-line-strong bg-raised text-ink",
         primary: "border-accent-strong bg-accent-strong text-on-accent",
-        start: "border-ok-line bg-ok-bg text-ok",
-        stop: "border-danger-line bg-danger-bg text-danger",
+        start: toneBox({ tone: "ok" }),
+        stop: toneBox({ tone: "danger" }),
         quiet:
           "border-transparent bg-transparent text-soft hover:bg-hover hover:text-ink hover:brightness-100",
       },
