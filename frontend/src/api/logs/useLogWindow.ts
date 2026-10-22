@@ -21,7 +21,6 @@ import {
 } from "./logWindow.ts";
 
 const LOGS_PAGE_SIZE = 1_000;
-const LOGS_MAX_SEED_PAGES = 5;
 
 export type LogWindowResult = {
   readonly lines: readonly LogLine[];
@@ -172,30 +171,22 @@ type SeedWindow = {
   readonly followAfter: LogPosition | null | undefined;
 };
 
+/// The seed is the newest page of the window; scrolling back fetches the
+/// rest a page at a time, so opening a service never waits on a day of logs.
 async function fetchSeedWindow(
   name: string,
   bounds: LogBounds,
 ): Promise<SeedWindow> {
-  const collected: LogLine[] = [];
-  let cursor: string | undefined;
-  let followAfter: LogPosition | null | undefined;
-  for (let page = 0; page < LOGS_MAX_SEED_PAGES; page++) {
-    const resp = await api.getLogs(name, {
-      since: bounds.sinceMs,
-      // A live window omits `until`, so the first page says where it ends.
-      until: bounds.untilMs ?? undefined,
-      limit: LOGS_PAGE_SIZE,
-      before: cursor,
-    });
-    if (page === 0 && bounds.untilMs === null) {
-      followAfter = resp.follow_after ?? null;
-    }
-    collected.push(...resp.logs);
-    if (!resp.next_cursor) {
-      cursor = undefined;
-      break;
-    }
-    cursor = resp.next_cursor;
-  }
-  return { lines: collected, truncated: cursor !== undefined, followAfter };
+  const resp = await api.getLogs(name, {
+    since: bounds.sinceMs,
+    // A live window omits `until`, so the page says where it ends.
+    until: bounds.untilMs ?? undefined,
+    limit: LOGS_PAGE_SIZE,
+  });
+  return {
+    lines: resp.logs,
+    truncated: Boolean(resp.next_cursor),
+    followAfter:
+      bounds.untilMs === null ? (resp.follow_after ?? null) : undefined,
+  };
 }

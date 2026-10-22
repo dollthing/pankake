@@ -17,6 +17,7 @@ import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { Button } from "../ui/button/Button.tsx";
 import { ButtonLink } from "../ui/button/ButtonLink.tsx";
 import { LogsViewer } from "../logs/LogsViewer.tsx";
+import { useTimeRange } from "../ui/form/useTimeRange.ts";
 import { ConfigurationPanel } from "./detail/ConfigurationPanel.tsx";
 import { EstimatePanel } from "./detail/EstimatePanel.tsx";
 import { LaunchCommandPanel } from "./detail/LaunchCommandPanel.tsx";
@@ -30,6 +31,7 @@ export function ServiceDetailView() {
   const { name } = useParams<{ name: string }>();
   const detail = useServiceDetail(name ?? null);
   const lifecycle = useLifecycle();
+  const [range] = useTimeRange();
 
   if (detail.isPending) {
     return (
@@ -138,7 +140,7 @@ export function ServiceDetailView() {
 
         {/* Logs */}
         <Card header={t("serviceDetail.logs")} bodyClassName="p-0">
-          <LogsViewer name={d.name} />
+          <LogsViewer name={d.name} range={range} />
         </Card>
       </div>
     </div>

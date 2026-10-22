@@ -15,6 +15,7 @@ const migrated = [
   "src/App.tsx",
   "src/components/events/eventSummary.ts",
   "src/components/layout/**",
+  "src/components/logs/**",
   "src/components/services/detail/**",
   "src/components/ui/**",
   "src/styles/**",

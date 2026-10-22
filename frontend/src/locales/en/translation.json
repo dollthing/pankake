@@ -355,6 +355,10 @@
     "stderr": "stderr",
     "combined": "combined",
     "err": "err",
-    "out": "out"
+    "out": "out",
+    "searchLabel": "Search log lines",
+    "runFilter": "Run",
+    "selectedRange": "selected range",
+    "jumpToEnd": "jump to end"
   }
 }
