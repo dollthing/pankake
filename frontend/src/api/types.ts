@@ -993,6 +993,11 @@ export interface components {
           /** @enum {string} */
           resource: "service";
         };
+    /** @description An append-only feed a client can follow on `/api/live`. */
+    LiveFeed: components["schemas"]["LogFeed"] & {
+      /** @enum {string} */
+      kind: "logs";
+    };
     /** @description A frame the daemon sends on `/api/live`. */
     LiveMessage:
       | {
@@ -1008,6 +1013,34 @@ export interface components {
           id: string;
           /** @enum {string} */
           type: "snapshot";
+        }
+      | {
+          /** @description The follow's id. */
+          id: string;
+          /** @description The lines, in position order. */
+          lines: components["schemas"]["LogLine"][];
+          /** @enum {string} */
+          type: "log_lines";
+        }
+      | {
+          after?: null | components["schemas"]["LogPosition"];
+          /** @description The first line the follow sends after the gap. */
+          before: components["schemas"]["LogPosition"];
+          /** @description The follow's id. */
+          id: string;
+          /**
+           * Format: int64
+           * @description How many matching lines were skipped.
+           */
+          skipped: number;
+          /** @enum {string} */
+          type: "log_gap";
+        }
+      | {
+          /** @description The follow's id. */
+          id: string;
+          /** @enum {string} */
+          type: "log_caught_up";
         }
       | {
           /** @description The standard error envelope. */
@@ -1039,7 +1072,15 @@ export interface components {
           type: "subscribe";
         }
       | {
-          /** @description The id the subscription was started with. */
+          /** @description What to follow, and from where. */
+          feed: components["schemas"]["LiveFeed"];
+          /** @description A connection-local id, as for `subscribe`. */
+          id: string;
+          /** @enum {string} */
+          type: "follow";
+        }
+      | {
+          /** @description The id the subscription or follow was started with. */
           id: string;
           /** @enum {string} */
           type: "cancel";
@@ -1068,6 +1109,18 @@ export interface components {
           /** @description The service's name. */
           name: string;
         };
+    /** @description Which log lines to follow, and from where. */
+    LogFeed: {
+      after?: null | components["schemas"]["LogPosition"];
+      /**
+       * Format: int64
+       * @description Restrict to one run.
+       */
+      run?: number | null;
+      /** @description The service's name. */
+      service: string;
+      stream?: null | components["schemas"]["LogStream"];
+    };
     /** @description One captured stdout/stderr/combined line. */
     LogLine: {
       /** @description The line content (sans trailing newline). */

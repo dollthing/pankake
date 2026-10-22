@@ -27,40 +27,20 @@ use ananke_api::{
 use ananke_placement::devices::{CpuSnapshot, DeviceSnapshot, GpuSnapshot};
 use ananke_proxy::InflightGuard;
 use axum::{body::Body, http::Request};
-use common::{TestHarness, build_harness, build_harness_with_snapshot, minimal_llama_service};
-use futures::{SinkExt, StreamExt};
+use common::{
+    TestHarness, build_harness, build_harness_with_snapshot,
+    live::{DEADLINE, Socket, connect, next_message, send},
+    minimal_llama_service,
+};
+use futures::SinkExt;
 use smol_str::SmolStr;
-use tokio::{net::TcpStream, time::timeout};
 use tokio_tungstenite::{
-    MaybeTlsStream, WebSocketStream, connect_async,
+    connect_async,
     tungstenite::{self, Message, client::IntoClientRequest},
 };
 use tower::util::ServiceExt;
 
-type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
-
-const DEADLINE: Duration = Duration::from_secs(5);
 const GIB: u64 = 1024 * 1024 * 1024;
-
-/// Connect and consume the hello, which is always the first frame.
-async fn connect(h: &TestHarness) -> Socket {
-    let addr = h.spawn_management_server().await;
-    let (mut socket, _) = connect_async(format!("ws://{addr}/api/live"))
-        .await
-        .unwrap();
-    match next_message(&mut socket, DEADLINE).await {
-        Some(LiveMessage::Hello { build }) => {
-            assert!(build.starts_with(env!("CARGO_PKG_VERSION")), "{build}");
-        }
-        other => panic!("expected a hello first, got {other:?}"),
-    }
-    socket
-}
-
-async fn send(socket: &mut Socket, request: LiveRequest) {
-    let text = serde_json::to_string(&request).unwrap();
-    socket.send(Message::Text(text.into())).await.unwrap();
-}
 
 async fn subscribe(socket: &mut Socket, id: &str, resource: LiveResource) {
     send(
@@ -71,23 +51,6 @@ async fn subscribe(socket: &mut Socket, id: &str, resource: LiveResource) {
         },
     )
     .await;
-}
-
-/// The next server message, skipping control frames.
-async fn next_message(socket: &mut Socket, within: Duration) -> Option<LiveMessage> {
-    timeout(within, async {
-        loop {
-            match socket.next().await {
-                Some(Ok(Message::Text(text))) => {
-                    return serde_json::from_str::<LiveMessage>(&text).unwrap();
-                }
-                Some(Ok(_)) => {}
-                other => panic!("the socket ended: {other:?}"),
-            }
-        }
-    })
-    .await
-    .ok()
 }
 
 /// Read snapshots for `id` until one satisfies `accept`, failing at the

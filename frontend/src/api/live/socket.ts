@@ -245,6 +245,11 @@ export class LiveSocket {
         }
         return;
       }
+      case "log_lines":
+      case "log_gap":
+      case "log_caught_up":
+        // This socket starts no follows, so these never belong to it.
+        return;
       default: {
         const unreachable: never = message;
         return unreachable;

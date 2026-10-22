@@ -4,9 +4,12 @@
 //! Each subscription gets a full snapshot of its resource, then another
 //! whenever something the resource reads changes and the body differs from
 //! the last one sent. The bodies are the HTTP `GET` DTOs, computed by the
-//! same functions. See `protocol` for the frame handling, `resource` for
-//! what wakes each resource, and `session` for the connection shell.
+//! same functions. A follow instead streams an append-only feed, such as a
+//! service's log, from a client-held position; see `logs`. See `protocol`
+//! for the frame handling, `resource` for what wakes each resource, and
+//! `session` for the connection shell.
 
+mod logs;
 mod protocol;
 mod resource;
 mod session;

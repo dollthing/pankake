@@ -1,10 +1,10 @@
 //! The live connection's shell: a reader that feeds [`Session`] and starts
-//! or aborts subscription tasks, and a writer that drains the shared outbox
+//! or aborts subscription and follow tasks, and a writer that drains the shared outbox
 //! with a stall timeout and keepalive pings.
 
 use std::{borrow::Cow, collections::BTreeMap, time::Duration};
 
-use ananke_api::live::LiveMessage;
+use ananke_api::live::{LiveFeed, LiveMessage};
 use axum::extract::ws::{CloseFrame, Message, WebSocket, close_code};
 use futures::{SinkExt, StreamExt, stream::SplitSink};
 use tokio::{
@@ -18,7 +18,8 @@ use crate::{
         errors::ApiErrorCode,
         frontend::build_id,
         management::live::{
-            protocol::{Effect, Session, error_message},
+            logs,
+            protocol::{Effect, LiveTask, Session, error_message},
             subscription,
         },
     },
@@ -86,9 +87,19 @@ pub(crate) async fn serve(socket: WebSocket, state: AppState) {
             }
         };
         match effect {
-            Effect::Spawn { id, resource } => {
-                let task = subscription::run(state.clone(), id.clone(), resource, out.clone());
-                handles.insert(id, tasks.spawn(task));
+            Effect::Spawn { id, task } => {
+                let handle = match task {
+                    LiveTask::Snapshot(resource) => tasks.spawn(subscription::run(
+                        state.clone(),
+                        id.clone(),
+                        resource,
+                        out.clone(),
+                    )),
+                    LiveTask::Follow(LiveFeed::Logs(feed)) => {
+                        tasks.spawn(logs::run(state.clone(), id.clone(), feed, out.clone()))
+                    }
+                };
+                handles.insert(id, handle);
             }
             Effect::Abort { id } => {
                 if let Some(handle) = handles.remove(&id) {
