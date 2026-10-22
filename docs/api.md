@@ -38,6 +38,7 @@ The daemon binds to loopback by default. Do **not** expose the management API or
 | `POST` | `/api/config/validate` | Validate TOML config without persisting |
 | `GET` | `/api/devices` | List devices and reservations |
 | `GET` | `/api/devices/samples` | Get device memory samples |
+| `GET` | `/api/events/history` | List recent events |
 | `GET` | `/api/info` | Get daemon listen addresses |
 | `GET` | `/api/metrics` | Get request metrics (time-bucketed) |
 | `GET` | `/api/restarts` | Get auto-restart firings |
@@ -381,6 +382,65 @@ Get request metrics (time-bucketed)
 ```
 
 ### Other
+
+#### GET /api/events/history
+
+List recent events
+
+| Status | Description | Body |
+| --- | --- | --- |
+| 200 |  | `EventHistory` |
+
+**Response (200)**:
+
+```typescript
+{
+  events:
+    // state_changed
+    | {
+      at_ms: number
+      from: string
+      service: string
+      to: string
+      type: "state_changed"
+    }
+    // allocation_changed
+    | {
+      at_ms: number
+      reservations: Record<string, number>
+      service: string
+      type: "allocation_changed"
+    }
+    // config_reloaded
+    | {
+      at_ms: number
+      changed_services: string[]
+      type: "config_reloaded"
+    }
+    // estimator_drift
+    | {
+      at_ms: number
+      class: string
+      rolling_mean: number
+      service: string
+      type: "estimator_drift"
+    }
+    // auto_restarted
+    | {
+      at_ms: number
+      detail: string
+      service: string
+      trigger: string
+      type: "auto_restarted"
+    }
+    // overflow
+    | {
+      dropped: number
+      type: "overflow"
+    }[]
+  since_ms: number
+}
+```
 
 #### GET /api/restarts
 

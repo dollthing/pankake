@@ -245,6 +245,7 @@ name = "ananke-events"
 version = "0.2.0"
 dependencies = [
  "ananke-api",
+ "ananke-time",
  "parking_lot",
  "smol_str",
  "tokio",

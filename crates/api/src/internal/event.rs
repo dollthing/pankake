@@ -86,3 +86,18 @@ pub enum Event {
         dropped: u64,
     },
 }
+
+impl Event {
+    /// When the event happened, in unix milliseconds. `None` for `overflow`,
+    /// which the bus generates itself rather than recording an occurrence.
+    pub fn at_ms(&self) -> Option<i64> {
+        match self {
+            Self::StateChanged { at_ms, .. }
+            | Self::AllocationChanged { at_ms, .. }
+            | Self::ConfigReloaded { at_ms, .. }
+            | Self::EstimatorDrift { at_ms, .. }
+            | Self::AutoRestarted { at_ms, .. } => Some(*at_ms),
+            Self::Overflow { .. } => None,
+        }
+    }
+}

@@ -22,7 +22,7 @@ The backend's crates, leaves first. Package names keep the `ananke-` prefix; the
 | `ananke-gguf` | `crates/gguf` | the GGUF reader, including sharded models; the `Architecture` enum and every metadata key the workspace reads; `dump-gguf` | `ananke-fs` |
 | `ananke-tuning-schema` | `crates/tuning-schema` | the type of `tuning.json`, shared by everything that reads or writes it | `serde` |
 | `ananke-tuning` | `crates/tuning` | `tuning.json` and the build script that turns it into constants | `ananke-tuning-schema` (build) |
-| `ananke-events` | `crates/events` | the daemon-wide `EventBus` and the generic estimate cache | `ananke-api`, `tokio` |
+| `ananke-events` | `crates/events` | the daemon-wide `EventBus` with its bounded history, and the generic estimate cache | `ananke-api`, `ananke-time`, `tokio` |
 | `ananke-config` | `crates/config` | config defaults, the descriptor table the docs are generated from, the placement vocabulary (`SplitMode`, `DeviceSlot`), the parse → merge → validate pipeline, the config manager, and the input distillers | `ananke-api`, `ananke-errors`, `ananke-events`, `ananke-fs`, `ananke-gguf`, `ananke-time` |
 | `ananke-estimate` | `crates/estimate` | the VRAM estimator and the design-column contract the fitter shares | the four above |
 | `ananke-placement` | `crates/placement` | the packer, the device snapshot types, `ServiceRegistry<T>`, `KillHandle`, `DrainReason`, and the `estimate` example | `ananke-config`, `ananke-estimate`, `ananke-gguf` |

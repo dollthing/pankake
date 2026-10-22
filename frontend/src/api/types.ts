@@ -73,6 +73,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/events/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List recent events */
+    get: operations["get_events_history"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/info": {
     parameters: {
       query?: never;
@@ -795,6 +812,18 @@ export interface components {
           /** @enum {string} */
           type: "overflow";
         };
+    /** @description The daemon's bounded window of recent events, oldest first. */
+    EventHistory: {
+      /** @description The retained events, oldest first. */
+      events: components["schemas"]["Event"][];
+      /**
+       * Format: int64
+       * @description The start of the window, in unix milliseconds: the daemon's start time
+       *     until the window first evicts, then the oldest retained event's
+       *     timestamp. Earlier events may have happened but are not listed.
+       */
+      since_ms: number;
+    };
     /**
      * @description Whether a service's estimated placement fits under current conditions.
      *
@@ -1761,6 +1790,25 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  get_events_history: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventHistory"];
         };
       };
     };

@@ -2,6 +2,7 @@
 //! and `/api/openapi.json`.
 
 pub mod config;
+pub mod events_history;
 pub mod events_ws;
 pub mod handlers;
 pub mod info;
@@ -32,6 +33,10 @@ pub fn register(router: Router, state: AppState) -> Router {
         .route("/api/services/:name/logs", get(logs::get_logs))
         .route("/api/services/:name/logs/stream", any(logs_ws::get_logs_ws))
         .route("/api/events", any(events_ws::get_events_ws))
+        .route(
+            "/api/events/history",
+            get(events_history::get_events_history),
+        )
         .route("/api/info", get(info::get_info))
         .with_state(state.clone());
     handlers::register(router, state.clone())
