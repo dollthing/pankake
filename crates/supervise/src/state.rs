@@ -1,7 +1,5 @@
 //! Service state machine.
 
-use smol_str::SmolStr;
-
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum ServiceState {
     Starting,
@@ -21,17 +19,14 @@ pub enum ServiceState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DisableReason {
-    ConfigError(SmolStr),
     LaunchFailed,
     HealthTimeout,
     Oom,
-    CrashLoop,
-    NoFit,
     UserDisabled,
     /// Auto-restart fired more times than its flap cap allowed within the
     /// flap window — the service is presumed unrecoverable and is disabled
-    /// rather than restarted again. Distinct from [`Self::CrashLoop`], which
-    /// is a child that never launched; here the child launched fine but kept
+    /// rather than restarted again. Distinct from [`Self::LaunchFailed`],
+    /// where the child never launched; here it launched fine but kept
     /// degrading in service.
     AutoRestartLoop,
 }
@@ -52,14 +47,11 @@ impl ServiceState {
 }
 
 impl DisableReason {
-    pub fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &'static str {
         match self {
-            DisableReason::ConfigError(_) => "config_error",
             DisableReason::LaunchFailed => "launch_failed",
             DisableReason::HealthTimeout => "health_timeout",
             DisableReason::Oom => "oom",
-            DisableReason::CrashLoop => "crash_loop",
-            DisableReason::NoFit => "no_fit",
             DisableReason::UserDisabled => "user_disabled",
             DisableReason::AutoRestartLoop => "auto_restart_loop",
         }
@@ -75,7 +67,6 @@ pub enum Event {
     Stopped,
     LaunchFailed,
     HealthTimedOut,
-    CrashLoop,
     UserEnable,
     UserDisable,
     RetryAfterBackoff,
@@ -127,9 +118,6 @@ pub fn try_transition(from: &ServiceState, event: Event) -> Option<ServiceState>
         }
         (Starting, Event::HealthTimedOut) => Some(Disabled {
             reason: DisableReason::HealthTimeout,
-        }),
-        (Running, Event::CrashLoop) => Some(Disabled {
-            reason: DisableReason::CrashLoop,
         }),
         (Running, Event::AutoRestartLoop) => Some(Disabled {
             reason: DisableReason::AutoRestartLoop,
