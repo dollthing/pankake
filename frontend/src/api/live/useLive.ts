@@ -45,6 +45,16 @@ export function useDaemonUpdated(): boolean {
   );
 }
 
+/// The daemon build this tab first connected to, once its hello arrives.
+export function useDaemonBuild(): string | null {
+  const socket = useLiveSocket();
+  return useSyncExternalStore(
+    socket.onChange,
+    socket.getBuild,
+    socket.getBuild,
+  );
+}
+
 export type UseLiveOptions<T, S> = {
   readonly select?: (data: T) => S;
   readonly enabled?: boolean;

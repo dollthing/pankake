@@ -141,11 +141,14 @@ export class LiveSocket {
 
   readonly getStatus = (): LiveStatus => this.#status;
 
+  /// The build the first connection's hello named, or `null` before it.
+  readonly getBuild = (): string | null => this.#build;
+
   /// Whether a reconnect reached a daemon with a different build than the
   /// one this tab first connected to.
   readonly getDaemonUpdated = (): boolean => this.#daemonUpdated;
 
-  /// Notified when the status or `getDaemonUpdated` changes.
+  /// Notified when the status, `getBuild`, or `getDaemonUpdated` changes.
   readonly onChange = (listener: () => void): (() => void) => {
     this.#listeners.add(listener);
     return () => {
@@ -247,6 +250,7 @@ export class LiveSocket {
       case "hello": {
         if (this.#build === null) {
           this.#build = message.build;
+          this.#notify();
         } else if (this.#build !== message.build && !this.#daemonUpdated) {
           this.#daemonUpdated = true;
           this.#notify();

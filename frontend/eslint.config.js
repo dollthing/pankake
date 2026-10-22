@@ -11,7 +11,12 @@ import { defineConfig, globalIgnores } from "eslint/config";
 // Tailwind rules only run here, so files still on the legacy tokens are
 // neither failed nor auto-fixed before their own restyle. The list grows a
 // folder at a time and becomes `src/**` once nothing legacy is left.
-const migrated = ["src/components/ui/**", "src/styles/**"];
+const migrated = [
+  "src/App.tsx",
+  "src/components/layout/**",
+  "src/components/ui/**",
+  "src/styles/**",
+];
 
 export default defineConfig([
   globalIgnores(["dist", "src/api/types.ts"]),

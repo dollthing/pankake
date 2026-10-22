@@ -193,6 +193,21 @@ describe("LiveSocket", () => {
     expect(changed).toHaveBeenCalledOnce();
   });
 
+  it("keeps the first build it was told, for display", () => {
+    const live = newSocket();
+    const changed = vi.fn();
+    live.onChange(changed);
+    live.subscribe({ kind: "info" }, listener());
+    expect(live.getBuild()).toBeNull();
+
+    const socket = FakeWebSocket.latest();
+    socket.accept();
+    changed.mockClear();
+    socket.receive({ type: "hello", build: "0.2.0+aaaa" });
+    expect(live.getBuild()).toBe("0.2.0+aaaa");
+    expect(changed).toHaveBeenCalledOnce();
+  });
+
   it("reconnects on demand without waiting for the backoff", () => {
     const live = newSocket();
     live.subscribe({ kind: "info" }, listener());

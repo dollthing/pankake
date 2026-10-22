@@ -32,14 +32,30 @@
     "daemonUpdated": "The daemon was updated. Reload to use the matching interface.",
     "reload": "Reload"
   },
+  "shell": {
+    "skipToContent": "Skip to content",
+    "build": "Daemon build {{build}}",
+    "connection": {
+      "open": "Connected",
+      "connecting": "Connecting",
+      "reconnecting": "Reconnecting",
+      "reconnectingDetail": "Reconnecting. Showing the last known state."
+    }
+  },
+  "notFound": {
+    "title": "Not found",
+    "message": "Nothing lives at this address."
+  },
   "nav": {
-    "dashboard": "Dashboard",
+    "label": "Sections",
     "services": "Services",
     "devices": "Devices",
     "chat": "Chat",
     "config": "Config",
     "events": "Events",
-    "stats": "Stats"
+    "stats": "Stats",
+    "failedServices_one": "{{count}} service failed",
+    "failedServices_other": "{{count}} services failed"
   },
   "services": {
     "title": "Services",

@@ -22,7 +22,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "flex min-h-header shrink-0 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)]",
+        "flex min-h-header shrink-0 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2.5",
         className,
       )}
     >

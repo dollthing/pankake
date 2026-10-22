@@ -44,7 +44,7 @@ The audience is an operator deciding whether to upgrade and what they will have 
 - The VRAM estimator adds support for the laguna, glm-dsa, deepseek4, lfm2, and gemma4 architectures, and now models host RAM, quantised KV cache, sliding-window and recurrent (hybrid) KV, tensor-split compute buffers, and speculative-decoding overhead.
 - Token throughput is split into input (prompt processing) and output (decode) tokens per second, with an effective-generation figure (completion tokens over wall-clock) as the end-to-end fallback. The per-service reverse proxy records per-request token counts at the HTTP layer, and the web UI shows the split alongside the effective rate.
 - A `llama-cpp` service with `modality = "embedding"` now passes `--embeddings` to llama-server, enabling its embeddings endpoint.
-- A responsive web UI for small screens, with bottom-tab navigation and layouts adapted for touch and narrow viewports.
+- A responsive web UI for small screens, with layouts adapted for touch and narrow viewports. Navigation is a rail on wide screens and a scrolling tab row on narrow ones, so every section is reachable on a phone, and a band across the top shows the daemon's address, the live connection's state, and the theme toggle at every width.
 - The service memory footprint is broken out per device in both the API and the UI, showing where a service's allocation lands.
 - The service detail view surfaces runtime and serving configuration (binary path, KV cache types, batch, context, and thread settings, speculative decoding, and expert-offload mode) in the API and the UI.
 - A shared time-window selector across logs, per-service stats, global metrics, and the dashboard, adding a 5-minute preset and a custom absolute range.
