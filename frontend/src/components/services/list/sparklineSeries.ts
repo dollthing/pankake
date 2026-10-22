@@ -1,11 +1,12 @@
-// Per-service request-rate sparkline aggregation for DashboardView.
+// Per-service request-rate sparklines, split out of one metrics query over
+// every service.
 
-import type { MetricBucketResponse } from "../../api/client.ts";
+import type { MetricBucketResponse } from "../../../api/client.ts";
 
 export type ServiceSparkData = Map<string, { ts: number[]; counts: number[] }>;
 
 export function buildServiceSparkline(
-  buckets: MetricBucketResponse[],
+  buckets: readonly MetricBucketResponse[],
 ): ServiceSparkData {
   const byService = new Map<string, Map<number, number>>();
   for (const b of buckets) {

@@ -113,7 +113,29 @@
       "user_disabled": "by operator",
       "auto_restart_loop": "restart loop"
     },
-    "footprintNeeded": "needed"
+    "footprintNeeded": "needed",
+    "placement": {
+      "policy": "Policy",
+      "policies": {
+        "gpu-only": "GPU only",
+        "cpu-only": "CPU only",
+        "hybrid": "GPU, spilling to host"
+      },
+      "gpus": "GPUs",
+      "allGpus": "all GPUs",
+      "split": "Split",
+      "splitModes": {
+        "layer": "by layer",
+        "row": "by row",
+        "tensor": "by tensor"
+      },
+      "weights": "Split weights",
+      "headroom": "GPU headroom",
+      "allocation": "Allocation",
+      "estimated": "estimated",
+      "static": "fixed {{bytes}}",
+      "dynamic": "{{min}} to {{max}}, borrowers run at least {{runtime}}"
+    }
   },
   "dashboard": {
     "title": "Dashboard",

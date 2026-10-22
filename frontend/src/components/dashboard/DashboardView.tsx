@@ -17,7 +17,7 @@ import { Stat } from "../ui/data/Stat.tsx";
 import { Spinner } from "../ui/feedback/Spinner.tsx";
 import { SegmentedToggle } from "../ui/form/SegmentedToggle.tsx";
 import { ServiceRow } from "./ServiceRow.tsx";
-import { buildServiceSparkline } from "./dashboardSparkline.ts";
+import { buildServiceSparkline } from "../services/list/sparklineSeries.ts";
 
 type SortOrder = "alpha" | "recent" | "size";
 const SORT_OPTIONS: { id: SortOrder; label: string }[] = [
