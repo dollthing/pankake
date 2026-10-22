@@ -1,9 +1,9 @@
-// Surface container with an optional engraved-label header. Used for
-// cards, panels, and grouped content sections. The header is rendered
-// as an `eyebrow` (tracked mono capitals) — the console's structural
-// device — so every panel reads like a labelled instrument.
+// Legacy panel API, kept for views not yet restyled; new code uses
+// `layout/Panel` directly. Deleted once the last view moves off it.
 
 import type { ReactNode } from "react";
+
+import { Panel } from "./layout/Panel.tsx";
 
 type CardProps = {
   header?: ReactNode;
@@ -18,18 +18,18 @@ export function Card({
   header,
   headerAction,
   children,
-  className = "",
-  bodyClassName = "",
+  className,
+  bodyClassName,
 }: CardProps) {
   return (
-    <div className={`border border-border-default bg-surface ${className}`}>
-      {header !== undefined && (
-        <div className="flex items-center gap-2 border-b border-border-default px-4 py-2.5">
-          <span className="eyebrow">{header}</span>
-          {headerAction && <div className="ml-auto">{headerAction}</div>}
-        </div>
-      )}
+    <Panel
+      as="div"
+      heading={header}
+      actions={headerAction}
+      padding="none"
+      className={className}
+    >
       <div className={bodyClassName || "p-4"}>{children}</div>
-    </div>
+    </Panel>
   );
 }
