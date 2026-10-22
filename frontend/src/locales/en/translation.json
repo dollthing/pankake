@@ -15,6 +15,12 @@
     "custom": "custom",
     "unknown": "Unknown"
   },
+  "theme": {
+    "switchTo": {
+      "light": "Switch to light theme",
+      "dark": "Switch to dark theme"
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
     "services": "Services",

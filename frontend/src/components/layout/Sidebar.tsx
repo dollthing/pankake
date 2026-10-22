@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { useServices } from "../../api/hooks.ts";
 import { CopyButton } from "../ui/CopyButton.tsx";
+import { ThemeToggle } from "../ui/theme/ThemeToggle.tsx";
 import { Icon } from "../ui/icon/Icon.tsx";
 
 type NavItem = {
@@ -103,8 +104,9 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-border-default px-4 py-3">
+      <div className="flex flex-col items-center gap-2 border-t border-border-default px-3 py-2 lg:flex-row lg:justify-between lg:pl-4">
         <span className={`h-2 w-2 rounded-full ${healthVariant}`} />
+        <ThemeToggle />
       </div>
     </aside>
   );
