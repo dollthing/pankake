@@ -13,6 +13,7 @@ The audience is an operator deciding whether to upgrade and what they will have 
   Rename every placeholder in `command`, `shutdown_command`, `launcher`, `env` values, and `container.gpu_device`. A config still using `{name}` does not error, because the text is now literal, so confirm a service's rendered command still contains the expected value, through `GET /api/services/{name}/command` or the launch-command panel.
 
   An unknown name, or a `${` with no closing brace, is a config error. A known name written bare, such as `{port}`, is a warning naming the service and the entry, since it cannot be an error: a JSON or format-string argument may hold `{model}` on purpose. Write `$${model}` to say that and silence the warning.
+- `GET /api/services/{name}` no longer includes `recent_logs`. Building it read the service's whole retained log on every request and on every live update to the service, and the lines it carried went stale between log writes. Fetch `GET /api/services/{name}/logs?limit=N` for the newest lines instead.
 
 ### Added
 

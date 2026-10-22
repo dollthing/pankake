@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::{
-    internal::{fit_verdict::FitVerdict, log_line::LogLine},
+    internal::fit_verdict::FitVerdict,
     shared::{metadata::AnankeMetadata, modality::Modality},
 };
 
@@ -35,8 +35,6 @@ pub struct ServiceDetail {
     pub run_id: Option<i64>,
     /// Child PID if any.
     pub pid: Option<i32>,
-    /// Most recent log lines for a frontend's first-paint context.
-    pub recent_logs: Vec<LogLine>,
     /// Rolling estimator correction factor for the service's VRAM footprint.
     /// `None` until the first observation lands.
     pub rolling_mean: Option<f32>,

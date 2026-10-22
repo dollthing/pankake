@@ -1427,8 +1427,6 @@ export interface components {
        * @description Private (upstream) port.
        */
       private_port: number;
-      /** @description Most recent log lines for a frontend's first-paint context. */
-      recent_logs: components["schemas"]["LogLine"][];
       /**
        * @description Recent auto-restart watchdog firings, most recent first. Sourced
        *     from the daemon's durable `service_restarts` store, so firings are

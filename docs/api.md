@@ -608,13 +608,6 @@ Get service detail
   port: number
   priority: number
   private_port: number
-  recent_logs: {
-    line: string
-    run_id: number
-    seq: number
-    stream: string
-    timestamp_ms: number
-  }[]
   recent_restarts?: {
     at_ms: number
     detail: string

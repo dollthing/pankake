@@ -1,7 +1,7 @@
 //! Service list, detail, and launch-command-preview handlers.
 
 use ananke_api::{
-    internal::{fit_verdict::FitVerdict, log_line::LogLine},
+    internal::fit_verdict::FitVerdict,
     services::{
         command::{
             EnvVar, LaunchCommand, LaunchCommandResponse, LaunchCommandSource, LaunchContainer,
@@ -147,38 +147,6 @@ pub(crate) async fn service_detail_snapshot(
         })
         .collect();
 
-    let recent_logs: Vec<LogLine> = {
-        let svc_id_opt = state.db.resolve_service_id(name).await.ok().flatten();
-        match svc_id_opt {
-            Some(svc_id) => {
-                let mut rows = state
-                    .db
-                    .fetch_service_logs(svc_id)
-                    .await
-                    .unwrap_or_default();
-                // Sort newest first by (timestamp_ms DESC, seq DESC) and
-                // truncate to 200. The index on (service_id, run_id,
-                // timestamp_ms) keeps the candidate set cheap to fetch.
-                rows.sort_by(|a, b| {
-                    b.timestamp_ms
-                        .cmp(&a.timestamp_ms)
-                        .then_with(|| b.seq.cmp(&a.seq))
-                });
-                rows.truncate(200);
-                rows.into_iter()
-                    .map(|r| LogLine {
-                        timestamp_ms: r.timestamp_ms,
-                        stream: r.stream,
-                        line: r.line,
-                        run_id: r.run_id,
-                        seq: r.seq,
-                    })
-                    .collect()
-            }
-            None => Vec::new(),
-        }
-    };
-
     let recent_restarts: Vec<RestartEvent> = {
         let svc_id_opt = state.db.resolve_service_id(name).await.ok().flatten();
         match svc_id_opt {
@@ -229,7 +197,6 @@ pub(crate) async fn service_detail_snapshot(
         idle_timeout_ms: svc_cfg.idle_timeout_ms,
         run_id: snap.as_ref().and_then(|s| s.run_id),
         pid: snap.as_ref().and_then(|s| s.pid),
-        recent_logs,
         // Cast from the internal f64/u32 representation to the shared DTO's f32/u64.
         rolling_mean: if rc.vram.samples == 0 {
             None

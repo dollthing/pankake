@@ -7,6 +7,7 @@
 
 use ananke_api::{
     devices::list::DeviceSummary,
+    internal::log_line::LogLine,
     services::{detail::ServiceDetail, list::ServiceSummary},
 };
 use ananke_config::units::{GIB, MIB};
@@ -88,7 +89,9 @@ pub fn print_services_table(services: &[ServiceSummary], show_all: bool) {
     println!("{table}");
 }
 
-pub fn print_service_detail(detail: &ServiceDetail) {
+/// Print a service's detail, with `recent_logs` newest first as the logs
+/// endpoint returns them.
+pub fn print_service_detail(detail: &ServiceDetail, recent_logs: &[LogLine]) {
     println!("{}", detail.name);
     println!("  state:     {}", detail.state);
     println!("  lifecycle: {}", detail.lifecycle);
@@ -121,9 +124,9 @@ pub fn print_service_detail(detail: &ServiceDetail) {
             );
         }
     }
-    if !detail.recent_logs.is_empty() {
-        println!("  recent logs (last {}):", detail.recent_logs.len());
-        for line in detail.recent_logs.iter().rev().take(10).rev() {
+    if !recent_logs.is_empty() {
+        println!("  recent logs (last {}):", recent_logs.len());
+        for line in recent_logs.iter().rev() {
             println!("    [{}] {}", line.stream, line.line);
         }
     }
