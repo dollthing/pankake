@@ -181,6 +181,24 @@ impl ApiClient {
         }
     }
 
+    /// The `ws://` (or `wss://`) URL of the daemon's `/api/live` socket.
+    pub fn live_url(&self) -> Result<String, ApiClientError> {
+        let path = "/api/live";
+        let mut url = self
+            .endpoint
+            .join(path)
+            .map_err(|cause| ApiClientError::InvalidPath {
+                endpoint: self.endpoint.to_string(),
+                path: path.to_string(),
+                cause,
+            })?;
+        let scheme = if url.scheme() == "https" { "wss" } else { "ws" };
+        url.set_scheme(scheme).map_err(|()| {
+            ApiClientError::Usage(format!("cannot use `{url}` as a WebSocket URL"))
+        })?;
+        Ok(url.to_string())
+    }
+
     async fn read_json<T: DeserializeOwned>(
         &self,
         resp: reqwest::Response,

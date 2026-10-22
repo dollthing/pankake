@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
+use ananke_api::internal::log_line::LogStream;
+use clap::{Parser, Subcommand, ValueEnum};
 
 mod client;
 mod commands;
@@ -115,7 +116,8 @@ enum Command {
     Logs {
         /// Service name.
         name: String,
-        /// Follow new lines as they arrive.
+        /// Follow new lines as they arrive. With `--json`, every line is
+        /// printed as its own JSON object, one per line.
         #[arg(long)]
         follow: bool,
         /// Filter to a specific run id.
@@ -125,16 +127,16 @@ enum Command {
         /// (`2026-07-24 15:30`), a local date, or an age like `2h` / `30m`.
         #[arg(long, value_parser = parse_time_arg)]
         since: Option<i64>,
-        /// Maximum timestamp; accepts the same forms as `--since`.
-        #[arg(long, value_parser = parse_time_arg)]
+        /// Maximum timestamp; accepts the same forms as `--since`. A follow
+        /// has no end, so this cannot be combined with `--follow`.
+        #[arg(long, value_parser = parse_time_arg, conflicts_with = "follow")]
         until: Option<i64>,
         /// Cap on number of historical lines returned.
         #[arg(long, default_value_t = 200)]
         limit: u32,
-        /// Filter to one stream: `stdout`, `stderr`, or `combined` (a
-        /// container's merged output).
-        #[arg(long)]
-        stream: Option<String>,
+        /// Filter to one stream; `combined` is a container's merged output.
+        #[arg(long, value_enum)]
+        stream: Option<StreamArg>,
     },
     /// Manage daemon configuration over the management API.
     ServerConfig {
@@ -199,7 +201,15 @@ async fn main() -> ExitCode {
             stream,
         } => {
             commands::logs::run(
-                &client, cli.json, &name, follow, run, since, until, limit, stream,
+                &client,
+                cli.json,
+                &name,
+                follow,
+                run,
+                since,
+                until,
+                limit,
+                stream.map(LogStream::from),
             )
             .await
         }
@@ -235,6 +245,24 @@ async fn main() -> ExitCode {
         Err(e) => {
             eprintln!("anankectl: {e}");
             e.exit_code()
+        }
+    }
+}
+
+/// The `--stream` values, mirroring [`LogStream`] so clap can list them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum StreamArg {
+    Stdout,
+    Stderr,
+    Combined,
+}
+
+impl From<StreamArg> for LogStream {
+    fn from(arg: StreamArg) -> Self {
+        match arg {
+            StreamArg::Stdout => LogStream::Stdout,
+            StreamArg::Stderr => LogStream::Stderr,
+            StreamArg::Combined => LogStream::Combined,
         }
     }
 }
@@ -290,9 +318,6 @@ fn parse_relative_age_ms(s: &str) -> Option<i64> {
 mod tests {
     use super::*;
 
-    /// `--stream combined` must reach the query string; the daemon owns
-    /// the vocabulary, so the CLI passes the value through rather than
-    /// re-validating it.
     #[test]
     fn logs_accepts_combined_stream_flag() {
         let cli = Cli::try_parse_from(["anankectl", "logs", "demo", "--stream", "combined"])
@@ -301,7 +326,23 @@ mod tests {
             panic!("expected the logs subcommand");
         };
         assert_eq!(name, "demo");
-        assert_eq!(stream.as_deref(), Some("combined"));
+        assert_eq!(stream.map(LogStream::from), Some(LogStream::Combined));
+    }
+
+    #[test]
+    fn logs_rejects_an_unknown_stream() {
+        assert!(Cli::try_parse_from(["anankectl", "logs", "demo", "--stream", "stdin"]).is_err());
+    }
+
+    #[test]
+    fn logs_follow_conflicts_with_until() {
+        let err = Cli::try_parse_from(["anankectl", "logs", "demo", "--follow", "--until", "0"])
+            .err()
+            .expect("--follow with --until must be refused");
+        assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
+        assert!(
+            Cli::try_parse_from(["anankectl", "logs", "demo", "--follow", "--since", "0"]).is_ok()
+        );
     }
 
     #[test]
