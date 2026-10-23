@@ -3,6 +3,8 @@
 // chat store snapshot.
 
 import { api } from "../../../api/client.ts";
+import i18n from "../../../i18n.ts";
+import { waitForModel } from "./modelStart.ts";
 import {
   activeRun,
   EMPTY_STATS,
@@ -95,29 +97,19 @@ export async function send(
   const needsStart = svc != null && svc.state !== "running";
   if (needsStart) {
     update((prev) => ({ ...prev, chatState: { kind: "starting", run } }));
-    try {
-      await api.start(selectedModel);
-      const deadline = Date.now() + 3 * 60 * 1000;
-      while (Date.now() < deadline) {
-        if (stale()) return;
-        await new Promise((r) => setTimeout(r, 2000));
-        if (stale()) return;
-        const resp = await api.listServices();
-        if (stale()) return;
-        const s = resp.services.find((x) => x.name === selectedModel);
-        if (s?.state === "running") break;
-        if (s?.state === "failed") {
-          fail(`service ${selectedModel} failed to start`);
-          return;
-        }
-      }
-    } catch (e) {
+    const outcome = await waitForModel(selectedModel, controller.signal);
+    if (stale()) return;
+    if (outcome.kind === "failed") {
       fail(
-        `failed to start ${selectedModel}: ${e instanceof Error ? e.message : String(e)}`,
+        outcome.failure.kind === "queue_full"
+          ? i18n.t("chat.startQueueFull", { model: selectedModel })
+          : i18n.t("chat.startFailed", {
+              model: selectedModel,
+              message: outcome.failure.message,
+            }),
       );
       return;
     }
-    if (stale()) return;
     update((prev) => ({ ...prev, chatState: { kind: "sending", run } }));
   }
 

@@ -71,6 +71,96 @@ describe("send", () => {
     ]);
   });
 
+  // The start request is held open until the model is ready, so a slow
+  // load can outlast a proxy or the browser and come back as a 504 or a
+  // network error while the daemon carries on starting it.
+  it("keeps waiting when a slow start's request is cut", async () => {
+    let starts = 0;
+    installFakeDaemon(
+      ["stopped", "starting", "starting", "starting", "running"],
+      (call) => {
+        if (!call.url.endsWith("/start")) return undefined;
+        starts += 1;
+        return starts === 1
+          ? new Response("<html>Gateway Timeout</html>", { status: 504 })
+          : new Promise<never>(() => {});
+      },
+    );
+    setInput("hello");
+    await settle(send(MODEL, BASE_URL));
+    const { messages, chatState } = getSnapshot();
+    expect(chatState.kind).toBe("idle");
+    expect(messages.map((m) => m.content)).toEqual(["hello", "reply"]);
+  });
+
+  it("waits for as long as the model takes", async () => {
+    const starting = Array.from({ length: 400 }, () => "starting" as const);
+    installFakeDaemon(["stopped", ...starting, "running"], (call) =>
+      call.url.endsWith("/start") ? new Promise<never>(() => {}) : undefined,
+    );
+    setInput("hello");
+    const sending = send(MODEL, BASE_URL);
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    const { messages, chatState } = getSnapshot();
+    expect(chatState.kind).toBe("starting");
+    expect(messages.map((m) => m.content)).toEqual(["hello"]);
+    await settle(sending);
+    expect(getSnapshot().messages.map((m) => m.content)).toEqual([
+      "hello",
+      "reply",
+    ]);
+  });
+
+  it("reports a start the daemon declines and gives the text back", async () => {
+    installFakeDaemon(["stopped"], (call) =>
+      call.url.endsWith("/start")
+        ? Response.json(
+            {
+              status: "unavailable",
+              error: {
+                code: "insufficient_capacity",
+                message: "not enough VRAM",
+                type: "server_error",
+              },
+            },
+            { status: 202 },
+          )
+        : undefined,
+    );
+    setInput("hello");
+    await settle(send(MODEL, BASE_URL));
+    const { messages, chatState, input } = getSnapshot();
+    expect(chatState).toEqual({
+      kind: "error",
+      message: "Failed to start m: not enough VRAM",
+    });
+    expect(messages).toEqual([]);
+    expect(input).toBe("hello");
+  });
+
+  it("reports a start that fails once the model stops starting", async () => {
+    installFakeDaemon(["stopped", "failed"], (call) =>
+      call.url.endsWith("/start")
+        ? Response.json(
+            {
+              error: {
+                code: "start_failed",
+                message: "health check timed out",
+                type: "server_error",
+              },
+            },
+            { status: 503 },
+          )
+        : undefined,
+    );
+    setInput("hello");
+    await settle(send(MODEL, BASE_URL));
+    expect(getSnapshot().chatState).toEqual({
+      kind: "error",
+      message: "Failed to start m: health check timed out",
+    });
+  });
+
   it("gives the text back when cancelled before a reply", async () => {
     installFakeDaemon(["running"], (call) =>
       call.url.startsWith(BASE_URL) ? new Promise<never>(() => {}) : undefined,

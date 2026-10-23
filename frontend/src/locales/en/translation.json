@@ -168,6 +168,8 @@
     "emptyState": "Send a message to start chatting.",
     "starting": "Starting {{model}}…",
     "startingModelPlaceholder": "Starting model…",
+    "startFailed": "Failed to start {{model}}: {{message}}",
+    "startQueueFull": "{{model}} cannot start yet: its start queue is full. Try again shortly.",
     "send": "Send",
     "stop": "Stop",
     "typePlaceholder": "Type a message… (Enter to send, Shift+Enter for newline)",
