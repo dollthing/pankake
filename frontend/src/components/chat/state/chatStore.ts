@@ -48,6 +48,7 @@ export type Message = {
 /// reset, a cancel, or a later send leaves it nowhere to write.
 export type Run = {
   readonly controller: AbortController;
+  readonly model: string;
   /// The user message the run added, and the composer it came from, so a
   /// run that ends before any reply can give the text back.
   readonly turn: Message;

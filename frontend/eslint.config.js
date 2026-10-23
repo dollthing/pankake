@@ -13,6 +13,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 // folder at a time and becomes `src/**` once nothing legacy is left.
 const migrated = [
   "src/App.tsx",
+  "src/components/chat/**",
   "src/components/events/eventSummary.ts",
   "src/components/layout/**",
   "src/components/logs/**",

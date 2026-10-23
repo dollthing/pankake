@@ -40,6 +40,7 @@ export async function send(
     .map((a) => a.content);
   const run: Run = {
     controller: new AbortController(),
+    model: selectedModel,
     turn: {
       id: newMessageId(),
       role: "user",

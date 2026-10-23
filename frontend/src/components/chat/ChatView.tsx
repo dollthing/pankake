@@ -1,39 +1,30 @@
-// Chat interface — a web equivalent of `anankectl chat`. The operator
-// picks a model, enters a system prompt, and chats with streaming
-// responses, token stats, and file attachments.
+// Chat with a model on the OpenAI-compatible API, a web equivalent of
+// `anankectl chat`: a model picker, a per-model system prompt, streamed
+// replies with their reasoning and token figures, and file attachments.
+// A stopped model is started first, and the chat waits for it.
 //
-// Chat state (messages, system prompt, input, attachments, streaming
-// state) lives in the module-level chatStore so it survives navigation
-// away and back within the same tab session.
+// The conversation lives in the module-level chat store, so it survives
+// navigating away and back within the tab.
 
-import { isChatModel } from "../../api/chatModels.ts";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
-import { useServices, useInfo } from "../../api/hooks.ts";
+import { isChatModel } from "../../api/chatModels.ts";
+import { useInfo, useServices } from "../../api/hooks.ts";
 import { openaiBaseUrlFromListen } from "../../util.ts";
+import { Button } from "../ui/button/Button.tsx";
+import { Spinner } from "../ui/feedback/Spinner.tsx";
+import { PageHeader } from "../ui/layout/PageHeader.tsx";
+import { conversationMeta } from "./chatMeta.ts";
+import { Composer } from "./composer/Composer.tsx";
 import {
-  activeRun,
-  addAttachment,
-  cancel as cancelSend,
   clearConversation,
-  removeAttachment,
-  saveSystemPrompt,
   selectModel,
   send,
-  setInput,
   useChat,
 } from "./state/chatStore.ts";
-import { Spinner } from "../ui/feedback/Spinner.tsx";
-import { Button } from "../ui/button/Button.tsx";
-import { ButtonLink } from "../ui/button/ButtonLink.tsx";
-import { EmptyState } from "../ui/feedback/EmptyState.tsx";
-import { CopyButton } from "../ui/feedback/CopyButton.tsx";
-import { ViewHeader } from "../ui/ViewHeader.tsx";
-import { useStickToBottom } from "../../hooks/useStickToBottom.ts";
-import { ModelDropdown } from "./ChatModelDropdown.tsx";
-import { MessageBubble } from "./ChatMessageBubble.tsx";
+import { Transcript } from "./transcript/Transcript.tsx";
 
 export function ChatView() {
   const { t } = useTranslation();
@@ -41,13 +32,6 @@ export function ChatView() {
   const info = useInfo();
   const [searchParams, setSearchParams] = useSearchParams();
   const chat = useChat();
-
-  const chatModels = (services.data ?? []).filter(isChatModel).sort((a, b) => {
-    const ar = a.state === "running" ? 0 : 1;
-    const br = b.state === "running" ? 0 : 1;
-    if (ar !== br) return ar - br;
-    return a.name.localeCompare(b.name);
-  });
   const paramModel = searchParams.get("model");
 
   // The store owns the selection, so it survives navigating away and
@@ -63,63 +47,6 @@ export function ChatView() {
     }
   }, [paramModel, chat.currentModel, setSearchParams]);
 
-  const selectedModel = chat.currentModel;
-
-  const { scrollRef, onScroll } = useStickToBottom(chat.messages);
-
-  async function handleSend() {
-    if (!selectedModel) return;
-    const baseUrl = openaiBaseUrlFromListen(
-      info.data?.openai_listen ?? "0.0.0.0:7070",
-    );
-    await send(selectedModel, baseUrl);
-  }
-
-  function handleSelectModel(name: string) {
-    selectModel(name);
-    setSearchParams({ model: name });
-  }
-
-  async function handleFiles(files: FileList) {
-    const svc = selectedModel
-      ? (services.data ?? []).find((s) => s.name === selectedModel)
-      : null;
-    const hasVision = svc?.has_mmproj ?? false;
-
-    for (const file of Array.from(files)) {
-      if (file.type.startsWith("image/")) {
-        if (!hasVision) continue;
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result;
-          if (typeof result === "string") {
-            addAttachment({
-              name: file.name,
-              size: file.size,
-              type: "image",
-              content: result,
-            });
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result;
-          if (typeof result === "string") {
-            addAttachment({
-              name: file.name,
-              size: file.size,
-              type: "text",
-              content: result,
-            });
-          }
-        };
-        reader.readAsText(file);
-      }
-    }
-  }
-
   if (services.isPending) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -128,190 +55,68 @@ export function ChatView() {
     );
   }
 
-  const inputDisabled = !selectedModel;
+  const models = (services.data ?? [])
+    .filter(isChatModel)
+    .sort(
+      (a, b) =>
+        Number(b.state === "running") - Number(a.state === "running") ||
+        a.name.localeCompare(b.name),
+    );
+  const model = chat.currentModel;
+  const meta = conversationMeta(chat.messages);
+
+  function handleSelectModel(name: string) {
+    selectModel(name);
+    setSearchParams({ model: name });
+  }
+
+  function handleSend() {
+    if (!model) return;
+    void send(model, openaiBaseUrlFromListen(info.data?.openai_listen));
+  }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <ViewHeader>
-        <h1 className="eyebrow !text-primary">{t("chat.title")}</h1>
-      </ViewHeader>
-
-      {/* Messages */}
-      <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className="min-h-0 flex-1 overflow-auto px-4 py-4"
-      >
-        {chat.messages.length === 0 ? (
+    <div className="flex h-full min-h-0 flex-col">
+      <PageHeader
+        title={t("chat.title")}
+        meta={
           <>
-            <EmptyState message={t("chat.emptyState")} />
-            {chat.chatState.kind === "starting" && (
-              <div className="flex items-center justify-center gap-2 py-2 text-sm text-tertiary">
-                <Spinner />
-                {t("chat.starting", { model: selectedModel })}
-              </div>
+            <span className="font-mono text-body">
+              {model ?? t("chat.noModel")}
+            </span>
+            {" · "}
+            {t("chat.exchanges", { count: meta.exchanges })}
+            {meta.contextTokens !== null && (
+              <>
+                {" · "}
+                {t("chat.contextTokens", { count: meta.contextTokens })}
+              </>
             )}
           </>
-        ) : (
-          chat.messages.map((msg, i) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              modelName={selectedModel}
-              liveStats={
-                chat.chatState.kind === "streaming" &&
-                i === chat.messages.length - 1 &&
-                msg.role === "assistant"
-                  ? chat.stats
-                  : null
-              }
-            />
-          ))
-        )}
-        {chat.messages.length > 0 && chat.chatState.kind === "starting" && (
-          <div className="flex items-center gap-2 py-2 text-sm text-tertiary">
-            <Spinner />
-            {t("chat.starting", { model: selectedModel })}
-          </div>
-        )}
-        {chat.chatState.kind === "error" && (
-          <div className="mt-2 rounded-sm border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-            {chat.chatState.message}
-          </div>
-        )}
-      </div>
-
-      {/* Composer block: sits at the bottom of the flex column, below
-          the flex-1 message list, so it never scrolls with the
-          conversation on mobile or desktop. */}
-      <div className="shrink-0 bg-surface">
-        {/* System prompt */}
-        {selectedModel && (
-          <details className="shrink-0 border-t border-border-default px-4 py-2">
-            <summary className="eyebrow cursor-pointer select-none hover:text-secondary">
-              {t("chat.systemPrompt")}
-            </summary>
-            <textarea
-              value={chat.systemPrompt}
-              onChange={(e) => saveSystemPrompt(e.target.value)}
-              placeholder={t("chat.systemPromptPlaceholder")}
-              className="mt-1 h-20 w-full resize-none rounded-sm border border-border-default bg-base px-2 py-1 text-xs text-primary placeholder:text-tertiary focus:border-accent focus:outline-none"
-            />
-          </details>
-        )}
-
-        {/* Attachments preview */}
-        {chat.attachments.length > 0 && (
-          <div className="shrink-0 flex flex-wrap items-center gap-2 border-t border-border-default px-4 py-2">
-            {chat.attachments.map((att, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-1 rounded-sm bg-elevated px-2 py-0.5 text-xs text-secondary"
-              >
-                {att.type === "image" && (
-                  <img
-                    src={att.content}
-                    alt={att.name}
-                    className="h-6 w-6 rounded object-cover"
-                  />
-                )}
-                <span>{att.name}</span>
-                <button
-                  onClick={() => removeAttachment(i)}
-                  className="text-tertiary hover:text-danger"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Composer: model picker + stats sit next to the input, so the
-          controls you use most are all within reach of the textbox. */}
-        <div className="shrink-0 border-t border-border-default px-4 py-3">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <ModelDropdown
-              models={chatModels}
-              selected={selectedModel}
-              onSelect={handleSelectModel}
-              className="min-w-0 flex-1"
-            />
-            {selectedModel && (
-              <CopyButton
-                value={selectedModel}
-                className="h-7 rounded-md bg-elevated px-2 text-xs font-medium text-primary hover:bg-border-strong"
-              />
-            )}
-            {selectedModel && (
-              <ButtonLink
-                to={`/services/${encodeURIComponent(selectedModel)}`}
-                size="icon-sm"
-                icon="open"
-              />
-            )}
-            {selectedModel && (
-              <Button size="icon-sm" icon="trash" onClick={clearConversation} />
-            )}
-          </div>
-          <div className="flex items-stretch gap-2">
-            <textarea
-              value={chat.input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  // On touch devices, Enter inserts a newline instead of
-                  // sending. Coarse-pointer devices are phones/tablets.
-                  if (window.matchMedia("(pointer: coarse)").matches) return;
-                  e.preventDefault();
-                  void handleSend();
-                }
-              }}
-              placeholder={
-                selectedModel
-                  ? chat.chatState.kind === "starting"
-                    ? t("chat.startingModelPlaceholder")
-                    : t("chat.typePlaceholder")
-                  : t("chat.selectModelFirst")
-              }
-              disabled={inputDisabled}
-              rows={3}
-              className="flex-1 resize-none overflow-y-auto rounded-sm border border-border-default bg-base px-2 py-2.5 text-base text-primary placeholder:text-tertiary focus:border-accent focus:outline-none disabled:opacity-50 md:text-sm"
-            />
-            <label className="flex w-10 shrink-0 self-stretch cursor-pointer items-center justify-center rounded-md bg-elevated text-lg text-secondary hover:bg-border-strong">
-              <input
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files) handleFiles(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              +
-            </label>
-            {activeRun(chat.chatState) ? (
-              <Button
-                tone="stop"
-                onClick={cancelSend}
-                className="h-auto self-stretch"
-              >
-                {t("chat.stop")}
-              </Button>
-            ) : (
-              <Button
-                tone="primary"
-                onClick={handleSend}
-                disabled={!selectedModel || !chat.input.trim()}
-                className="h-auto self-stretch"
-              >
-                {t("chat.send")}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+        }
+        actions={
+          <Button
+            icon="plus"
+            onClick={clearConversation}
+            disabled={
+              chat.messages.length === 0 && chat.chatState.kind === "idle"
+            }
+          >
+            {t("chat.newChat")}
+          </Button>
+        }
+      />
+      <Transcript
+        messages={chat.messages}
+        chatState={chat.chatState}
+        liveStats={chat.stats}
+      />
+      <Composer
+        chat={chat}
+        models={models}
+        onSelectModel={handleSelectModel}
+        onSend={handleSend}
+      />
     </div>
   );
 }
