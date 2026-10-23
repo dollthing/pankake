@@ -12,6 +12,7 @@ import { cn } from "../cn.ts";
 import { useTheme } from "../theme/useTheme.ts";
 import { resolveTokenColors, resolveTokenValue } from "./resolveColor.ts";
 import { fillToken, seriesBgClassName, type SeriesColor } from "./series.ts";
+import { compactTick } from "./ticks.ts";
 
 export type ChartSeries = {
   readonly label: string;
@@ -105,8 +106,13 @@ export function Chart({ data, series, height = 160, xMin, xMax }: ChartProps) {
         },
       },
       axes: [
-        { ...axis, size: 32 },
-        { ...axis, size: 36 },
+        // Tall enough for uPlot's two-line labels at day boundaries.
+        { ...axis, size: 44 },
+        {
+          ...axis,
+          size: 40,
+          values: (_u, splits) => splits.map((v) => compactTick(v)),
+        },
       ],
       legend: { show: false },
       cursor: {
