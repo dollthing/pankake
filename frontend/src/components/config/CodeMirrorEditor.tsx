@@ -1,4 +1,7 @@
-// CodeMirror 6 TOML editor instance for ConfigEditorView.
+// The CodeMirror 6 TOML editor for the Config view, themed from the design
+// tokens, with line numbers, the active line marked, and long lines
+// wrapped. It holds its own document; `content` replaces it only when the
+// two differ, so typing never round-trips through React.
 
 import { useEffect, useRef } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
@@ -45,11 +48,13 @@ const tomlHighlightStyle = HighlightStyle.define([
 export function CodeMirrorEditor({
   content,
   readOnly,
+  label,
   onChange,
 }: {
-  content: string;
-  readOnly: boolean;
-  onChange: (value: string) => void;
+  readonly content: string;
+  readonly readOnly: boolean;
+  readonly label: string;
+  readonly onChange: (value: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -57,6 +62,7 @@ export function CodeMirrorEditor({
   const onChangeRef = useRef(onChange);
   const isExternalUpdate = useRef(false);
   const initialContent = useRef(content);
+  const initialLabel = useRef(label);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -116,6 +122,9 @@ export function CodeMirrorEditor({
         theme,
         readOnlyComp.current.of(EditorState.readOnly.of(false)),
         EditorView.lineWrapping,
+        EditorView.contentAttributes.of({
+          "aria-label": initialLabel.current,
+        }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !isExternalUpdate.current) {
             onChangeRef.current(update.state.doc.toString());

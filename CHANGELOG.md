@@ -65,10 +65,12 @@ The audience is an operator deciding whether to upgrade and what they will have 
 - `anankectl logs --follow` follows over `/api/live`. It now honours `--run` and `--stream` while following, no longer loses the lines written between the history fetch and the start of the follow, and reports lines it had to skip as `[N lines skipped]` on stderr. With `--json`, a follow prints each line as its own JSON object, one per line, history included. `--stream` rejects values other than `stdout`, `stderr`, and `combined` instead of silently matching nothing, and `--follow` can no longer be combined with `--until`.
 - The web UI's Events view shows the shared time range, which the navigation now carries to it, and includes the auto-restarts recorded before the daemon's live history begins. Events are listed newest first with plain-language summaries, link to their service, and filter by any combination of types; the live connection's state replaces the reconnect button.
 - The web UI's Stats view opens with the totals over the range (running services, requests, errors, tokens, latency, and token rates), ranks services by output tokens per second, and charts GPU and host memory apart, so host RAM no longer flattens the GPU lines. A chart with nothing in the range says so instead of drawing a flat line, and the charts go one, two, or three across by the room they have.
+- The web UI's Config view names the file it edits and when it was read, keeps unsaved edits when you leave the view and come back, confirms a save, and explains a read-only config.
 - The management API returns the documented error envelope (`{"error": {"code", "message", "type"}}`) rather than a bare string, so a client can dispatch on `error.code`.
 
 ### Fixed
 
+- The web UI's config editor no longer replaces unsaved edits when the config is reloaded from disk. It keeps them and says the file changed, offering to keep the edits (the next save overwrites the file) or to reload the version on disk.
 - A `}` with nothing to close made the placeholder scanner loop forever, hanging config load.
 - A typo in an `env` or `container.env` value now fails at config load, naming the variable, rather than at the launch it breaks.
 - Container removal waits for the log follower to finish, so the tail of a stopped container's output (the part saying why it stopped) is no longer lost to the removal that deletes the runtime's log store.
