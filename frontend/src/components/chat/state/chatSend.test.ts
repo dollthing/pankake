@@ -13,6 +13,7 @@ import {
   installFakeDaemon,
   resetChat,
   settle,
+  sse,
 } from "./chatTestKit.ts";
 
 beforeEach(() => {
@@ -159,6 +160,22 @@ describe("send", () => {
       kind: "error",
       message: "Failed to start m: health check timed out",
     });
+  });
+
+  it("fails a reply whose stream stops before [DONE]", async () => {
+    installFakeDaemon(["running"], (call) =>
+      call.url.startsWith(BASE_URL)
+        ? sse(["half a"], { done: false })
+        : undefined,
+    );
+    setInput("hello");
+    await settle(send(MODEL, BASE_URL));
+    const { messages, chatState } = getSnapshot();
+    expect(chatState).toEqual({
+      kind: "error",
+      message: "The reply ended before the model finished it.",
+    });
+    expect(messages.map((m) => m.content)).toEqual(["hello", "half a"]);
   });
 
   it("gives the text back when cancelled before a reply", async () => {

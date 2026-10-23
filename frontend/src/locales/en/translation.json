@@ -169,6 +169,7 @@
     "starting": "Starting {{model}}…",
     "startingModelPlaceholder": "Starting model…",
     "startFailed": "Failed to start {{model}}: {{message}}",
+    "streamIncomplete": "The reply ended before the model finished it.",
     "startQueueFull": "{{model}} cannot start yet: its start queue is full. Try again shortly.",
     "send": "Send",
     "stop": "Stop",
