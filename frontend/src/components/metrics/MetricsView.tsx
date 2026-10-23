@@ -73,7 +73,9 @@ export function MetricsView() {
             >
               <option value="">{t("stats.allServices")}</option>
               {fleet
-                .filter((s) => s.modality !== "embedding")
+                .filter(
+                  (s) => s.modality === undefined || s.modality === "chat",
+                )
                 .map((s) => (
                   <option key={s.name} value={s.name}>
                     {s.name}

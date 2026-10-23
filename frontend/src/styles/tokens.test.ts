@@ -40,7 +40,12 @@ describe("token contrast", () => {
     ["ok", ["status-ok"], ["status-ok-bg", "tone-surface"], 4.5],
     ["warn", ["status-warn"], ["status-warn-bg", "tone-surface"], 4.5],
     ["danger", ["status-danger"], ["status-danger-bg", "tone-surface"], 4.5],
-    ["modality", ["chip-vision", "chip-embedding"], ["tone-surface"], 4.5],
+    [
+      "modality",
+      ["chip-vision", "chip-embedding", "chip-transcription"],
+      ["tone-surface"],
+      4.5,
+    ],
     [
       "series",
       ["series-1", "series-2", "series-3", "series-4", "series-5"],

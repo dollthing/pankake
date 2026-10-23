@@ -135,6 +135,7 @@
       "open": "Open :{{port}}",
       "chatNotOpenai": "Not on the OpenAI API, so it cannot be chatted with.",
       "chatEmbedding": "An embedding model cannot be chatted with.",
+      "chatTranscription": "A transcription model cannot be chatted with.",
       "chatDisabled": "Enable the service to chat with it.",
       "activity": "Activity",
       "recentEvents": "Recent events",

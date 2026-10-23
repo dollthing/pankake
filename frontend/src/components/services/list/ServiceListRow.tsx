@@ -127,6 +127,9 @@ export function ServiceListRow({
           {service.modality === "embedding" && (
             <Chip tone="embedding">embedding</Chip>
           )}
+          {service.modality === "transcription" && (
+            <Chip tone="transcription">transcription</Chip>
+          )}
           {inflight > 0 && (
             <Chip tone="accent">
               {t("services.list.inflight", { count: inflight })}

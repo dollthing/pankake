@@ -58,6 +58,8 @@
   --color-vision-line: var(--chip-vision-line);
   --color-embedding: var(--chip-embedding);
   --color-embedding-line: var(--chip-embedding-line);
+  --color-transcription: var(--chip-transcription);
+  --color-transcription-line: var(--chip-transcription-line);
 
   --color-series-1: var(--series-1);
   --color-series-2: var(--series-2);

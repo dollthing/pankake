@@ -86,6 +86,9 @@ export function DetailHeader({
         {service.modality === "embedding" && (
           <Chip tone="embedding">embedding</Chip>
         )}
+        {service.modality === "transcription" && (
+          <Chip tone="transcription">transcription</Chip>
+        )}
         {service.pid != null && (
           <span className="font-mono text-xs text-muted">
             {t("services.detail.pid", { pid: service.pid })}
@@ -169,5 +172,7 @@ function chatBlockedReason(
   if (!service.openai_compat) return t("services.detail.chatNotOpenai");
   if (service.modality === "embedding")
     return t("services.detail.chatEmbedding");
+  if (service.modality === "transcription")
+    return t("services.detail.chatTranscription");
   return t("services.detail.chatDisabled");
 }

@@ -97,7 +97,7 @@ export function ServiceDetail({
         >
           {t("services.detail.activity")}
         </SectionHeading>
-        {d?.modality !== "embedding" && (
+        {(d?.modality === undefined || d.modality === "chat") && (
           <ServiceHistory name={name} range={range} resolved={resolved} />
         )}
         <ServiceEvents name={name} resolved={resolved} />

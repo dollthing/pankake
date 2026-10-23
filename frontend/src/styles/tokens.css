@@ -104,6 +104,8 @@
   --chip-vision-line: light-dark(#9fc6e2, #416078);
   --chip-embedding: light-dark(#1b6a4b, #7ed6b0);
   --chip-embedding-line: light-dark(#98cfb6, #376b55);
+  --chip-transcription: light-dark(#7a4a12, #f0c27a);
+  --chip-transcription-line: light-dark(#e2c08f, #6e5430);
 
   /* Chart series: a categorical set whose first member is the accent, so
    * a single-series chart reads as "the" colour. */

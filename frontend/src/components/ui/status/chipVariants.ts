@@ -17,6 +17,7 @@ export const chipVariants = cva(
         accent: "border-line-hover text-accent",
         vision: "border-vision-line text-vision",
         embedding: "border-embedding-line text-embedding",
+        transcription: "border-transcription-line text-transcription",
       },
     },
     defaultVariants: { tone: "neutral" },
