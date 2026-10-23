@@ -229,6 +229,7 @@ Get or update the daemon config
 {
   content: string
   hash: string
+  path: string
   writable: boolean
 }
 ```

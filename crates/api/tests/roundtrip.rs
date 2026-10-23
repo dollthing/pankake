@@ -162,6 +162,7 @@ fn config_response_roundtrips() {
     let v = ConfigResponse {
         content: "[daemon]\n".into(),
         hash: "abc".into(),
+        path: "/etc/ananke/config.toml".into(),
         writable: true,
     };
     assert_eq!(v.clone(), roundtrip(v));
