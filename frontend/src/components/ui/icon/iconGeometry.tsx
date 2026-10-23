@@ -28,6 +28,9 @@ export type IconName =
   | "plus"
   | "edit"
   | "send"
+  | "chevron"
+  | "attach"
+  | "close"
   | "empty"
   | "sun"
   | "moon";
@@ -204,6 +207,16 @@ export const ICON_GEOMETRY: Readonly<Record<IconName, IconGeometry>> = {
     ),
   },
   plus: { strokeWidth: STROKE, shape: <path d="M12 5v14M5 12h14" /> },
+  chevron: { strokeWidth: STROKE, shape: <path d="M6 9l6 6 6-6" /> },
+  close: { strokeWidth: STROKE, shape: <path d="M6 6l12 12M18 6L6 18" /> },
+  attach: {
+    strokeWidth: STROKE,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    shape: (
+      <path d="M20 11.5l-8 8a5 5 0 01-7-7l8.5-8.5a3.5 3.5 0 015 5L10 17.5a2 2 0 01-3-3l7.5-7.5" />
+    ),
+  },
   edit: {
     strokeWidth: STROKE,
     shape: (
