@@ -50,6 +50,7 @@ The audience is an operator deciding whether to upgrade and what they will have 
 - The service detail view surfaces runtime and serving configuration (binary path, KV cache types, batch, context, and thread settings, speculative decoding, and expert-offload mode) in the API and the UI.
 - A shared time range across a service's history and logs and the Stats view, with 5-minute, 1-hour, 6-hour, and 24-hour rolling presets and a custom fixed range. The range is kept in the URL (`?range=6h`, or `?from=…&to=…` in epoch milliseconds), so a link or a reload keeps it, and moving between a service and Stats carries it along. A rolling range keeps moving with the clock rather than freezing when it was picked.
 - Chat renders LaTeX math, markdown in reasoning traces, and correctly escaped code blocks.
+- Chat has a copy button on every message and every code block, which also shows the block's language, and a header with the model, the number of exchanges, and the tokens in context. The reasoning trace is a collapsible block, and the wait while a stopped model starts is shown as such, with Stop available throughout.
 - `anankectl logs` accepts human-friendly `--since` and `--until` values: RFC 3339 timestamps, local datetimes and dates, or relative ages like `2h` and `30m`, in addition to epoch milliseconds.
 - Llama.cpp-native endpoints on the OpenAI listener. `/tokenize`, `/detokenize`, `/apply-template`, `/completion`, `/infill`, `/embedding`, `/embeddings`, `/rerank`, `/reranking`, `/props`, `/slots`, `/slots/{id}`, `/lora-adapters`, `/health`, `/v1/health`, and `/metrics` are now served on the main inference URL and forwarded verbatim to the upstream of a `llama-cpp` template service (started on demand). A `model` field in the body selects the service; without one, the sole llama-cpp service is the target. The OpenAI-shape aliases (`/v1/*`, `/models`, `/completions`, `/chat/completions`, …) are not proxied.
 - `GET /api/info` and the live `info` resource report `uptime_ms`, the time since the daemon started.
@@ -73,6 +74,11 @@ The audience is an operator deciding whether to upgrade and what they will have 
 - The service detail's serving settings resolve `parallel`, `kv_unified`, `flash_attn`, and `ubatch_size` through `extra_args` the way the launch command does, rather than reading the config keys alone, so they no longer disagree with the running server.
 - When both `cache_ram_mb` and `-cram` in `extra_args` are set, the estimate uses the `extra_args` value, which is the one llama-server receives.
 - A command service without an `openai_proxy` block is no longer offered for chat in the web UI. It is not on the OpenAI-compatible API, so the chat could only fail.
+- Picking another model mid-conversation in the chat now switches to it. Before, only the URL changed and the conversation stayed on the old model. The conversation carries over, and each reply is labelled with the model that wrote it.
+- Starting a new chat while a message was still being sent, or while its model was starting, no longer leaves that message in the new conversation.
+- The chat's reasoning trace follows the model's output as it streams, until the reader scrolls up inside it.
+- The chat waits for a model that is slow to start instead of reporting an error. A start request cut by a proxy or the browser while the model is still loading is reissued, a start the daemon declines (start queue full, not enough memory) is reported rather than ignored, and there is no client-side time limit.
+- A chat reply that ends without the stream's `[DONE]` marker, or with an error frame, is reported as incomplete rather than shown as finished.
 - `pid 0` is no longer registered for memory attribution. It parents init, so attributing its descendants summed the whole machine into one service.
 
 ### Notes
