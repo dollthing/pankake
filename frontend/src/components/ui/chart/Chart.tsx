@@ -208,9 +208,9 @@ function Legend({
           <span className="min-w-0 truncate text-muted">{s.label}</span>
         </div>
       ))}
-      <div className="text-soft">{time ?? "—"}</div>
+      <div className="truncate text-soft">{time ?? "—"}</div>
       {series.map((_, i) => (
-        <div key={i} className="text-soft">
+        <div key={i} className="truncate text-soft">
           {values[i] ?? "—"}
         </div>
       ))}
