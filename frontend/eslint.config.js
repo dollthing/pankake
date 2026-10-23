@@ -7,23 +7,9 @@ import { getDefaultSelectors } from "eslint-plugin-better-tailwindcss/defaults";
 import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
-// Folders whose class names have been moved onto the design tokens. The
-// Tailwind rules only run here, so files still on the legacy tokens are
-// neither failed nor auto-fixed before their own restyle. The list grows a
-// folder at a time and becomes `src/**` once nothing legacy is left.
-const migrated = [
-  "src/App.tsx",
-  "src/components/chat/**",
-  "src/components/config/**",
-  "src/components/events/**",
-  "src/components/layout/**",
-  "src/components/logs/**",
-  "src/components/metrics/**",
-  "src/components/services/**",
-  "src/hooks/useStoredValue.ts",
-  "src/components/ui/**",
-  "src/styles/**",
-];
+// Every source file is on the design tokens, so the Tailwind rules cover
+// all of `src`.
+const styled = ["src/**"];
 
 export default defineConfig([
   globalIgnores(["dist", "src/api/types.ts"]),
@@ -41,7 +27,7 @@ export default defineConfig([
     },
   },
   {
-    files: migrated,
+    files: styled,
     extends: [betterTailwind.configs["recommended-error"]],
     settings: {
       "better-tailwindcss": {
@@ -91,10 +77,5 @@ export default defineConfig([
         },
       ],
     },
-  },
-  {
-    // Legacy primitives kept only until their last views are restyled.
-    files: ["src/components/ui/Badge.tsx", "src/components/ui/ViewHeader.tsx"],
-    rules: { "better-tailwindcss/no-restricted-classes": "off" },
   },
 ]);
