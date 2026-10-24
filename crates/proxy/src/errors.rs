@@ -67,6 +67,15 @@ pub enum ApiErrorCode {
     DuplicateSubscriptionId { id: String },
     /// A `/api/live` connection already holds `limit` subscriptions.
     SubscriptionLimit { limit: usize },
+    /// Management caller referenced a manual reservation that doesn't exist.
+    ReservationNotFound { id: i64 },
+    /// A manual reservation could not be placed: not enough capacity even
+    /// after evicting what its priority allows. `busy_peers` lists services
+    /// that would have to go but are busy.
+    ReservationNoFit {
+        reason: String,
+        busy_peers: Vec<SmolStr>,
+    },
 }
 
 impl ApiErrorCode {
@@ -96,13 +105,17 @@ impl ApiErrorCode {
             Self::InvalidLiveRequest { .. } => ApiErrorCodeSlug::InvalidLiveRequest,
             Self::DuplicateSubscriptionId { .. } => ApiErrorCodeSlug::DuplicateSubscriptionId,
             Self::SubscriptionLimit { .. } => ApiErrorCodeSlug::SubscriptionLimit,
+            Self::ReservationNotFound { .. } => ApiErrorCodeSlug::ReservationNotFound,
+            Self::ReservationNoFit { .. } => ApiErrorCodeSlug::ReservationNoFit,
         }
     }
 
     /// HTTP status code paired with this error class.
     pub fn status(&self) -> StatusCode {
         match self {
-            Self::ModelNotFound { .. } | Self::ServiceNotFound { .. } => StatusCode::NOT_FOUND,
+            Self::ModelNotFound { .. }
+            | Self::ServiceNotFound { .. }
+            | Self::ReservationNotFound { .. } => StatusCode::NOT_FOUND,
             Self::ServiceDisabled { .. }
             | Self::StartQueueFull { .. }
             | Self::StartFailed { .. }
@@ -116,7 +129,9 @@ impl ApiErrorCode {
             Self::InvalidRequest { .. } | Self::InvalidCursor | Self::InvalidLiveRequest { .. } => {
                 StatusCode::BAD_REQUEST
             }
-            Self::DuplicateSubscriptionId { .. } => StatusCode::CONFLICT,
+            Self::DuplicateSubscriptionId { .. } | Self::ReservationNoFit { .. } => {
+                StatusCode::CONFLICT
+            }
             Self::SubscriptionLimit { .. } => StatusCode::TOO_MANY_REQUESTS,
             Self::PreviewFailed { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             Self::IfMatchRequired => StatusCode::PRECONDITION_REQUIRED,
@@ -141,7 +156,8 @@ impl ApiErrorCode {
             | Self::PreviewFailed { .. }
             | Self::InvalidLiveRequest { .. }
             | Self::DuplicateSubscriptionId { .. }
-            | Self::SubscriptionLimit { .. } => ApiErrorKind::InvalidRequestError,
+            | Self::SubscriptionLimit { .. }
+            | Self::ReservationNotFound { .. } => ApiErrorKind::InvalidRequestError,
             Self::ServiceDisabled { .. }
             | Self::StartQueueFull { .. }
             | Self::StartFailed { .. }
@@ -150,7 +166,8 @@ impl ApiErrorCode {
             | Self::UpstreamUnavailable { .. }
             | Self::ProxyInternal { .. }
             | Self::PersistFailed { .. }
-            | Self::QueryFailed { .. } => ApiErrorKind::ServerError,
+            | Self::QueryFailed { .. }
+            | Self::ReservationNoFit { .. } => ApiErrorKind::ServerError,
         }
     }
 
@@ -208,6 +225,19 @@ impl ApiErrorCode {
             }
             Self::SubscriptionLimit { limit } => {
                 format!("this connection already holds the maximum of {limit} subscriptions")
+            }
+            Self::ReservationNotFound { id } => format!("reservation {id} not found"),
+            Self::ReservationNoFit { reason, busy_peers } => {
+                if busy_peers.is_empty() {
+                    format!("reservation cannot fit: {reason}")
+                } else {
+                    let list = busy_peers
+                        .iter()
+                        .map(|p| format!("`{p}`"))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    format!("reservation cannot fit: {reason}; busy peer(s) in the way: {list}")
+                }
             }
         }
     }
