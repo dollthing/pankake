@@ -55,10 +55,10 @@ export function ReservationsView() {
     <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title={t("reservations.title")}
-        meta={t("reservations.meta", {
-          manual: manual.length,
-          services: services.length,
-        })}
+        meta={`${t("reservations.metaManual", { count: manual.length })} · ${t(
+          "reservations.metaServices",
+          { count: services.length },
+        )}`}
         actions={
           !formOpen && (
             <Button
