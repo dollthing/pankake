@@ -443,7 +443,10 @@
   },
   "reservations": {
     "title": "Reservations",
-    "meta": "{{manual}} manual · {{services}} services",
+    "metaManual_one": "{{count}} manual",
+    "metaManual_other": "{{count}} manual",
+    "metaServices_one": "{{count}} service",
+    "metaServices_other": "{{count}} services",
     "intro": "Memory held on each device. A manual reservation keeps memory free for work outside ananke: no service is placed into it, and it stays until removed, across restarts.",
     "devices": "Devices",
     "deviceSummary": "{{manual}} reserved manually · {{services}} pledged to services · {{unpledged}} unpledged of {{total}}",
