@@ -73,7 +73,8 @@
     "events": "Events",
     "stats": "Stats",
     "attentionServices_one": "{{count}} service needs attention",
-    "attentionServices_other": "{{count}} services need attention"
+    "attentionServices_other": "{{count}} services need attention",
+    "reservations": "Reservations"
   },
   "services": {
     "title": "Services",
@@ -238,14 +239,19 @@
       "allocation_changed": "Allocation changed",
       "config_reloaded": "Config reloaded",
       "estimator_drift": "Estimate drift",
-      "auto_restarted": "Auto-restarted"
+      "auto_restarted": "Auto-restarted",
+      "reservation_placed": "Reservation placed",
+      "reservation_removed": "Reservation removed"
     },
     "status": {
       "open": "Live",
       "connecting": "Connecting",
       "reconnecting": "Reconnecting, showing the last events received"
     },
-    "olderThanLive": "The live history starts at {{time}}; before that, only recorded restarts are shown."
+    "olderThanLive": "The live history starts at {{time}}; before that, only recorded restarts are shown.",
+    "reservationPlaced": "reservation {{name}} placed, holding {{devices}}",
+    "reservationPlacedEvicting": "reservation {{name}} placed, holding {{devices}}; evicted {{services}}",
+    "reservationRemoved": "reservation {{name}} removed"
   },
   "stats": {
     "title": "Stats",
@@ -435,5 +441,43 @@
     "runFilter": "Run",
     "selectedRange": "selected range",
     "jumpToEnd": "jump to end"
+  },
+  "reservations": {
+    "title": "Reservations",
+    "meta": "{{manual}} manual · {{services}} services",
+    "intro": "Memory held on each device. A manual reservation keeps memory free for work outside ananke: no service is placed into it, and it stays until removed, across restarts.",
+    "devices": "Devices",
+    "deviceSummary": "{{manual}} reserved manually · {{services}} pledged to services · {{unpledged}} unpledged of {{total}}",
+    "manual": "Manual reservations",
+    "services": "Services holding memory",
+    "noManual": "No manual reservations.",
+    "noServices": "No service holds memory right now.",
+    "unnamed": "#{{id}}",
+    "manualMeta": "#{{id}} · priority {{priority}} · placed {{time}}",
+    "serviceMeta_one": "priority {{priority}} · {{count}} request in flight",
+    "serviceMeta_other": "priority {{priority}} · {{count}} requests in flight",
+    "remove": "Remove",
+    "removeNamed": "Remove reservation {{name}}",
+    "stop": "Stop",
+    "stopNamed": "Stop {{name}}",
+    "new": "New reservation",
+    "newTitle": "New reservation",
+    "label": "Label",
+    "labelPlaceholder": "What the memory is for",
+    "priority": "Priority",
+    "amounts": "Memory to reserve, in GiB",
+    "amountFor": "GiB to reserve on {{device}}",
+    "amountHint": "{{unpledged}} unpledged of {{total}}",
+    "evictionNote": "Services in the way are evicted as for a service start: idle ones at any priority, busy ones only from a higher priority. Placing waits for them to stop.",
+    "place": "Reserve",
+    "placing": "Reserving…",
+    "placed": "Placed reservation {{name}}.",
+    "placedEvicting": "Placed reservation {{name}}; evicted {{services}}.",
+    "problem": {
+      "no_devices": "Enter an amount for at least one device.",
+      "bad_amount": "The amount for {{device}} must be a positive number of GiB.",
+      "too_large": "The amount for {{device}} is more than the device holds.",
+      "bad_priority": "The priority must be a whole number from 0 to 255."
+    }
   }
 }

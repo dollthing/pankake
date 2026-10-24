@@ -71,6 +71,28 @@ enum Command {
     Status,
     /// List devices with reservations.
     Devices,
+    /// List manual reservations and the memory services have pledged.
+    Reservations,
+    /// Reserve device memory so ananke never places a service into it.
+    /// Services are evicted to make room by the ordinary priority rules.
+    Reserve {
+        /// One or more `DEVICE=SIZE` amounts, such as `gpu:0=18G` or
+        /// `cpu=512M`.
+        #[arg(required = true)]
+        devices: Vec<String>,
+        /// What the memory is for.
+        #[arg(long)]
+        label: Option<String>,
+        /// Eviction priority, as for a service (default 50). Idle services
+        /// can be evicted at any priority; busy ones only from a higher one.
+        #[arg(long)]
+        priority: Option<u8>,
+    },
+    /// Remove a manual reservation, releasing its memory.
+    Unreserve {
+        /// Reservation id, as `anankectl reservations` lists it.
+        id: i64,
+    },
     /// List services.
     Services {
         /// Include disabled services.
@@ -183,6 +205,13 @@ async fn main() -> ExitCode {
     let result = match cli.command {
         Command::Status => commands::status::run(&client, cli.json).await,
         Command::Devices => commands::devices::run(&client, cli.json).await,
+        Command::Reservations => commands::reservations::list(&client, cli.json).await,
+        Command::Reserve {
+            devices,
+            label,
+            priority,
+        } => commands::reservations::reserve(&client, cli.json, &devices, label, priority).await,
+        Command::Unreserve { id } => commands::reservations::unreserve(&client, cli.json, id).await,
         Command::Services { all } => commands::services::run(&client, cli.json, all).await,
         Command::Show { name } => commands::show::run(&client, cli.json, &name).await,
         Command::Start { name } => commands::lifecycle::start(&client, cli.json, &name).await,
