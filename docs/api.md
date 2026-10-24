@@ -507,6 +507,7 @@ Place a manual reservation
   devices: Record<string, number>
   label?: string | null
   priority?: number | null
+  wait?: boolean | null
 }
 ```
 

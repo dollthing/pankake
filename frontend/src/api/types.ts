@@ -136,7 +136,7 @@ export interface paths {
     put?: never;
     /**
      * Place a manual reservation
-     * @description Reserve memory on one or more devices so ananke never places a service into it. Services are evicted to make room by the same rules a service start uses; the response is sent once they have stopped.
+     * @description Reserve memory on one or more devices so ananke never places a service into it. Services are evicted to make room by the same rules a service start uses. By default the response is sent once they have stopped; with `wait: false` it is sent as soon as their evictions begin.
      */
     post: operations["post_reservation"];
     delete?: never;
@@ -615,12 +615,20 @@ export interface components {
        *     Defaults to the service default.
        */
       priority?: number | null;
+      /**
+       * @description Whether to answer only once evicted services have stopped and
+       *     released their memory, so a job started on the reply finds it free.
+       *     Defaults to `true`; with `false` the reply comes straight after the
+       *     evictions begin, and the reservation already holds its memory
+       *     against services either way.
+       */
+      wait?: boolean | null;
     };
     /** @description Response from `POST /api/reservations`. */
     CreateReservationResponse: {
       /**
-       * @description Services evicted to make room, in eviction order. The response is
-       *     sent once they have stopped.
+       * @description Services evicted to make room. With `wait`, they have stopped by
+       *     the time of the response; without it, they may still be stopping.
        */
       evicted: string[];
       /** @description The reservation as stored. */

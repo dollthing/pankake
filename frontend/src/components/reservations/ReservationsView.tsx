@@ -300,19 +300,24 @@ function NewReservation({
       return;
     }
     setProblem(null);
-    create.mutate(parsed.request, {
-      onSuccess: ({ reservation, evicted }) => {
-        const name = reservationName(reservation.id, reservation.label, t);
-        onPlaced(
-          evicted.length === 0
-            ? t("reservations.placed", { name })
-            : t("reservations.placedEvicting", {
-                name,
-                services: evicted.join(", "),
-              }),
-        );
+    // Answer straight away: the evicted services show as stopping in the
+    // live list rather than holding the button for their shutdown.
+    create.mutate(
+      { ...parsed.request, wait: false },
+      {
+        onSuccess: ({ reservation, evicted }) => {
+          const name = reservationName(reservation.id, reservation.label, t);
+          onPlaced(
+            evicted.length === 0
+              ? t("reservations.placed", { name })
+              : t("reservations.placedEvicting", {
+                  name,
+                  services: evicted.join(", "),
+                }),
+          );
+        },
       },
-    });
+    );
   };
 
   return (

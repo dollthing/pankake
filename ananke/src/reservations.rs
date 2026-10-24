@@ -206,7 +206,9 @@ pub async fn create(
         at_ms: created_at_ms,
     });
 
-    wait_for_release(state, &victims).await;
+    if req.wait.unwrap_or(true) {
+        wait_for_release(state, &victims).await;
+    }
     Ok(CreateReservationResponse {
         reservation,
         evicted: victims.iter().map(ToString::to_string).collect(),
