@@ -155,6 +155,11 @@ impl RunLoop {
                 timeout: Duration::from_millis(current.health.timeout_ms),
             };
 
+            // The flag is per-run: a drain, fast-kill or disable that aborted
+            // an earlier start left it set, and a probe that starts out
+            // cancelled would end this run as `Cancelled` and exit the
+            // supervisor task, stranding every later Ensure.
+            self.cancel_tx.send_replace(false);
             let cancel_rx_h = self.cancel_rx.clone();
             let health_task = tokio::spawn(wait_healthy(health_cfg, cancel_rx_h));
             tokio::pin!(health_task);
