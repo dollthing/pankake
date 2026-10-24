@@ -51,9 +51,10 @@ pub enum ReservationPlanFailure {
 ///
 /// Candidates the reservation's priority may displace, under the same
 /// [`EvictionCandidate::is_evictable_by`] rule as a service start (the
-/// reservation counts as on-demand), are taken least recently used first,
-/// one at a time, until the reservation fits; only those holding memory on
-/// a requested device are considered. `last_used_age_ms` gives each
+/// reservation counts as on-demand), are taken least recently used first.
+/// Each pick targets the device that is still short, so a service holding
+/// memory only on devices that already fit is never touched; a final pass
+/// drops any victim the rest already cover. `last_used_age_ms` gives each
 /// candidate's age since its last request, `None` for never used, which
 /// sorts as oldest. Returns the empty set when it already fits.
 pub fn plan_evictions(
@@ -67,45 +68,57 @@ pub fn plan_evictions(
     let fits = |victims: &[SmolStr]| {
         ananke_allocator::can_fit_after_eviction(want, snapshot, table, None, victims)
     };
-    let first = match fits(&[]) {
-        Ok(()) => return Ok(Vec::new()),
-        Err(nofit) => nofit,
-    };
-
-    let holds_wanted = |c: &&EvictionCandidate| {
-        table.get(&c.name).is_some_and(|row| {
-            want.keys()
-                .any(|slot| row.get(slot).copied().unwrap_or(0) > 0)
-        })
+    let holds = |c: &EvictionCandidate, slot: &DeviceSlot| {
+        table
+            .get(&c.name)
+            .and_then(|row| row.get(slot))
+            .is_some_and(|mb| *mb > 0)
     };
     let mut ranked: Vec<(&EvictionCandidate, u128)> = candidates
         .iter()
-        .filter(holds_wanted)
         .filter(|c| c.is_evictable_by(priority, Lifecycle::OnDemand))
         .map(|c| (c, last_used_age_ms(&c.name).unwrap_or(u128::MAX)))
         .collect();
     ranked.sort_by_key(|(_, age)| std::cmp::Reverse(*age));
 
-    let mut victims = Vec::new();
-    let mut last = first;
-    for (c, _) in ranked {
-        victims.push(c.name.clone());
-        match fits(&victims) {
-            Ok(()) => return Ok(victims),
-            Err(nofit) => last = nofit,
+    let mut victims: Vec<SmolStr> = Vec::new();
+    loop {
+        let nofit = match fits(&victims) {
+            Ok(()) => break,
+            Err(nofit) => nofit,
+        };
+        let next = ranked
+            .iter()
+            .find(|(c, _)| !victims.contains(&c.name) && holds(c, &nofit.slot));
+        match next {
+            Some((c, _)) => victims.push(c.name.clone()),
+            None => {
+                let busy_peers = candidates
+                    .iter()
+                    .filter(|c| holds(c, &nofit.slot))
+                    .filter(|c| !c.idle && c.priority <= priority)
+                    .map(|c| c.name.clone())
+                    .collect();
+                return Err(ReservationPlanFailure::NoFit {
+                    reason: nofit.to_string(),
+                    busy_peers,
+                });
+            }
         }
     }
 
-    let busy_peers = candidates
-        .iter()
-        .filter(holds_wanted)
-        .filter(|c| !c.idle && c.priority <= priority)
-        .map(|c| c.name.clone())
-        .collect();
-    Err(ReservationPlanFailure::NoFit {
-        reason: last.to_string(),
-        busy_peers,
-    })
+    // A later pick on another device can cover an earlier one's deficit
+    // too; keep only the victims the reservation still needs.
+    let mut i = victims.len();
+    while i > 0 {
+        i -= 1;
+        let mut without = victims.clone();
+        without.remove(i);
+        if fits(&without).is_ok() {
+            victims = without;
+        }
+    }
+    Ok(victims)
 }
 
 #[cfg(test)]
@@ -247,6 +260,77 @@ mod tests {
         let cands = [cand("cpu-only", 10, true), cand("a", 10, true)];
         let plan = plan_evictions(&want(10), 50, &snapshot(24), &t, &cands, |_| None).unwrap();
         assert_eq!(plan, vec![SmolStr::new("a")]);
+    }
+
+    #[test]
+    fn only_services_on_the_short_device_are_evicted() {
+        // gpu:0 is short; the cpu has room. `deepseek` is older but holds
+        // only gpu:1 and cpu, so it must survive; `qwen` on gpu:0 goes.
+        let snap = DeviceSnapshot {
+            gpus: vec![
+                GpuSnapshot {
+                    id: 0,
+                    name: "a".into(),
+                    total_bytes: 24 * GIB_MB * 1024 * 1024,
+                    free_bytes: 0,
+                },
+                GpuSnapshot {
+                    id: 1,
+                    name: "b".into(),
+                    total_bytes: 24 * GIB_MB * 1024 * 1024,
+                    free_bytes: 0,
+                },
+            ],
+            cpu: Some(ananke_placement::devices::CpuSnapshot {
+                total_bytes: 376 * GIB_MB * 1024 * 1024,
+                available_bytes: 60 * GIB_MB * 1024 * 1024,
+            }),
+            taken_at_ms: 0,
+        };
+        let t: AllocationTable = [
+            (
+                SmolStr::new("qwen"),
+                BTreeMap::from([
+                    (DeviceSlot::Gpu(0), 22 * GIB_MB),
+                    (DeviceSlot::Cpu, 2 * GIB_MB),
+                ]),
+            ),
+            (
+                SmolStr::new("deepseek"),
+                BTreeMap::from([
+                    (DeviceSlot::Gpu(1), 23 * GIB_MB),
+                    (DeviceSlot::Cpu, 281 * GIB_MB),
+                ]),
+            ),
+        ]
+        .into_iter()
+        .collect();
+        let want = BTreeMap::from([
+            (DeviceSlot::Gpu(0), 3 * GIB_MB),
+            (DeviceSlot::Cpu, 4 * GIB_MB),
+        ]);
+        let cands = [cand("qwen", 45, true), cand("deepseek", 100, true)];
+        let age = |name: &str| match name {
+            "deepseek" => Some(90_000),
+            _ => Some(10),
+        };
+        let plan = plan_evictions(&want, 50, &snap, &t, &cands, age).unwrap();
+        assert_eq!(plan, vec![SmolStr::new("qwen")]);
+    }
+
+    #[test]
+    fn victims_another_pick_covers_are_dropped() {
+        // Both devices short. `small` (older) frees gpu:0 only partly;
+        // `big` alone covers both, so `small` is dropped again.
+        let mut t = table(&[("small", 2)]);
+        t.insert(
+            "big".into(),
+            BTreeMap::from([(DeviceSlot::Gpu(0), 20 * GIB_MB)]),
+        );
+        let cands = [cand("small", 10, true), cand("big", 10, true)];
+        let age = |name: &str| if name == "small" { Some(900) } else { Some(1) };
+        let plan = plan_evictions(&want(20), 50, &snapshot(24), &t, &cands, age).unwrap();
+        assert_eq!(plan, vec![SmolStr::new("big")]);
     }
 
     #[test]

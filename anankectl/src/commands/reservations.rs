@@ -28,6 +28,7 @@ pub async fn reserve(
     devices: &[String],
     label: Option<String>,
     priority: Option<u8>,
+    no_wait: bool,
 ) -> Result<(), ApiClientError> {
     let devices = devices
         .iter()
@@ -37,6 +38,7 @@ pub async fn reserve(
         devices,
         label,
         priority,
+        wait: Some(!no_wait),
     };
     let resp: CreateReservationResponse = client.post_json("/api/reservations", &req).await?;
     if json {
@@ -51,7 +53,8 @@ pub async fn reserve(
             .join(", ");
         println!("ok: placed reservation {} ({held})", r.id);
         if !resp.evicted.is_empty() {
-            println!("evicted: {}", resp.evicted.join(", "));
+            let verb = if no_wait { "evicting" } else { "evicted" };
+            println!("{verb}: {}", resp.evicted.join(", "));
         }
     }
     Ok(())

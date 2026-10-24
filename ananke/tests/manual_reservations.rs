@@ -250,3 +250,33 @@ async fn stored_reservations_are_restored_into_the_allocation_table() {
 
     h.cleanup().await;
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn without_wait_the_reply_comes_before_the_evicted_service_stops() {
+    let h = build_harness(vec![service("alpha", 10)]).await;
+    *h.state.snapshot.write() = cpu_snapshot(15);
+    let (st, body) = chat(&h.state, "alpha").await;
+    assert_eq!(st, StatusCode::OK, "{body}");
+
+    let (st, body) = reserve(
+        &h.state,
+        &format!(r#"{{"devices":{{"cpu":{}}},"wait":false}}"#, 8 * GIB),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{body}");
+    let created: CreateReservationResponse = serde_json::from_str(&body).unwrap();
+    assert_eq!(created.evicted, vec!["alpha".to_string()]);
+
+    // The reservation holds its memory at once; alpha drains behind it.
+    let key = SmolStr::new(format!("reservation:{}", created.reservation.id));
+    assert!(h.state.allocations.lock().contains_key(&key));
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        while h.state.allocations.lock().contains_key("alpha") {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+    })
+    .await
+    .expect("alpha stops after the reply");
+
+    h.cleanup().await;
+}

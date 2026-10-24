@@ -87,6 +87,10 @@ enum Command {
         /// can be evicted at any priority; busy ones only from a higher one.
         #[arg(long)]
         priority: Option<u8>,
+        /// Return as soon as evictions begin instead of waiting for the
+        /// evicted services to stop.
+        #[arg(long)]
+        no_wait: bool,
     },
     /// Remove a manual reservation, releasing its memory.
     Unreserve {
@@ -210,7 +214,11 @@ async fn main() -> ExitCode {
             devices,
             label,
             priority,
-        } => commands::reservations::reserve(&client, cli.json, &devices, label, priority).await,
+            no_wait,
+        } => {
+            commands::reservations::reserve(&client, cli.json, &devices, label, priority, no_wait)
+                .await
+        }
         Command::Unreserve { id } => commands::reservations::unreserve(&client, cli.json, id).await,
         Command::Services { all } => commands::services::run(&client, cli.json, all).await,
         Command::Show { name } => commands::show::run(&client, cli.json, &name).await,

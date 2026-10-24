@@ -471,11 +471,11 @@
     "amounts": "Memory to reserve, in GiB",
     "amountFor": "GiB to reserve on {{device}}",
     "amountHint": "{{unpledged}} unpledged of {{total}}",
-    "evictionNote": "Services in the way are evicted as for a service start: idle ones at any priority, busy ones only from a higher priority. Placing waits for them to stop.",
+    "evictionNote": "Services in the way are evicted as for a service start: idle ones at any priority, busy ones only from a higher priority, and only from devices that are short.",
     "place": "Reserve",
     "placing": "Reserving…",
     "placed": "Placed reservation {{name}}.",
-    "placedEvicting": "Placed reservation {{name}}; evicted {{services}}.",
+    "placedEvicting": "Placed reservation {{name}}; stopping {{services}} to make room.",
     "problem": {
       "no_devices": "Enter an amount for at least one device.",
       "bad_amount": "The amount for {{device}} must be a positive number of GiB.",

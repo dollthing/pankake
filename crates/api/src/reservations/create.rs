@@ -23,6 +23,13 @@ pub struct CreateReservationRequest {
     /// Defaults to the service default.
     #[serde(default)]
     pub priority: Option<u8>,
+    /// Whether to answer only once evicted services have stopped and
+    /// released their memory, so a job started on the reply finds it free.
+    /// Defaults to `true`; with `false` the reply comes straight after the
+    /// evictions begin, and the reservation already holds its memory
+    /// against services either way.
+    #[serde(default)]
+    pub wait: Option<bool>,
 }
 
 /// Response from `POST /api/reservations`.
@@ -30,7 +37,7 @@ pub struct CreateReservationRequest {
 pub struct CreateReservationResponse {
     /// The reservation as stored.
     pub reservation: ManualReservation,
-    /// Services evicted to make room, in eviction order. The response is
-    /// sent once they have stopped.
+    /// Services evicted to make room. With `wait`, they have stopped by
+    /// the time of the response; without it, they may still be stopping.
     pub evicted: Vec<String>,
 }
