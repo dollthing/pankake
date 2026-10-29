@@ -136,7 +136,7 @@ export interface paths {
     put?: never;
     /**
      * Place a manual reservation
-     * @description Reserve memory on one or more devices so ananke never places a service into it. Services are evicted to make room by the same rules a service start uses. By default the response is sent once they have stopped; with `wait: false` it is sent as soon as their evictions begin.
+     * @description Reserve memory on one or more devices so ananke never places a service into it. A reservation outranks every service: any service in the way is evicted, busy and persistent ones included. By default the response is sent once they have stopped; with `wait: false` it is sent as soon as their evictions begin.
      */
     post: operations["post_reservation"];
     delete?: never;
@@ -624,14 +624,6 @@ export interface components {
       };
       /** @description Free-form label naming what the memory is for. */
       label?: string | null;
-      /**
-       * Format: int32
-       * @description Eviction priority, as for a service. Placing the reservation evicts
-       *     services through the same rules a service start uses: idle services
-       *     may be evicted, busy ones only from a strictly higher priority.
-       *     Defaults to the service default.
-       */
-      priority?: number | null;
       /**
        * @description Whether to answer only once evicted services have stopped and
        *     released their memory, so a job started on the reply finds it free.
@@ -1424,12 +1416,6 @@ export interface components {
       id: number;
       /** @description Free-form label naming what the memory is for. */
       label?: string | null;
-      /**
-       * Format: int32
-       * @description The priority it was placed with, which decided which services it
-       *     could evict.
-       */
-      priority: number;
     };
     /** @description One time bucket of aggregated request metrics, scoped to a single service. */
     MetricBucketResponse: {
@@ -1837,13 +1823,6 @@ export interface components {
        * @description Requests in flight through the service's proxy.
        */
       inflight_count: number;
-      /** @description When the service starts and stops. */
-      lifecycle: components["schemas"]["Lifecycle"];
-      /**
-       * Format: int32
-       * @description The service's eviction priority.
-       */
-      priority: number;
       /** @description The service's name. */
       service: string;
       /** @description The service's current state. */

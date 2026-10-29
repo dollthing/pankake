@@ -8,7 +8,6 @@
 CREATE TABLE manual_reservations (
     reservation_id INTEGER PRIMARY KEY AUTOINCREMENT,
     label          TEXT,
-    priority       INTEGER NOT NULL,
     created_at     INTEGER NOT NULL
 ) STRICT;
 

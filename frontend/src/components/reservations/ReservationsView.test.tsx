@@ -32,7 +32,6 @@ const reservations: ReservationsResponse = {
     {
       id: 3,
       label: "train",
-      priority: 60,
       created_at_ms: Date.now() - 60_000,
       devices: { "gpu:0": 12 * GIB },
     },
@@ -41,8 +40,6 @@ const reservations: ReservationsResponse = {
     {
       service: "qwen",
       state: "running",
-      priority: 45,
-      lifecycle: "on_demand",
       inflight_count: 0,
       devices: { "gpu:0": 4 * GIB },
     },
@@ -74,7 +71,7 @@ describe("ReservationsView", () => {
     await renderView();
     expect(
       screen.getByText(
-        "12.00 GiB reserved manually · 4.00 GiB pledged to services · 8.00 GiB unpledged of 24.00 GiB",
+        "12.00 GiB reserved · 4.00 GiB services · 8.00 GiB free of 24.00 GiB",
       ),
     ).toBeInTheDocument();
     const manual = panel("Manual reservations");
@@ -82,7 +79,7 @@ describe("ReservationsView", () => {
     expect(
       within(manual).getByRole("button", { name: "Remove reservation train" }),
     ).toBeInTheDocument();
-    const services = panel("Services holding memory");
+    const services = panel("Services");
     expect(
       within(services).getByRole("link", { name: "qwen" }),
     ).toHaveAttribute("href", "/services/qwen");

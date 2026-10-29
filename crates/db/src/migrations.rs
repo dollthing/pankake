@@ -125,7 +125,7 @@ pub const MIGRATIONS: &[Migration] = &[
         version: 14,
         name: "manual_reservations",
         source_path: "migrations/0014_manual_reservations.sql",
-        digest: "be88ef935c9ca03b7bb7545d3887a0a0d4291fed93d73ed3559e40c33de0b739",
+        digest: "760ae04abefd1a537c988b8c52a58a87762f89e0d93f014cc2e75e9799511060",
         sql: include_str!("migrations/0014_manual_reservations.sql"),
     },
 ];

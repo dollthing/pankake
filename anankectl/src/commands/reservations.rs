@@ -27,7 +27,6 @@ pub async fn reserve(
     json: bool,
     devices: &[String],
     label: Option<String>,
-    priority: Option<u8>,
     no_wait: bool,
 ) -> Result<(), ApiClientError> {
     let devices = devices
@@ -37,7 +36,6 @@ pub async fn reserve(
     let req = CreateReservationRequest {
         devices,
         label,
-        priority,
         wait: Some(!no_wait),
     };
     let resp: CreateReservationResponse = client.post_json("/api/reservations", &req).await?;

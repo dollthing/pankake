@@ -500,13 +500,10 @@ List reservations
     devices: Record<string, number>
     id: number
     label?: string | null
-    priority: number
   }[]
   services: {
     devices: Record<string, number>
     inflight_count: number
-    lifecycle: "persistent" | "on_demand"
-    priority: number
     service: string
     state: "idle" | "starting" | "running" | "draining" | "stopped" | "evicted" | "failed" | "disabled" | "unknown"
   }[]
@@ -523,7 +520,6 @@ Place a manual reservation
 {
   devices: Record<string, number>
   label?: string | null
-  priority?: number | null
   wait?: boolean | null
 }
 ```
@@ -545,7 +541,6 @@ Place a manual reservation
     devices: Record<string, number>
     id: number
     label?: string | null
-    priority: number
   }
 }
 ```

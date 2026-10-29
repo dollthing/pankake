@@ -17,12 +17,6 @@ pub struct CreateReservationRequest {
     /// Free-form label naming what the memory is for.
     #[serde(default)]
     pub label: Option<String>,
-    /// Eviction priority, as for a service. Placing the reservation evicts
-    /// services through the same rules a service start uses: idle services
-    /// may be evicted, busy ones only from a strictly higher priority.
-    /// Defaults to the service default.
-    #[serde(default)]
-    pub priority: Option<u8>,
     /// Whether to answer only once evicted services have stopped and
     /// released their memory, so a job started on the reply finds it free.
     /// Defaults to `true`; with `false` the reply comes straight after the

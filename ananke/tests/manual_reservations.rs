@@ -1,5 +1,5 @@
-//! Integration tests for manual reservations: placing one evicts services
-//! by the ordinary rules, holds its memory against later starts, survives
+//! Integration tests for manual reservations: placing one evicts whatever
+//! services are in the way, holds its memory against later starts, survives
 //! a reload from the database, and releases the memory when removed.
 #![cfg(feature = "test-fakes")]
 
@@ -161,30 +161,42 @@ async fn reservation_evicts_idle_service_and_holds_its_memory_until_removed() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn busy_service_blocks_an_equal_priority_reservation_but_not_a_higher_one() {
-    let h = build_harness(vec![service("alpha", 10)]).await;
-    *h.state.snapshot.write() = cpu_snapshot(15);
-    let (st, body) = chat(&h.state, "alpha").await;
-    assert_eq!(st, StatusCode::OK, "{body}");
+async fn busy_and_persistent_services_at_top_priority_are_evicted() {
+    let mut alpha = service("alpha", 10);
+    alpha.priority = 255;
+    let mut beta = service("beta", 10);
+    beta.priority = 255;
+    beta.lifecycle = ananke::config::Lifecycle::Persistent;
+    let h = build_harness(vec![alpha, beta]).await;
+    *h.state.snapshot.write() = cpu_snapshot(30);
+    for name in ["alpha", "beta"] {
+        let (st, body) = chat(&h.state, name).await;
+        assert_eq!(st, StatusCode::OK, "{name}: {body}");
+    }
 
     let busy = InflightGuard::new(h.state.inflight.counter(&SmolStr::new("alpha")));
-    let (st, body) = reserve(&h.state, &format!(r#"{{"devices":{{"cpu":{}}}}}"#, 8 * GIB)).await;
-    assert_eq!(st, StatusCode::CONFLICT, "{body}");
-    assert!(body.contains("reservation_no_fit"), "{body}");
-    assert!(body.contains("`alpha`"), "the busy peer is named: {body}");
-    assert!(h.state.allocations.lock().get("alpha").is_some());
-
     let (st, body) = reserve(
         &h.state,
-        &format!(r#"{{"devices":{{"cpu":{}}},"priority":51}}"#, 8 * GIB),
+        &format!(r#"{{"devices":{{"cpu":{}}},"wait":false}}"#, 25 * GIB),
     )
     .await;
+    assert_eq!(st, StatusCode::CREATED, "{body}");
+    let created: CreateReservationResponse = serde_json::from_str(&body).unwrap();
+    let mut evicted = created.evicted.clone();
+    evicted.sort();
+    assert_eq!(evicted, vec!["alpha".to_string(), "beta".to_string()]);
     drop(busy);
-    assert_eq!(
-        st,
-        StatusCode::CREATED,
-        "a higher priority evicts a busy service: {body}"
-    );
+
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        while ["alpha", "beta"]
+            .iter()
+            .any(|name| h.state.allocations.lock().contains_key(*name))
+        {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+    })
+    .await
+    .expect("both evicted services stop");
 
     h.cleanup().await;
 }
@@ -209,6 +221,7 @@ async fn reservation_that_fits_evicts_nothing_and_requests_are_validated() {
         r#"{"devices":{"cpu":0}}"#.to_string(),
         format!(r#"{{"devices":{{"cpu":{}}}}}"#, 16 * GIB),
         r#"{"devices":{"cpu":1},"ttl":"1h"}"#.to_string(),
+        r#"{"devices":{"cpu":1},"priority":50}"#.to_string(),
         "not json".to_string(),
     ] {
         let (st, body) = reserve(&h.state, &bad).await;
@@ -222,11 +235,7 @@ async fn reservation_that_fits_evicts_nothing_and_requests_are_validated() {
 async fn stored_reservations_are_restored_into_the_allocation_table() {
     let h = build_harness(vec![]).await;
     *h.state.snapshot.write() = cpu_snapshot(15);
-    let (st, body) = reserve(
-        &h.state,
-        &format!(r#"{{"devices":{{"cpu":{}}},"priority":70}}"#, 3 * GIB),
-    )
-    .await;
+    let (st, body) = reserve(&h.state, &format!(r#"{{"devices":{{"cpu":{}}}}}"#, 3 * GIB)).await;
     assert_eq!(st, StatusCode::CREATED, "{body}");
     let created: CreateReservationResponse = serde_json::from_str(&body).unwrap();
 

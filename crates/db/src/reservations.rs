@@ -14,15 +14,14 @@ impl Database {
     pub async fn insert_manual_reservation(
         &self,
         label: Option<&str>,
-        priority: i64,
         created_at_ms: i64,
         devices: &BTreeMap<String, i64>,
     ) -> Result<i64, ExpectedError> {
         let mut conn = self.conn.lock();
         let tx = conn.transaction().map_err(|e| self.db_err(e))?;
         tx.execute(
-            "INSERT INTO manual_reservations(label, priority, created_at) VALUES (?1, ?2, ?3)",
-            params![label, priority, created_at_ms],
+            "INSERT INTO manual_reservations(label, created_at) VALUES (?1, ?2)",
+            params![label, created_at_ms],
         )
         .map_err(|e| self.db_err(e))?;
         let id = tx.last_insert_rowid();
@@ -56,7 +55,7 @@ impl Database {
         let mut out: BTreeMap<i64, ManualReservation> = BTreeMap::new();
         let mut stmt = conn
             .prepare(
-                "SELECT reservation_id, label, priority, created_at
+                "SELECT reservation_id, label, created_at
                  FROM manual_reservations ORDER BY reservation_id",
             )
             .map_err(|e| self.db_err(e))?;
@@ -65,8 +64,7 @@ impl Database {
                 Ok(ManualReservation {
                     reservation_id: r.get(0)?,
                     label: r.get(1)?,
-                    priority: r.get(2)?,
-                    created_at_ms: r.get(3)?,
+                    created_at_ms: r.get(2)?,
                     devices: BTreeMap::new(),
                 })
             })
@@ -107,16 +105,11 @@ mod tests {
         let db = Database::open(&dir.path().join("a.sqlite")).await.unwrap();
         let devices = BTreeMap::from([("gpu:0".to_string(), 18_432), ("gpu:1".to_string(), 1_024)]);
         let id = db
-            .insert_manual_reservation(Some("train"), 60, 1_000, &devices)
+            .insert_manual_reservation(Some("train"), 1_000, &devices)
             .await
             .unwrap();
         let other = db
-            .insert_manual_reservation(
-                None,
-                50,
-                2_000,
-                &BTreeMap::from([("cpu".to_string(), 4_096)]),
-            )
+            .insert_manual_reservation(None, 2_000, &BTreeMap::from([("cpu".to_string(), 4_096)]))
             .await
             .unwrap();
 
@@ -124,7 +117,6 @@ mod tests {
         assert_eq!(listed.len(), 2);
         assert_eq!(listed[0].reservation_id, id);
         assert_eq!(listed[0].label.as_deref(), Some("train"));
-        assert_eq!(listed[0].priority, 60);
         assert_eq!(listed[0].devices, devices);
         assert_eq!(listed[1].label, None);
 
