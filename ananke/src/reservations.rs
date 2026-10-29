@@ -168,6 +168,7 @@ pub async fn create(
         .insert_manual_reservation(label.as_deref(), created_at_ms, &stored_mb)
         .await
         .map_err(|e| ApiErrorCode::PersistFailed {
+            what: "the reservation to the local store",
             reason: e.to_string(),
         })?;
     // The row goes in before the victims finish stopping, so nothing else
@@ -216,6 +217,7 @@ pub async fn remove(state: &AppState, id: i64) -> Result<(), ApiErrorCode> {
         .delete_manual_reservation(id)
         .await
         .map_err(|e| ApiErrorCode::PersistFailed {
+            what: "the reservation's removal to the local store",
             reason: e.to_string(),
         })?;
     state.allocations.lock().remove(&manual_reservation_key(id));
