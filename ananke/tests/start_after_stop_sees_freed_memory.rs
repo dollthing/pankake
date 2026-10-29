@@ -16,7 +16,7 @@ use std::{sync::Arc, time::Duration};
 
 use ananke::{
     api::management::router,
-    config::{AllocationMode, PlacementPolicy, ServiceConfig},
+    config::{AllocationMode, CommandConfig, PlacementPolicy, ServiceConfig, TemplateConfig},
 };
 use ananke_api::services::StartResponse;
 use ananke_placement::devices::{CpuSnapshot, DeviceSnapshot, GpuSnapshot};
@@ -33,8 +33,14 @@ const CHILD_VRAM: u64 = 14 * GIB;
 /// A command service pinned to GPU 0 with a static 14 GiB reserve: two
 /// copies never fit on the 24 GiB card, one always does.
 fn gpu0_command_service() -> ServiceConfig {
-    let mut s = common::minimal_transcription_service("explorer", 0);
-    s.modality = ananke_api::shared::Modality::Chat;
+    let mut s = common::minimal_llama_service("explorer", 0);
+    s.template_config = TemplateConfig::Command(CommandConfig {
+        command: vec!["/fake/explorer".into(), "--port".into(), "{port}".into()],
+        workdir: None,
+        shutdown_command: None,
+        private_port_override: None,
+        openai_proxy: None,
+    });
     s.placement_override.clear();
     s.placement_policy = PlacementPolicy::GpuOnly;
     s.gpu_allow = vec![0];
