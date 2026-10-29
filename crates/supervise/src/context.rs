@@ -33,9 +33,9 @@ impl RunLoop {
         rx: mpsc::Receiver<SupervisorCommand>,
         mirror: Arc<SyncMutex<MirroredState>>,
     ) -> Self {
-        // `MirroredState::default()` already seeds `Idle`; the explicit write
-        // here is defensive in case the caller reused a handle's mirror.
-        *mirror.lock() = MirroredState::default();
+        // `spawn_supervisor` already seeds the initial state; the explicit
+        // write here is defensive in case the caller reused a handle's mirror.
+        *mirror.lock() = MirroredState::initial(init.disabled);
         let (cancel_tx, cancel_rx) = watch::channel(false);
         Self {
             init,
@@ -132,10 +132,6 @@ impl RunLoop {
         self.deps.mirror_changed.notify();
     }
 
-    /// Combined teardown: delete the DB `running_services` row and clear the
-    /// mirror's `run_id` + `pid`. Every exit from the running/draining loops
-    /// needs both, and keeping them in one helper means neither can be
-    /// forgotten.
     /// Store or clear the operator's disable, so it outlives a daemon
     /// restart. Written here, in command order, rather than by the caller:
     /// a racing enable and disable then cannot leave the database
@@ -156,6 +152,10 @@ impl RunLoop {
         })
     }
 
+    /// Combined teardown: delete the DB `running_services` row and clear the
+    /// mirror's `run_id` + `pid`. Every exit from the running/draining loops
+    /// needs both, and keeping them in one helper means neither can be
+    /// forgotten.
     pub(crate) async fn end_run(&mut self, run_id: i64) {
         delete_running_row(&self.deps.db, self.init.service_id, run_id).await;
         self.clear_running_ids();

@@ -9,9 +9,12 @@ mod common;
 use std::time::Duration;
 
 use ananke::{
-    api::management::router,
+    api::{management::router, openai},
     config::{EffectiveConfig, Lifecycle},
-    supervise::state::{DisableReason, ServiceState},
+    supervise::{
+        DisableResult, EnableResult,
+        state::{DisableReason, ServiceState},
+    },
 };
 use ananke_api::events::Event;
 use axum::{body::to_bytes, http::StatusCode};
@@ -130,6 +133,52 @@ async fn stored_disable_keeps_a_provisioned_persistent_service_from_starting() {
     let body = post(&app, "/api/services/beta/enable").await;
     assert!(body.contains("\"enabled\""), "{body}");
     assert_eq!(disabled_at(&h, "beta").await, None);
+
+    h.cleanup().await;
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn disabling_a_running_service_stores_the_mark() {
+    let h = build_harness(vec![minimal_llama_service("demo", 0)]).await;
+    let req = axum::http::Request::builder()
+        .method("POST")
+        .uri("/v1/chat/completions")
+        .header("content-type", "application/json")
+        .body(axum::body::Body::from(r#"{"model":"demo","messages":[]}"#))
+        .unwrap();
+    let resp = openai::router(h.state.clone()).oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(h.supervisors[0].peek_state(), ServiceState::Running);
+
+    let body = post(&router(h.state.clone()), "/api/services/demo/disable").await;
+    assert!(body.contains("\"disabled\""), "{body}");
+    assert!(disabled_at(&h, "demo").await.is_some());
+    assert_eq!(
+        h.supervisors[0].peek_state(),
+        ServiceState::Disabled {
+            reason: DisableReason::UserDisabled
+        }
+    );
+
+    h.cleanup().await;
+}
+
+/// Once the supervisor task is gone nothing can be stored, so enable and
+/// disable must not report success.
+#[tokio::test(flavor = "current_thread")]
+async fn a_stopped_supervisor_does_not_report_success() {
+    let h = build_harness(vec![minimal_llama_service("demo", 0)]).await;
+    let handle = h.supervisors[0].clone();
+    handle.shutdown().await;
+    assert!(matches!(
+        handle.disable().await,
+        DisableResult::PersistFailed(_)
+    ));
+    assert!(matches!(
+        handle.enable().await,
+        EnableResult::PersistFailed(_)
+    ));
+    assert_eq!(disabled_at(&h, "demo").await, None);
 
     h.cleanup().await;
 }
