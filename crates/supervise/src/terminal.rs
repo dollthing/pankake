@@ -71,11 +71,18 @@ impl RunLoop {
                     // No running child; a stall report is stale.
                     Some(SupervisorCommand::WatchdogStall { .. }) => Step::Continue,
                     Some(SupervisorCommand::Enable { ack }) => {
-                        // Failed is not disabled; enable is a no-op.
-                        let _ = ack.send(EnableResult::NotDisabled);
+                        // Failed is not disabled; only clear a stale stored mark.
+                        let _ = ack.send(match self.persist_operator_disable(false).await {
+                            Ok(()) => EnableResult::NotDisabled,
+                            Err(reason) => EnableResult::PersistFailed(reason),
+                        });
                         Step::Continue
                     }
                     Some(SupervisorCommand::Disable { ack }) => {
+                        if let Err(reason) = self.persist_operator_disable(true).await {
+                            let _ = ack.send(DisableResult::PersistFailed(reason));
+                            return Step::Continue;
+                        }
                         // Disable a failed service: skip the retry and go to Disabled.
                         self.set_state(ServiceState::Disabled {
                             reason: DisableReason::UserDisabled,
@@ -113,6 +120,10 @@ impl RunLoop {
                     let _ = ack.send(());
                 }
                 Some(SupervisorCommand::Enable { ack }) => {
+                    if let Err(reason) = self.persist_operator_disable(false).await {
+                        let _ = ack.send(EnableResult::PersistFailed(reason));
+                        continue;
+                    }
                     // Transition back to Idle so the next Ensure can start it.
                     // Clear the auto-restart flap history: a manual re-enable is
                     // an operator override that grants a fresh restart budget.
@@ -127,8 +138,12 @@ impl RunLoop {
                     return Step::Continue;
                 }
                 Some(SupervisorCommand::Disable { ack }) => {
-                    // Already disabled.
-                    let _ = ack.send(DisableResult::AlreadyDisabled);
+                    // Already disabled. Store it anyway: an automatic disable
+                    // (OOM, restart loop) the operator confirms should stick.
+                    let _ = ack.send(match self.persist_operator_disable(true).await {
+                        Ok(()) => DisableResult::AlreadyDisabled,
+                        Err(reason) => DisableResult::PersistFailed(reason),
+                    });
                 }
                 None => return Step::Exit,
             }

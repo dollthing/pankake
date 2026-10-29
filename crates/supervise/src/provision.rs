@@ -16,7 +16,7 @@ use ananke_tracking::{activity::ActivityTable, inflight::InflightTable};
 use futures::future::BoxFuture;
 use parking_lot::Mutex;
 use tokio::{sync::watch, task::JoinHandle};
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 
 use crate::{
     ServiceIdentity, SupervisorDeps, SupervisorHandle, SupervisorInit, await_ensure,
@@ -76,11 +76,23 @@ pub async fn provision_service(
         svc.clone(),
         deps.supervisor_deps.clone(),
     ));
+    // Restore an operator disable from an earlier run before the service is
+    // registered, so no request or persistent ensure can start it first.
+    let disabled = deps.db.service_disabled_at(service_id).await?.is_some();
+    if disabled {
+        info!(service = %svc.name, "restoring operator disable from the database");
+        if let crate::DisableResult::PersistFailed(reason) = handle.disable().await {
+            // The mark was just read, so this write is a no-op that only a
+            // failing database can refuse. The persistent ensure below is
+            // still skipped; a request can start the service.
+            warn!(service = %svc.name, %reason, "restoring operator disable failed");
+        }
+    }
     deps.supervisor_deps
         .registry
         .insert(svc.name.clone(), handle.clone());
 
-    if matches!(svc.lifecycle, Lifecycle::Persistent) {
+    if !disabled && matches!(svc.lifecycle, Lifecycle::Persistent) {
         let h = handle.clone();
         tokio::spawn(async move {
             let _ = h.ensure(crate::EnsureSource::BackgroundWatcher).await;

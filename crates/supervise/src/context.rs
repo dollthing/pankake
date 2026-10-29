@@ -136,6 +136,26 @@ impl RunLoop {
     /// mirror's `run_id` + `pid`. Every exit from the running/draining loops
     /// needs both, and keeping them in one helper means neither can be
     /// forgotten.
+    /// Store or clear the operator's disable, so it outlives a daemon
+    /// restart. Written here, in command order, rather than by the caller:
+    /// a racing enable and disable then cannot leave the database
+    /// disagreeing with the state. Called before the transition, so a
+    /// failure leaves both unchanged.
+    pub(crate) async fn persist_operator_disable(&self, disabled: bool) -> Result<(), String> {
+        let db = &self.deps.db;
+        let id = self.init.service_id;
+        let result = if disabled {
+            db.mark_service_disabled(id, ananke_time::now_unix_ms())
+                .await
+        } else {
+            db.clear_service_disabled(id).await.map(|_| ())
+        };
+        result.map_err(|e| {
+            warn!(service = %self.init.identity.name, error = %e, disabled, "storing the operator disable failed");
+            e.to_string()
+        })
+    }
+
     pub(crate) async fn end_run(&mut self, run_id: i64) {
         delete_running_row(&self.deps.db, self.init.service_id, run_id).await;
         self.clear_running_ids();
