@@ -139,11 +139,24 @@ impl RunLoop {
                 }
                 Some(SupervisorCommand::Disable { ack }) => {
                     // Already disabled. Store it anyway: an automatic disable
-                    // (OOM, restart loop) the operator confirms should stick.
-                    let _ = ack.send(match self.persist_operator_disable(true).await {
-                        Ok(()) => DisableResult::AlreadyDisabled,
-                        Err(reason) => DisableResult::PersistFailed(reason),
-                    });
+                    // (OOM, restart loop) the operator confirms should stick,
+                    // and from then on it is the operator's, so the reason
+                    // says so, as it would after a restart.
+                    if let Err(reason) = self.persist_operator_disable(true).await {
+                        let _ = ack.send(DisableResult::PersistFailed(reason));
+                        continue;
+                    }
+                    if !matches!(
+                        self.read_state(),
+                        ServiceState::Disabled {
+                            reason: DisableReason::UserDisabled
+                        }
+                    ) {
+                        self.set_state(ServiceState::Disabled {
+                            reason: DisableReason::UserDisabled,
+                        });
+                    }
+                    let _ = ack.send(DisableResult::AlreadyDisabled);
                 }
                 None => return Step::Exit,
             }

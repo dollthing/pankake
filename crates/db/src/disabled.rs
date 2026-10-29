@@ -82,4 +82,26 @@ mod tests {
         let id = db.upsert_service("new", 3).await.unwrap();
         assert_eq!(db.service_disabled_at(id).await.unwrap(), Some(10));
     }
+
+    /// Renaming onto a name that already has a row tombstones the old row
+    /// and keeps the new id; the renamed service's disable state goes with it.
+    #[tokio::test]
+    async fn rename_onto_an_existing_name_moves_the_mark() {
+        let db = Database::open_in_memory().await.unwrap();
+        let old = db.upsert_service("old", 1).await.unwrap();
+        let new = db.upsert_service("new", 1).await.unwrap();
+        db.mark_service_disabled(old, 10).await.unwrap();
+        db.reparent("old", "new", 2).await.unwrap();
+        assert_eq!(db.service_disabled_at(new).await.unwrap(), Some(10));
+        assert_eq!(db.service_disabled_at(old).await.unwrap(), None);
+
+        // A stale mark on the new name doesn't outlive a rename from an
+        // enabled service.
+        let a = db.upsert_service("a", 3).await.unwrap();
+        let b = db.upsert_service("b", 3).await.unwrap();
+        db.mark_service_disabled(b, 10).await.unwrap();
+        db.reparent("a", "b", 4).await.unwrap();
+        assert_eq!(db.service_disabled_at(b).await.unwrap(), None);
+        assert_eq!(db.service_disabled_at(a).await.unwrap(), None);
+    }
 }

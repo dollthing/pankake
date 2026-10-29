@@ -64,30 +64,27 @@ pub async fn provision_service(
         .db
         .upsert_service(&svc.name, ananke_tracking::now_unix_ms())
         .await?;
+    // Restore an operator disable from an earlier run. The supervisor starts
+    // in that state rather than being sent a disable, so no request,
+    // persistent ensure or watcher tick can start it first, and restoring
+    // needs no database write that could fail.
+    let disabled = deps.db.service_disabled_at(service_id).await?.is_some();
+    if disabled {
+        info!(service = %svc.name, "restoring operator disable from the database");
+    }
     let init = SupervisorInit {
         identity: ServiceIdentity::from_service(&svc),
         allocation: Allocation::from_override(&svc.placement_override),
         service_id,
         last_activity: deps.activity.get_or_init(&svc.name),
         inflight: deps.inflight.counter(&svc.name),
+        disabled,
     };
     let handle = Arc::new(spawn_supervisor(
         init,
         svc.clone(),
         deps.supervisor_deps.clone(),
     ));
-    // Restore an operator disable from an earlier run before the service is
-    // registered, so no request or persistent ensure can start it first.
-    let disabled = deps.db.service_disabled_at(service_id).await?.is_some();
-    if disabled {
-        info!(service = %svc.name, "restoring operator disable from the database");
-        if let crate::DisableResult::PersistFailed(reason) = handle.disable().await {
-            // The mark was just read, so this write is a no-op that only a
-            // failing database can refuse. The persistent ensure below is
-            // still skipped; a request can start the service.
-            warn!(service = %svc.name, %reason, "restoring operator disable failed");
-        }
-    }
     deps.supervisor_deps
         .registry
         .insert(svc.name.clone(), handle.clone());

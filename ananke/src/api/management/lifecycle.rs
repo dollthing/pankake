@@ -171,7 +171,7 @@ pub async fn post_disable(State(state): State<AppState>, Path(name): Path<String
 /// left the service as it was.
 fn persist_failed(reason: String) -> Response {
     ApiErrorCode::PersistFailed {
-        what: "the service's disabled flag to the local store",
+        what: "the service's enabled or disabled state to the local store",
         reason,
     }
     .into_response()
