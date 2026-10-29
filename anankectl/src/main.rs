@@ -74,7 +74,7 @@ enum Command {
     /// List manual reservations and the memory services have pledged.
     Reservations,
     /// Reserve device memory so ananke never places a service into it.
-    /// Services are evicted to make room by the ordinary priority rules.
+    /// Services in the way are evicted, busy and persistent ones included.
     Reserve {
         /// One or more `DEVICE=SIZE` amounts, such as `gpu:0=18G` or
         /// `cpu=512M`.
@@ -83,10 +83,6 @@ enum Command {
         /// What the memory is for.
         #[arg(long)]
         label: Option<String>,
-        /// Eviction priority, as for a service (default 50). Idle services
-        /// can be evicted at any priority; busy ones only from a higher one.
-        #[arg(long)]
-        priority: Option<u8>,
         /// Return as soon as evictions begin instead of waiting for the
         /// evicted services to stop.
         #[arg(long)]
@@ -213,12 +209,8 @@ async fn main() -> ExitCode {
         Command::Reserve {
             devices,
             label,
-            priority,
             no_wait,
-        } => {
-            commands::reservations::reserve(&client, cli.json, &devices, label, priority, no_wait)
-                .await
-        }
+        } => commands::reservations::reserve(&client, cli.json, &devices, label, no_wait).await,
         Command::Unreserve { id } => commands::reservations::unreserve(&client, cli.json, id).await,
         Command::Services { all } => commands::services::run(&client, cli.json, all).await,
         Command::Show { name } => commands::show::run(&client, cli.json, &name).await,

@@ -30,9 +30,10 @@ pub async fn get_reservations(State(state): State<AppState>) -> Response {
 #[utoipa::path(
     summary = "Place a manual reservation",
     description = "Reserve memory on one or more devices so ananke never places a service \
-                   into it. Services are evicted to make room by the same rules a service \
-                   start uses. By default the response is sent once they have stopped; \
-                   with `wait: false` it is sent as soon as their evictions begin.",
+                   into it. A reservation outranks every service: any service in the way \
+                   is evicted, busy and persistent ones included. By default the response \
+                   is sent once they have stopped; with `wait: false` it is sent as soon as \
+                   their evictions begin.",
     post,
     path = "/api/reservations",
     request_body = CreateReservationRequest,

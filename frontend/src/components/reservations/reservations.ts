@@ -45,25 +45,22 @@ export function deviceBudgets(
 
 export type ReservationForm = {
   readonly label: string;
-  readonly priority: string;
   /// GiB per device id, as typed.
   readonly amounts: Readonly<Record<string, string>>;
 };
 
 export const EMPTY_FORM: ReservationForm = {
   label: "",
-  priority: "",
   amounts: {},
 };
 
 export type FormProblem =
   | { readonly kind: "no_devices" }
   | { readonly kind: "bad_amount"; readonly device: string }
-  | { readonly kind: "too_large"; readonly device: string }
-  | { readonly kind: "bad_priority" };
+  | { readonly kind: "too_large"; readonly device: string };
 
 /// The request the form describes, or the first problem with it. Blank
-/// amounts are skipped; a blank priority takes the daemon's default.
+/// amounts are skipped.
 export function formRequest(
   form: ReservationForm,
   budgets: readonly DeviceBudget[],
@@ -87,21 +84,12 @@ export function formRequest(
   if (Object.keys(devices).length === 0) {
     return { ok: false, problem: { kind: "no_devices" } };
   }
-  const rawPriority = form.priority.trim();
-  let priority: number | undefined;
-  if (rawPriority !== "") {
-    priority = Number(rawPriority);
-    if (!Number.isInteger(priority) || priority < 0 || priority > 255) {
-      return { ok: false, problem: { kind: "bad_priority" } };
-    }
-  }
   const label = form.label.trim();
   return {
     ok: true,
     request: {
       devices,
       ...(label === "" ? {} : { label }),
-      ...(priority === undefined ? {} : { priority }),
     },
   };
 }

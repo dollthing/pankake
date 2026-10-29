@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::shared::{lifecycle::Lifecycle, service_state::ServiceStateKind};
+use crate::shared::service_state::ServiceStateKind;
 
 /// Response from `GET /api/reservations`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
@@ -24,9 +24,6 @@ pub struct ManualReservation {
     /// Free-form label naming what the memory is for.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
-    /// The priority it was placed with, which decided which services it
-    /// could evict.
-    pub priority: u8,
     /// When it was placed, in unix milliseconds.
     pub created_at_ms: i64,
     /// Reserved bytes per device id (`"cpu"` or `"gpu:N"`).
@@ -40,10 +37,6 @@ pub struct ServiceReservation {
     pub service: String,
     /// The service's current state.
     pub state: ServiceStateKind,
-    /// The service's eviction priority.
-    pub priority: u8,
-    /// When the service starts and stops.
-    pub lifecycle: Lifecycle,
     /// Requests in flight through the service's proxy.
     pub inflight_count: u64,
     /// Pledged bytes per device id (`"cpu"` or `"gpu:N"`).

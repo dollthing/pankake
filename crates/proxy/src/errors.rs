@@ -70,12 +70,9 @@ pub enum ApiErrorCode {
     /// Management caller referenced a manual reservation that doesn't exist.
     ReservationNotFound { id: i64 },
     /// A manual reservation could not be placed: not enough capacity even
-    /// after evicting what its priority allows. `busy_peers` lists services
-    /// that would have to go but are busy.
-    ReservationNoFit {
-        reason: String,
-        busy_peers: Vec<SmolStr>,
-    },
+    /// after evicting every service, because other manual reservations hold
+    /// the rest.
+    ReservationNoFit { reason: String },
 }
 
 impl ApiErrorCode {
@@ -227,18 +224,7 @@ impl ApiErrorCode {
                 format!("this connection already holds the maximum of {limit} subscriptions")
             }
             Self::ReservationNotFound { id } => format!("reservation {id} not found"),
-            Self::ReservationNoFit { reason, busy_peers } => {
-                if busy_peers.is_empty() {
-                    format!("reservation cannot fit: {reason}")
-                } else {
-                    let list = busy_peers
-                        .iter()
-                        .map(|p| format!("`{p}`"))
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    format!("reservation cannot fit: {reason}; busy peer(s) in the way: {list}")
-                }
-            }
+            Self::ReservationNoFit { reason } => format!("reservation cannot fit: {reason}"),
         }
     }
 }

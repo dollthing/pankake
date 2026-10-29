@@ -5,9 +5,9 @@
 //! allocation table under a `reservation:<id>` key. Every placement check
 //! sums that row like a service pledge, so ananke never places a service
 //! into it, while processes outside ananke may use the memory. No
-//! supervisor owns the row, so nothing evicts it. Placing one evicts
-//! services through the same rules a service start uses; see
-//! [`crate::supervise::manual_reservation`].
+//! supervisor owns the row, so nothing evicts it. A reservation outranks
+//! every service: placing one evicts whatever is in the way, busy and
+//! persistent services included; see [`crate::supervise::manual_reservation`].
 
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
@@ -18,7 +18,7 @@ use ananke_api::{
         ReservationsResponse, ServiceReservation,
     },
 };
-use ananke_config::{DeviceSlot, validate::DEFAULT_SERVICE_PRIORITY};
+use ananke_config::DeviceSlot;
 use parking_lot::Mutex;
 use smol_str::SmolStr;
 use tracing::{info, warn};
@@ -83,7 +83,6 @@ pub async fn load(state: &AppState) -> Result<(), ananke_errors::ExpectedError> 
         let reservation = ManualReservation {
             id: row.reservation_id,
             label: row.label,
-            priority: u8::try_from(row.priority).unwrap_or(DEFAULT_SERVICE_PRIORITY),
             created_at_ms: row.created_at_ms,
             devices,
         };
@@ -104,12 +103,10 @@ pub fn reservations_snapshot(state: &AppState) -> ReservationsResponse {
         .filter(|(_, row)| row.values().any(|mb| *mb > 0))
         .filter_map(|(name, row)| {
             let handle = state.registry.get(name)?;
-            let svc = config.services.iter().find(|s| &s.name == name)?;
+            config.services.iter().find(|s| &s.name == name)?;
             Some(ServiceReservation {
                 service: name.to_string(),
                 state: handle.peek_state().kind(),
-                priority: svc.priority,
-                lifecycle: svc.lifecycle,
                 inflight_count: state.inflight.current(name),
                 devices: device_bytes(row),
             })
@@ -121,7 +118,7 @@ pub fn reservations_snapshot(state: &AppState) -> ReservationsResponse {
     }
 }
 
-/// Place a manual reservation, evicting services as its priority allows,
+/// Place a manual reservation, evicting whatever services are in the way,
 /// and wait for them to stop.
 pub async fn create(
     state: &AppState,
@@ -136,7 +133,6 @@ pub async fn create(
         Some(l) if l.is_empty() => None,
         other => other,
     };
-    let priority = req.priority.unwrap_or(DEFAULT_SERVICE_PRIORITY);
     let want = requested_mb(state, &req.devices)?;
 
     let _serial = state.reservations.changes.lock().await;
@@ -145,15 +141,15 @@ pub async fn create(
     let deps = state.supervisor_deps();
     let candidates = eviction_candidates(&deps, None);
     let now = tokio::time::Instant::now();
-    let victims = plan_evictions(&want, priority, &snapshot, &table, &candidates, |name| {
+    let victims = plan_evictions(&want, &snapshot, &table, &candidates, |name| {
         state
             .activity
             .last(&SmolStr::new(name))
             .map(|t| now.saturating_duration_since(t).as_millis())
     })
-    .map_err(|ReservationPlanFailure::NoFit { reason, busy_peers }| {
-        ApiErrorCode::ReservationNoFit { reason, busy_peers }
-    })?;
+    .map_err(
+        |ReservationPlanFailure::NoFit { reason }| ApiErrorCode::ReservationNoFit { reason },
+    )?;
 
     for victim in &victims {
         if let Some(handle) = state.registry.get(victim) {
@@ -169,12 +165,7 @@ pub async fn create(
         .collect();
     let id = state
         .db
-        .insert_manual_reservation(
-            label.as_deref(),
-            i64::from(priority),
-            created_at_ms,
-            &stored_mb,
-        )
+        .insert_manual_reservation(label.as_deref(), created_at_ms, &stored_mb)
         .await
         .map_err(|e| ApiErrorCode::PersistFailed {
             reason: e.to_string(),
@@ -188,7 +179,6 @@ pub async fn create(
     let reservation = ManualReservation {
         id,
         label,
-        priority,
         created_at_ms,
         devices: device_bytes(&want),
     };

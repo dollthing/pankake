@@ -1,9 +1,9 @@
 // Reservations (`/reservations`): how each device's memory splits between
 // manual reservations and service pledges, the manual reservations an
-// operator placed, and the services holding memory. Placing a manual
-// reservation evicts services by the ordinary priority rules; a service's
-// row offers a stop as a shortcut, while its page stays the place to manage
-// it.
+// operator placed, and the services holding memory. A manual reservation
+// outranks every service, so placing one stops whatever is in the way; a
+// service's row offers a stop as a shortcut, while its page stays the place
+// to manage it.
 
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -76,7 +76,6 @@ export function ReservationsView() {
       />
       <div className="min-h-0 flex-1 overflow-auto bg-canvas">
         <div className="flex flex-col gap-4 p-4">
-          <p className="text-sm text-muted">{t("reservations.intro")}</p>
           {reservations.error && (
             <Message kind="error" text={reservations.error.message} />
           )}
@@ -143,12 +142,18 @@ export function ReservationsView() {
 
 function DeviceRow({ budget }: { readonly budget: DeviceBudget }) {
   const { t } = useTranslation();
-  const summary = t("reservations.deviceSummary", {
-    manual: formatBytes(budget.manual),
-    services: formatBytes(budget.services),
-    unpledged: formatBytes(budget.unpledged),
-    total: formatBytes(budget.total),
-  });
+  const summary = [
+    budget.manual > 0 &&
+      t("reservations.reserved", { bytes: formatBytes(budget.manual) }),
+    budget.services > 0 &&
+      t("reservations.servicesBytes", { bytes: formatBytes(budget.services) }),
+    t("reservations.freeOf", {
+      free: formatBytes(budget.unpledged),
+      total: formatBytes(budget.total),
+    }),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <li className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -203,7 +208,6 @@ function ManualRow({
         <span className="text-xs text-muted">
           {t("reservations.manualMeta", {
             id: reservation.id,
-            priority: reservation.priority,
             time: formatTimestamp(reservation.created_at_ms),
           })}
         </span>
@@ -246,10 +250,8 @@ function ServiceRow({
         </Link>
         <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
           <StateChip state={reservation.state} />
-          {t("reservations.serviceMeta", {
-            priority: reservation.priority,
-            count: reservation.inflight_count,
-          })}
+          {reservation.inflight_count > 0 &&
+            t("reservations.inflight", { count: reservation.inflight_count })}
         </span>
       </div>
       <DeviceAmounts devices={reservation.devices} />
@@ -323,27 +325,15 @@ function NewReservation({
   return (
     <Panel heading={t("reservations.newTitle")}>
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-4">
-          <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-body">
-            {t("reservations.label")}
-            <TextInput
-              value={form.label}
-              maxLength={200}
-              placeholder={t("reservations.labelPlaceholder")}
-              onChange={(e) => setForm({ ...form, label: e.target.value })}
-            />
-          </label>
-          <label className="flex w-32 flex-col gap-1 text-sm text-body">
-            {t("reservations.priority")}
-            <TextInput
-              value={form.priority}
-              inputMode="numeric"
-              mono
-              placeholder="50"
-              onChange={(e) => setForm({ ...form, priority: e.target.value })}
-            />
-          </label>
-        </div>
+        <label className="flex min-w-0 flex-col gap-1 text-sm text-body">
+          {t("reservations.label")}
+          <TextInput
+            value={form.label}
+            maxLength={200}
+            placeholder={t("reservations.labelPlaceholder")}
+            onChange={(e) => setForm({ ...form, label: e.target.value })}
+          />
+        </label>
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-sm text-body">
             {t("reservations.amounts")}
@@ -370,8 +360,7 @@ function NewReservation({
               />
               <span className="text-xs text-muted">
                 {t("reservations.amountHint", {
-                  unpledged: formatBytes(b.unpledged),
-                  total: formatBytes(b.total),
+                  free: formatBytes(b.unpledged),
                 })}
               </span>
             </label>

@@ -202,13 +202,12 @@ fn reservations_roundtrip() {
             CreateReservationRequest, CreateReservationResponse, ManualReservation,
             ReservationsResponse, ServiceReservation,
         },
-        shared::{lifecycle::Lifecycle, service_state::ServiceStateKind},
+        shared::service_state::ServiceStateKind,
     };
 
     let manual = ManualReservation {
         id: 7,
         label: Some("train".into()),
-        priority: 60,
         created_at_ms: 1_000,
         devices: BTreeMap::from([("gpu:0".into(), 18 << 30), ("gpu:1".into(), 2 << 30)]),
     };
@@ -217,8 +216,6 @@ fn reservations_roundtrip() {
         services: vec![ServiceReservation {
             service: "demo".into(),
             state: ServiceStateKind::Running,
-            priority: 50,
-            lifecycle: Lifecycle::OnDemand,
             inflight_count: 1,
             devices: BTreeMap::from([("gpu:1".into(), 4 << 30)]),
         }],
@@ -233,8 +230,11 @@ fn reservations_roundtrip() {
     let req: CreateReservationRequest =
         serde_json::from_str(r#"{"devices":{"gpu:0":1073741824}}"#).unwrap();
     assert_eq!(req.label, None);
-    assert_eq!(req.priority, None);
     assert!(serde_json::from_str::<CreateReservationRequest>(r#"{"devices":{},"ttl":1}"#).is_err());
+    assert!(
+        serde_json::from_str::<CreateReservationRequest>(r#"{"devices":{},"priority":50}"#)
+            .is_err()
+    );
 }
 
 #[test]

@@ -66,7 +66,6 @@ describe("formRequest", () => {
       formRequest(
         {
           label: " train ",
-          priority: "60",
           amounts: { "gpu:0": "1.5", cpu: "" },
         },
         budgets,
@@ -76,12 +75,11 @@ describe("formRequest", () => {
       request: {
         devices: { "gpu:0": 1.5 * GIB },
         label: "train",
-        priority: 60,
       },
     });
   });
 
-  it("leaves the label and priority to the daemon when blank", () => {
+  it("leaves the label out when blank", () => {
     expect(
       formRequest({ ...EMPTY_FORM, amounts: { cpu: "2" } }, budgets),
     ).toEqual({ ok: true, request: { devices: { cpu: 2 * GIB } } });
@@ -100,14 +98,6 @@ describe("formRequest", () => {
     [
       { ...EMPTY_FORM, amounts: { "gpu:0": "25" } },
       { kind: "too_large", device: "gpu:0" },
-    ],
-    [
-      { ...EMPTY_FORM, priority: "1.5", amounts: { cpu: "1" } },
-      { kind: "bad_priority" },
-    ],
-    [
-      { ...EMPTY_FORM, priority: "300", amounts: { cpu: "1" } },
-      { kind: "bad_priority" },
     ],
   ])("rejects %j", (form, problem) => {
     expect(formRequest(form, budgets)).toEqual({ ok: false, problem });

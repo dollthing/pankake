@@ -57,12 +57,11 @@ pub fn print_reservations(resp: &ReservationsResponse) {
             .join(", ")
     };
     let mut manual = base_table();
-    manual.set_header(header_row(["ID", "LABEL", "PRI", "DEVICES", "PLACED"]));
+    manual.set_header(header_row(["ID", "LABEL", "DEVICES", "PLACED"]));
     for r in &resp.manual {
         manual.add_row(vec![
             Cell::new(r.id),
             Cell::new(r.label.as_deref().unwrap_or("—")),
-            Cell::new(r.priority).set_alignment(CellAlignment::Right),
             Cell::new(devices(&r.devices)),
             Cell::new(format_restart_time(r.created_at_ms)),
         ]);
@@ -75,14 +74,11 @@ pub fn print_reservations(resp: &ReservationsResponse) {
     }
 
     let mut services = base_table();
-    services.set_header(header_row([
-        "SERVICE", "STATE", "PRI", "INFLIGHT", "DEVICES",
-    ]));
+    services.set_header(header_row(["SERVICE", "STATE", "INFLIGHT", "DEVICES"]));
     for r in &resp.services {
         services.add_row(vec![
             Cell::new(&r.service),
             Cell::new(r.state.to_string()),
-            Cell::new(r.priority).set_alignment(CellAlignment::Right),
             Cell::new(r.inflight_count).set_alignment(CellAlignment::Right),
             Cell::new(devices(&r.devices)),
         ]);

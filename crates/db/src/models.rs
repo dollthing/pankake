@@ -227,7 +227,6 @@ pub struct DeviceSample {
 pub struct ManualReservation {
     pub reservation_id: i64,
     pub label: Option<String>,
-    pub priority: i64,
     pub created_at_ms: i64,
     /// Reserved MiB per device key (`"cpu"` or `"gpu:N"`).
     pub devices: std::collections::BTreeMap<String, i64>,
