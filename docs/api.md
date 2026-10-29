@@ -908,6 +908,7 @@ Disable a service
 | --- | --- | --- |
 | 200 |  | `DisableResponse` |
 | 404 | service_not_found | `ApiError` |
+| 500 | persist_failed | `ApiError` |
 
 **Response (200)**:
 
@@ -934,6 +935,7 @@ Enable a disabled service
 | --- | --- | --- |
 | 200 |  | `EnableResponse` |
 | 404 | service_not_found | `ApiError` |
+| 500 | persist_failed | `ApiError` |
 
 **Response (200)**:
 
@@ -1395,7 +1397,7 @@ The `POST /api/services/{name}/start` endpoint returns `202 Accepted` even when 
 | `invalid_cursor` | Log-paging cursor failed to decode. |
 | `if_match_required` | Config PUT arrived without an If-Match header. |
 | `hash_mismatch` | Config PUT's If-Match didn't match the current hash. |
-| `persist_failed` | Config write failed at the IO layer. |
+| `persist_failed` | A durable write failed: the config file or a local-store row. |
 | `query_failed` | The daemon could not read the metrics, restart, or device history you asked for. |
 | `preview_failed` | The launch command for this service could not be built. |
 | `invalid_live_request` | A `/api/live` frame could not be parsed as a request. |

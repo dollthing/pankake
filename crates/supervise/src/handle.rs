@@ -77,21 +77,25 @@ pub enum SupervisorCommand {
 }
 
 /// Result of a `SupervisorCommand::Enable`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EnableResult {
     /// Was `Disabled`; now `Idle`.
     Enabled,
     /// Already in a non-disabled state (Idle, Running, etc.).
     NotDisabled,
+    /// Clearing the stored disable failed; the state is unchanged.
+    PersistFailed(String),
 }
 
 /// Result of a `SupervisorCommand::Disable`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DisableResult {
     /// Transitioned to `Disabled`.
     Disabled,
     /// Was already `Disabled`; no change.
     AlreadyDisabled,
+    /// Storing the disable failed; the state is unchanged.
+    PersistFailed(String),
 }
 
 #[derive(Debug)]

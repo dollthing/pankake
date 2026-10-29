@@ -124,7 +124,7 @@ enum Command {
         /// Service name.
         name: String,
     },
-    /// Disable a service.
+    /// Disable a service. It stays disabled across daemon restarts until enabled.
     Disable {
         /// Service name.
         name: String,
